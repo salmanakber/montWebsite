@@ -1,0 +1,176 @@
+# Translation of Plugins - WordPress Importer - Stable (latest release) in Pashto
+# This file is distributed under the same license as the Plugins - WordPress Importer - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2015-08-01 21:43:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/4.0.1\n"
+"Language: ps_AF\n"
+"Project-Id-Version: Plugins - WordPress Importer - Stable (latest release)\n"
+
+#. Author of the plugin
+#: wordpress-importer.php
+msgid "wordpressdotorg"
+msgstr "wordpressdotorg"
+
+#: class-wp-import.php:1335
+msgid "Choose a WXR (.xml) file to upload, then click Upload file and import."
+msgstr "خپله د WXR يا (xml.) دوتنه خوښه کړئ د پورته کولو لپاره او بيا پر \"دوتنه پورته او وارده کړئ\" کلېک وکړئ."
+
+#: class-wp-import.php:305
+msgid "or assign posts to an existing user:"
+msgstr "يا هم ليکنې شته غړي ته منسوبې کړه:"
+
+#: parsers/class-wxr-parser-simplexml.php:33
+#: parsers/class-wxr-parser-simplexml.php:41 parsers/class-wxr-parser.php:45
+msgid "There was an error when reading this WXR file"
+msgstr "ستاسو د (WXR) دوتنې د لوستلو پر مهال ستونزه را منځ ته شوه"
+
+#: class-wp-import.php:290
+msgid "or create new user with login name:"
+msgstr "يا نوی غړی د کارن نوم سره جوړ کړه:"
+
+#: class-wp-import.php:373
+msgid "Failed to create new user for %s. Their posts will be attributed to the current user."
+msgstr "د %s لپاره د نوي غړي جوړول ناکامه شو. د هغوی ټولې ليکنې به اوسني غړي ته منسوبې شي."
+
+#: class-wp-import.php:1319
+msgid "A new version of this importer is available. Please update to version %s to ensure compatibility with newer export files."
+msgstr "د ورادونکي نوې نسخه شتون لري. مهرباني وکړئ خپله نسخه %s ته اوسمهاليزه کړئ تر څو د نوي ورډپرېس نسخې څخه صادرې شوې دوتنې په ښه توګه واردې کړي."
+
+#. Description of the plugin
+#: wordpress-importer.php
+msgid "Import posts, pages, comments, custom fields, categories, tags and more from a WordPress export file."
+msgstr "ليکنې، پاڼې، څرګندونې، خپلخوښه ځايونه، ټولي او ټګونه د ورډپرېس له صادرې شوې دوتنې څخه وارد کړئ."
+
+#: parsers/class-wxr-parser.php:46
+msgid "Details are shown above. The importer will now try again with a different parser..."
+msgstr "تفصيل يې پاس ښول شوی. واردونکی به اوس د بدلو (parser) کوښښ وکړي..."
+
+#: parsers/class-wxr-parser-regex.php:102
+#: parsers/class-wxr-parser-simplexml.php:46
+#: parsers/class-wxr-parser-simplexml.php:52
+#: parsers/class-wxr-parser-xml.php:106
+msgid "This does not appear to be a WXR file, missing/invalid WXR version number"
+msgstr "داسې نه ښکاري چې د (WXR) دوتنه دې وي، د نسخې شمېره يې ورکه / ناباوري (WXR) ده."
+
+#: class-wp-import.php:108
+msgid "The file does not exist, please try again."
+msgstr "دوتنه شتون نه لري. د مهربانۍ له مخې بیا کوښښ وکړئ."
+
+#: class-wp-import.php:152
+msgid "Remember to update the passwords and roles of imported users."
+msgstr "ياد لرئ چې د نويو واردو شویو غړو دندې (رول) او پټ توري اوسمهاليز کړئ."
+
+#: class-wp-import.php:1013
+msgid "Fetching attachments is not enabled"
+msgstr "د نښلنونو راکښونکی فعال نه دی"
+
+#: class-wp-import.php:946
+msgid "Menu item skipped due to invalid menu slug: %s"
+msgstr "د غورنۍ توکي له پامه و غورځول شول د ناباوري غورنۍ (slug) لنډ پېژندي له وجې: %s"
+
+#: class-wp-import.php:188
+msgid "This WXR file (version %s) may not be supported by this version of the importer. Please consider updating."
+msgstr "دغه د (WXR) دوتنې %s نسخه ښايي د دې واردونکي نسخې لخوا ملاتړ و نه لري. د مهربانۍ له مخې اوسمهاليزول يې په نظر کې ونيسئ."
+
+#: class-wp-import.php:244
+msgid "If a new user is created by WordPress, a new password will be randomly generated and the new user&#8217;s role will be set as %s. Manually changing the new user&#8217;s details will be necessary."
+msgstr "که نوی غړی د ورډپرېس له لوري جوړ شي نو نوی پټ توری به ورته جوړ شي او د نوي غړي دنده (رول) به د %s په توګه وټاکل شي. د نوي غړي د مالوماتو بدلون به په لاسي توګه اړين وي."
+
+#: class-wp-import.php:293
+msgid "as a new user:"
+msgstr "د نوي غړي په توګه:"
+
+#: class-wp-import.php:303
+msgid "assign posts to an existing user:"
+msgstr "ليکنې شته غړي ته منسوبې کړه:"
+
+#: class-wp-import.php:939
+msgid "Menu item skipped due to missing menu slug"
+msgstr "د غورنۍ توکي له پامه و غورځول شول ځکه چې (slug) لنډ پېژندي یې نه لرلو"
+
+#: class-wp-import.php:483
+msgid "Failed to import post tag %s"
+msgstr "د %s ليکنې ټګ واردول ناکام شو"
+
+#: class-wp-import.php:432
+msgid "Failed to import category %s"
+msgstr "د %s ټولي واردول ناکامه شو"
+
+#: class-wp-import.php:213
+msgid "Failed to import author %s. Their posts will be attributed to the current user."
+msgstr "د %s غړي واردول ناکامه شو. د هغوی ټولې ليکنې به اوسني غړي ته منسوبې شي."
+
+#: class-wp-import.php:1132
+msgid "Zero size file downloaded"
+msgstr "صفر کچه دوتنه ښکته شوه"
+
+#: class-wp-import.php:1312
+msgid "Import WordPress"
+msgstr "ورډ پرېس وارد کړئ"
+
+#: class-wp-import.php:1334
+msgid "Howdy! Upload your WordPress eXtended RSS (WXR) file and we&#8217;ll import the posts, pages, comments, custom fields, categories, and tags into this site."
+msgstr "سلامونه! خپله د ورډپرېس (eXtended RSS) یا (WXR) دوتنه پورته کړئ او موږ به ستاسو ليکنې، پاڼې، څرګندونې، خپلخوښي ځایونه، ټولي او ټګونه دې پاڼې ته وارد کړو."
+
+#: class-wp-import.php:241
+msgid "Assign Authors"
+msgstr "د واردو شوو منځپانګو لپاره ليکوالان وټاکئ"
+
+#: class-wp-import.php:107 class-wp-import.php:116 class-wp-import.php:167
+#: class-wp-import.php:171 class-wp-import.php:180
+msgid "Sorry, there has been an error."
+msgstr "وبخښئ، هلته يوه ستونزه وه."
+
+#: wordpress-importer.php:63
+msgid "Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export file."
+msgstr "<strong>ليکنې، پاڼې، څرګندونې، خپلخوښه ځايونه، ټولي او ټګونه</strong> وارد کړئ د ورډپرېس له صادرې شوې دوتنې څخه."
+
+#: class-wp-import.php:1125
+msgid "Remote server did not respond"
+msgstr "وړاندې (Remote) پالنګر يا سرور ځواب ور نکړ"
+
+#: class-wp-import.php:254
+msgid "Import Attachments"
+msgstr "نښلنونه وارد کړه"
+
+#: class-wp-import.php:275
+msgid "Import author:"
+msgstr "ليکوال وارد کړه:"
+
+#: class-wp-import.php:151
+msgid "Have fun!"
+msgstr "مزې کوئ !"
+
+#: class-wp-import.php:151
+msgid "All done."
+msgstr "ټول بشپړ شو."
+
+#: class-wp-import.php:1143
+msgid "Remote file is too large, limit is %s"
+msgstr "وړاندې (Remote) دوتنه ډېره لويه ده، حد يې %s دی"
+
+#. Plugin Name of the plugin
+#: wordpress-importer.php
+msgid "WordPress Importer"
+msgstr "ورډ پرېس واردونکی"
+
+#: class-wp-import.php:257
+msgid "Download and import file attachments"
+msgstr "د دوتنې نښلنونه ښکته او وارد کړه"
+
+#: class-wp-import.php:1031
+msgid "Invalid file type"
+msgstr "ناباوري د دوتنې ډول"
+
+#: class-wp-import.php:314
+msgid "- Select -"
+msgstr "- غوره -"
+
+#: class-wp-import.php:261
+msgid "Submit"
+msgstr "تسليم کړه"

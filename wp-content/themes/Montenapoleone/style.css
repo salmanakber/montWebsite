@@ -1,0 +1,744 @@
+@charset "UTF-8";
+
+/*
+Theme Name: Montenapoleone
+Theme URI: Montenapoleone.co/
+Author: the WordPress team
+Author URI: https://Montenapoleone.co/
+Description: Montenapoleone is a blank canvas for your ideas and it makes the block editor your best brush. With new block patterns, which allow you to create a beautiful layout in a matter of seconds, this theme’s soft colors and eye-catching — yet timeless — design will let your work shine. Take it for a spin! See how Montenapoleone elevates your portfolio, business website, or personal blog.
+Requires at least: 5.3
+Tested up to: 6.2
+Requires PHP: 5.6
+Version: 1.8
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: Montenapoleone
+Tags: one-column, accessibility-ready, custom-colors, custom-menu, custom-logo, editor-style, featured-images, footer-widgets, block-patterns, rtl-language-support, sticky-post, threaded-comments, translation-ready
+
+Montenapoleone WordPress Theme, (C) 2020 WordPress.org
+Montenapoleone is distributed under the terms of the GNU GPL.
+
+*/
+
+.tabsData {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+img.menu-image.menu-image-title-after {
+    width: 36px !important;
+    height: auto !important;
+    max-width: 36px !important;
+}
+.ekit-wid-con embed, .ekit-wid-con img:not([draggable]), .ekit-wid-con object, .ekit-wid-con video {
+    max-width: 100% !important;
+    height: auto !important;
+}
+.custom-search {
+    position: absolute;
+}
+.measure-boxes label:after {
+    content: "";
+    height: 16px;
+    text-align: center;
+    width: 16px;
+    line-height: 17px;
+    margin-top: -31px;
+    position: absolute;
+    border: 1px solid #bcb5b5;
+    border-radius: 4px;
+}
+.home .image_sec h2.elementor-heading-title.elementor-size-default {
+    position: absolute;
+    left: 48px;
+    right: 0;
+    top: 55px;
+    z-index: 9;
+    font-size: 12px;
+    color: #000000;
+}
+
+.cehksComplete:after {
+    content: '\2713' !important;
+}
+.measure-boxes label span {
+    line-height: 15px;
+    text-align: center !important;
+}
+
+ .checkboxType {
+                    pointer-events: none;
+                }
+                
+                .hide_form {
+                    display: none;
+                }
+                ul.tabs-list {
+                    position: absolute;
+                    width: 100% !important;
+                    left: 0;
+                }
+                .measure-boxes h4 {
+                   font-size: 15px !important;
+               }
+               form#retailer_form {
+                margin-top: 85px;
+            }
+            .second-section .tabs ul {
+                border-bottom: 1px solid #7b7a7a87 !important;
+            }
+            ul.tabs-list li {
+                border-color: #7b7a7a69 !important;
+            }
+            .second-section .tabs ul.tabs-list {
+                margin-top: -80px !important;
+            }
+            .loader {
+                position: fixed;
+                left: 0px;
+                top: 0px;
+                width: 100%;
+                height: 100%;
+                z-index: 9999;
+                background: url(//upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Phi_fenomeni.gif/50px-Phi_fenomeni.gif) 50% 50% no-repeat rgb(249, 249, 249);
+                display: none;
+            }
+
+            .add_loader {
+                display: block;
+            }
+
+            .check_box_active {
+                border: 3px solid #0c0c0c;
+                background: black;
+                color: white;
+            }
+
+            .check_box_img {
+                border: 3px solid #0c0c0c;
+            }
+
+            .retailer_thankyou {
+                text-align: center;
+                padding: 100px 0;
+                font-size: 20px;
+            }
+
+            .th_high {
+                color: #38e838;
+                font-weight: 600;
+                font-size: 35px;
+                text-transform: uppercase;
+            }
+            .measure-boxes img {
+                border: 0px solid !important;
+            }
+            [type="radio"]:checked + img {
+                border: 1px solid #bfbfbf !important;
+            }
+            .measure-boxes {
+                margin: 0px 0px 12px 0px !important;
+                clear: inherit !important;
+            }
+            .next-btnn a, .fieldss button {
+                width: 48% !important;
+                height: 56px !important;
+                margin: -4px 8px 0px 0px !important;
+                line-height: 31px !important;
+                background: #444444 !important;
+                border-color: #444444 !important;
+            }
+
+            .small_n {
+                padding-left: 10px;
+                text-transform: capitalize;
+                font-size: 12px;
+            }
+
+            input.breakdown_input_val_ {
+                border: 0 !important;
+                border-bottom: 0.5px solid #969696 !important;
+                border-radius: 0 !important;
+            }
+
+            input.breakdown_input_val_::placeholder {
+                color: #9e3342 !important;
+            }
+
+            .second-section #filter-select {
+                width: 40% !important;
+                flex: 100%;
+                padding-left: 0 !important;
+                margin: 0 !important;
+                padding-right: 0 !important;
+                max-width: 33% !important;
+            }
+
+            .aas {
+                padding: 0;
+            }
+
+            .inquiry-formm .collection-form_ .sizes-boxx li {
+                width: calc(57% - 25px) !important;
+            }
+            .sizes-boxx li {
+                margin: 0px 1px 4px 5px !important;
+            }
+
+            .aas li span {
+                font-size: 11px !important;
+                position: relative;
+                position: relative;
+/*                     top: 12px; */
+}
+
+p.flex-fill a {
+    color: green !important;
+    font-size: 12px;
+}
+
+p.flex-fill {
+    font-weight: 300;
+    padding-right: 10px;
+    color: green !important;
+}
+
+.col-md-6.aas h3 {
+    font-size: 15px !important;
+    font-weight: 500;
+    color: #7b7a7a !important;
+    text-align: left;
+}
+
+.col-md-6.aas h4 {
+    font-size: 15px !important;
+    font-weight: 500;
+    color:#7b7a7a !important;
+    text-transform: uppercase;
+    position: relative;
+    bottom: 17px;
+    text-align: left;
+}
+ul.chs {
+    text-align: left;
+}
+
+.second-section .tabs {
+    width: 67% !important;
+}
+
+.aas:first-child {
+    border-right: 0.5px solid #a09f9f !important;
+}
+.price-block {
+    width: 36%;
+    margin: -10px 14px -2px 4px !important;
+}
+p.flex-fill {
+    flex: 1;
+}
+
+.price-block input {
+    height: 31px !important;
+    font-size: 11px !important;
+    border: none !important;
+    border-bottom: 0.5px solid #8e8d8d !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+}
+input.form-check-input {
+    position: unset !important;
+    margin: 0 !important;
+}
+
+.col,
+.col-1,
+.col-10,
+.col-11,
+.col-12,
+.col-2,
+.col-3,
+.col-4,
+.col-5,
+.col-6,
+.col-7,
+.col-8,
+.col-9,
+.col-auto,
+.col-lg,
+.col-lg-1,
+.col-lg-10,
+.col-lg-11,
+.col-lg-12,
+.col-lg-2,
+.col-lg-3,
+.col-lg-4,
+.col-lg-5,
+.col-lg-6,
+.col-lg-7,
+.col-lg-8,
+.col-lg-9,
+.col-lg-auto,
+.col-md,
+.col-md-1,
+.col-md-10,
+.col-md-11,
+.col-md-12,
+.col-md-2,
+.col-md-3,
+.col-md-4,
+.col-md-5,
+.col-md-6,
+.col-md-7,
+.col-md-8,
+.col-md-9,
+.col-md-auto,
+.col-sm,
+.col-sm-1,
+.col-sm-10,
+.col-sm-11,
+.col-sm-12,
+.col-sm-2,
+.col-sm-3,
+.col-sm-4,
+.col-sm-5,
+.col-sm-6,
+.col-sm-7,
+.col-sm-8,
+.col-sm-9,
+.col-sm-auto,
+.col-xl,
+.col-xl-1,
+.col-xl-10,
+.col-xl-11,
+.col-xl-12,
+.col-xl-2,
+.col-xl-3,
+.col-xl-4,
+.col-xl-5,
+.col-xl-6,
+.col-xl-7,
+.col-xl-8,
+.col-xl-9,
+.col-xl-auto {
+    padding-right: 15px !important;
+    padding-left: 15px !important;
+}
+
+.page-id-5624 h4 {
+    font-size: 18px;
+    padding-bottom: 15px;
+    font-weight: 300;
+
+}
+.logo_img img {
+    max-width: 280px !important;
+        height: auto !important;
+}
+.product-remove .remove {
+    right: 50px;
+    bottom: 46px;
+}
+h1.entry-title {
+    display: none !important;
+}
+ .page-id-5624 h1 {
+    text-align: center;
+    font-size: 30px;
+    font-weight: 300;
+}
+.page-id-5624 .entry-title {
+    display: none;
+}
+.page-id-5622 .entry-title {
+    display: none;
+}
+.page-id-11193 .entry-title {
+    display: none;
+}
+.page-id-5697 .entry-title {
+    display: none;
+}
+.page-id-5624 p {
+    padding-bottom: 15px;
+    font-weight: 300;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.t-left {
+    flex-grow: 1;
+}
+
+.t-right {
+    display: flex;
+    align-items: center;
+}
+
+.form-check-input {
+    margin-left: 10px;
+}
+
+ul.chs li {
+    margin-top: 11px;
+    position: relative;
+    left: 3px;
+}
+.sizes-boxx {
+    position: relative;
+    top: -21px;
+}
+@media (max-width:740px)
+{
+   .second-section .tabs ul li a {
+    padding: 5px 13px 6px 11px !important;
+    font-size: 9px;
+    text-align: center;
+}
+.second-section .tabs li {
+    border-top-right-radius: 11px !important;
+    border-top-left-radius: 12px !important;
+}
+.second-section .tabs {
+    width: 100% !important;
+    border: 0 !important;
+}
+.chkbx-design .chek_item {
+    margin-top: 0;
+    height: 251px;
+}
+label.control-label {
+    font-size: 10px !important;
+}
+figure.zoom {
+    height: 241px;
+}
+.second-section #filter-select {
+  width: 57% !important;
+  flex: 100%;
+  padding-left: 0 !important;
+  margin: 0 !important;
+  padding-right: 0 !important;
+  max-width: 100% !important;
+}
+}
+.wishsuite-button {
+    display: none !important;
+}
+
+span.htcompare-button-area {
+    display: none;
+}
+span.onsale {
+    DISPLAY: NONE;
+}
+span.vfds {
+    position: relative;
+    top: 3px;
+}
+    .blog-main {
+    cursor: default;
+}
+    .right-menus {
+    top: 7px;
+}
+    a.cart-bag {
+    top: -8px !important;
+}
+    header li a:hover:after, footer li a:hover:after, a:hover:after {
+    background: #31313114 !important;
+}
+    #menu-main-menu2 {
+    position: relative;
+    top: 4px !important;
+}
+    .headroom--pinned .right-menus ul li a {
+    position: relative;
+    top: 0px;
+}
+    span.header-cart-count {
+    right: 0px;
+    height: 13px;
+    left: 22px;
+    width: 13px;
+    padding-left: 1px;
+    background: #060606 !important;
+    font-size: 8px;
+    text-align: center;
+    line-height: 14px;
+    color: white !important;
+    top: 8px;
+}
+     .second-section .tabs li {
+    display: inline-block;
+    margin: -1px;
+    border-top-right-radius: 20px;
+    border-top-left-radius: 20px;
+    background: white;
+    border-bottom: 1px solid #7b7a7a6b !important;
+}
+    .second-section .tabs ul li a {
+    border-bottom: none !important;
+    padding: 6px 70px 6px 70px;
+    text-align: center;
+    background: transparent !important;
+}
+    .second-section .tabs ul li.active {
+    background: #bfbfbf;
+    z-index: 1;
+}
+@media (max-width:740px)
+{
+    .rowbh {
+    position: relative;
+    top: 36px;
+}
+    shirt-lengthh h4, .shirt-lengthh span {
+    font-size: 10px !important;
+    }
+    .second-section .tabs ul li a {
+padding: 2px 3px 0px 0px !important;
+font-size: 7px;
+text-align: center;
+}
+    .inquiry-formm .collection-form_ .sizes-boxx li {
+    width: calc(54% - 22px) !important;
+}
+    .aas:first-child{
+        border:0px !important;
+    }
+    form#retailer_form {
+    margin-top: -10px;
+}
+    .measure-boxes label span {
+    line-height: 37px;
+    font-size: 10px;
+}
+    .next-btnn a, .fieldss button {
+    margin: 3px !important;
+}
+    .retailer-filter-btn a:first-child {
+    background: #444444 !important;
+}
+    .retailer-filter-btn a {
+    border: 0px !important;
+    color: white !important;
+}
+    .price-block {
+    width: 100%;
+    margin: 6px 14px -2px 4px !important;
+}
+    .second-section .tabs ul.tabs-list {
+    margin-top: 12px !important;
+}
+    .second-section .tab {
+    margin-top: 88px;
+}
+    a.cls-shirts {
+    background: #1b3359 !important;
+}
+    .chkbx-design .chek_item {
+    margin-top: 0;
+    height: 269px;
+}
+    figure.zoom {
+    height: 250px;
+}
+    #retailer_form .chek_item label {
+    font-size: 8px !important;
+}
+    .hero-banner {
+    position: relative;
+    top: 50px;
+
+}
+    .mobile-logo img {
+    width: 400px !important;
+    max-width: 192px;
+}
+    section.related.products {
+    margin-top: 74px !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+}
+    .second-section .container {
+    padding: 0px 30px 0px 30px !important;
+}
+    .row.row.mb-5.pb-3 {
+    margin-bottom: 0 !important;
+        margin-top: 43px !important;
+}
+    .col-md-4.blocks h5 {
+    position: absolute;
+    left: 21px;
+    right: 0;
+    top: 23px;
+    z-index: 9;
+    font-size: 12px;
+    color: #ffffff;
+}
+    
+    .col-md-4.blocks p {
+    padding: 0 !important;
+    text-align: center;
+    font-size: 11px;
+}
+    .bagss-mobile {
+    height: 28px !important;
+    position: relative;
+    top: -10px;
+    left: 5px;
+    }
+    span.vfds {
+    color: #2a2a2a !important;
+}
+    .home .headroom--top .menu-image {
+    filter: none;
+}
+    span.vfds {
+    position: relative;
+    top: 0px;
+}
+    }
+    @media (max-width: 1024px){
+.main-mobile-menus {
+margin-top: 0%;
+}
+    }
+    
+   
+
+
+
+    }
+    @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+   /* Add your CSS styles here */
+            .main-mobile-menus {
+margin-top: 0 !important;
+}   
+        
+video.bg-video {
+    width: 100% !important;
+}
+.col-md-4.blocks h5 {
+    position: absolute;
+    left: 26px;
+    right: 0;
+    top: -8px;
+    z-index: 9;
+    font-size: 12px;
+    color: #000000;
+}
+
+        .mb-logo {
+    width: 350px;
+    margin: 13px 16px 19px 12px;
+    position: relative;
+    left: 26%;
+}
+        .mobile-cart img {
+    height: 61px !important;
+    position: relative;
+    margin-top: -11px;
+}
+.mobile-cart {
+    z-index: 99999999999 !important;
+}
+        .mobile-cart .header-cart-count {
+    position: relative;
+    top: 8px !important;
+    left: 39px !important;
+}
+        .menu-item-has-children, .active ul.sub-menu {
+    display: block !important;
+}
+        .mobile-search-menu ul.sub-menu {
+  width: 100%;
+    top: -83px;
+    margin: 0;
+    z-index: 2;
+}
+.sub-menu li {
+    width: calc(48% - 23px);
+    margin: 0 13px;
+    display: inline-block;
+    padding: 0!important;
+}
+        .mobile-search-menu, .tailor-shirt-items {
+    width: calc(100% - 25px);
+    left: 13px;
+    height: calc(100vh - 60px);
+    height: -webkit-calc(100vh - 60px);
+    background: #fff;
+    box-shadow: 0px 10px 10px rgba(0, 0, 0, 0.19);
+    position: fixed;
+    top: 13px;
+    padding: 13px 0px 34px 0px;
+    z-index: 9999;
+    display: none;
+            overflow-y: scroll;align-content
+        }
+        .main-mobile-menus li a {
+    color: #9a9999 !important;
+    text-align: left !important;
+    padding-top: 36px !important;
+    padding-left: 22px !important;
+}
+        .main-mobile-menus li {
+    border-bottom: 1px solid #9a999982;
+    text-align: left !important;
+}
+        .home .headroom--top span {
+    color: #9a9999;
+}
+        .menu-image-title-after.menu-image-title {
+    padding: 0px 0px 0px !important;
+    font-size: 15px !important;
+    position: relative;
+    right: 36px !important;
+    top: -3px;
+}
+        a.myAccount {
+    text-align: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin-top: 20%;
+    font-size: 21px;
+}
+        .container-fluid.text-center .col-md-6 {
+    height: auto;
+    overflow: hidden;
+}
+        .blocks .image-block {
+    width: 100%;
+    height: 278px !important;
+    overflow: hidden;
+}
+        .blocks p {
+    font-size: 12px !important;
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+        footer {
+    padding-top: 0px !important;
+}
+        div#hero {
+    margin-top: 2px !important;
+}
+}
+ @media only screen and (max-width: 768px) {
+        .related ul li {
+    width: 36% !mportant;
+
+}

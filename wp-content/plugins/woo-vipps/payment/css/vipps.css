@@ -1,0 +1,550 @@
+/* 
+
+This file is part of the plugin Pay with Vipps and MobilePay for WooCommerce
+Copyright (c) 2019 WP-Hosting AS
+
+MIT License
+
+Copyright (c) 2019 WP-Hosting AS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+/* This is for the Gutenberg payment-block IOK 2020-08-10 */
+.wc-block-components-tabs .wc-block-components-tabs__list > .wc-block-components-tabs__item .wc-block-components-tabs__item-content > img.vipps-payment-logo {
+ height: 2em;
+ margin-bottom: -0.7em;
+}
+
+/* And this is for the products blocks IOK 2020-09-03 */
+.wc-block-grid__product .vippsbuynow {
+}
+.wc-block-grid__product .single-product.button.vipps-buy-now .inline.vipps-logo.negative {
+    display: inline-block;
+    margin: 0 .2em;
+    height: 2ex;
+    max-width: 100%;
+    width: auto;
+    vertical-align: text-bottom;
+}
+
+.wc-block-grid__product .single-product.button.vipps-buy-now .inline.mobilepay-logo.negative {
+    display: inline-block;
+    margin: 0 .2em;
+    height: 2ex;
+    max-width: 100%;
+    width: auto;
+    vertical-align: text-bottom;
+}
+
+/* This is for the badge block IOK 2022-11-16 */
+.vipps-badge-wrapper.aligncenter {
+  text-align: center;
+}
+
+/* Gutenberg buy-now product block. LP 02.12.2024 */
+div.wp-block-button.wc-block-components-product-button.wc-block-button-vipps {
+    text-align: center;
+    margin-bottom:0;
+}
+div.wp-block-button.wc-block-components-product-button.wc-block-button-vipps a.single-product.button.vipps-buy-now{
+    margin-left: auto;
+    margin-right: auto;
+    display: inline-block;
+    padding-top:0;
+}
+div.wp-block-button.wc-block-components-product-button.wc-block-button-vipps a.single-product.button.vipps-buy-now img{
+    max-width: 9rem;
+    margin-bottom:0;
+}
+div.vipps_buy_now_wrapper.loop {
+    text-align:center;
+}
+div.vipps_buy_now_wrapper.loop  a.single-product.button.vipps-buy-now img{
+    max-width: 9rem;
+}
+
+/* end block stuff for now */
+
+
+/* Vipps Checkout Widgets */
+.vipps_checkout_widget_wrapper {
+    width: 100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    font-family: "Vipps Text", Arial, sans-serif;
+    margin-bottom: 1rem;
+    color: black;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_title {
+    font-size:18px;
+    line-height:24px;
+    font-weight:500;
+    color: black;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_title.accordion {
+    cursor: pointer;
+    transition: 0.4s,
+}
+.vipps_checkout_widget_title.active .vipps_checkout_widget_icon::before {
+    content: "\2212";
+}
+.vipps_checkout_widget_title .vipps_checkout_widget_icon::before {
+    content: "\002B";
+}
+.vipps_checkout_widget_title .vipps_checkout_widget_icon {
+     font-size: 1.5rem;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_title .vipps_checkout_widget_icon{
+    float: right;
+    width: 24px;
+    text-align: center;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget {
+    width: 100%;
+    font-weight:400;
+    border-bottom: 1px solid lightgrey;
+}
+@media (min-width: 590px) {
+    .vipps_checkout_widget_wrapper .vipps_checkout_widget {
+width: 586px;
+    }
+}
+
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_body {
+    display: none;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_input {
+    border-radius: 8px;
+    height: 56px;
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    outline: none;
+    margin: 0px;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_button {
+    min-width: 5.5em;
+    padding: 7.5px 16px;
+    font-size: 14px;
+    line-height:20px;
+    text-transform: none;
+    border-radius: 24px;
+    color: white;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    font-family: "Vipps Text", Arial, sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_small {
+    font-size: 14px;
+    font-weight: bold;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget:not(:last-child) {
+    margin: 1rem;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget {
+    padding-bottom: .8rem;
+}
+#vipps_checkout_widget_coupon_active_codes_container_codes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+}
+.vipps_checkout_widget_coupon_active_code_box {
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f2;
+    padding: 8px 12px;
+    margin-top: 0.2em;
+    max-width: fit-content;
+    border-radius: 4px;
+    gap: 0.5em;
+}
+.vipps_checkout_widget_coupon_delete {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #000;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_input.error {
+    border-color: #C60000;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_input.success {
+    border-color: #048a1a;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_error {
+    color: #C60000;
+}
+.vipps_checkout_widget_wrapper .vipps_checkout_widget .vipps_checkout_widget_success {
+    color: #048a1a;
+}
+@media (min-width: 720px) {
+    .vipps_checkout_widget_wrapper .vipps_checkout_widget {
+        width: 624px;
+    }
+}
+
+
+form#vippsdata {
+ margin:0;
+}
+h2.confirmVippsExpressCheckoutHeader {
+ margin-top: 0;
+}
+
+
+a.button.vipps-express-checkout img {
+    max-width: 100%;
+    width: 13.5rem;
+    max-height: 100%;
+    filter: drop-shadow( 0px 1px 2px #d7d7d7);
+}
+a.button.vipps-express-checkout.MobilePay.short img {
+    width: 9rem;
+}
+a.button.vipps-express-checkout:hover img {
+    opacity: 0.9;
+}
+a.button.vipps-express-checkout.disabled img {
+    opacity: 0.7;
+}
+
+li.wc_payment_method.payment_method_vipps img {
+	max-width: 145px;
+}
+
+a.button.vipps-buy-now:focus {
+    outline: none;
+}
+.wc-block-grid__products .wc-block-grid__product .wp-block-button__link.vipps-buy-now, .woocommerce ul.products li.product .button.vipps-buy-now, a.button.vipps-buy-now {
+ color: #fff;
+ background-color:transparent;
+}
+.wc-block-grid__products .wc-block-grid__product .wp-block-button__link.vipps-buy-now:hover, .woocommerce ul.products li.product .button.vipps-buy-now:hover, a.button.vipps-buy-now:hover {
+    opacity: 0.9;
+}
+
+ul.products li.product a.button.vipps-buy-now img {
+ margin:0px;
+ display:inline;
+}
+
+a.button.vipps-express-checkout {
+ background-color: #fff;
+ color: transparent;
+ vertical-align: bottom;
+ padding: 0;
+ margin-left:.5em;
+}
+a.button.vipps-express-checkout:active, a.button.vipps-buy-now:active {
+ border: 0;
+}
+a.button.vipps-express-checkout:hover, a.button.vipps-buy-now:hover {
+ border: 0;
+}
+
+/* New-style button for Vipps and Mobile Pay is 100% svg */
+a.single-product.button.vipps-buy-now  {
+    padding-left:0;
+    padding-right:0;
+    padding-bottom:0;
+}
+
+.widget_shopping_cart a.button.vipps-express-checkout {
+ color:transparent;
+ background-color: #fff;
+ float: none;
+ margin-top: .5em;
+ margin-bottom: 0;
+ margin-left: auto;
+ margin-right: auto;
+ clear: both;
+}
+
+/* This is for a plugin I'm doing testing with. */
+.woocommerce-cart-tab-container .widget_shopping_cart a.button.vipps-express-checkout {
+ min-width: 190px;
+}
+
+.vippslogincontainer {
+ width: 100%;
+ text-align: center;
+}
+
+a.button.vipps-login {
+ vertical-align: bottom;
+ max-width: 250px;
+ color:transparent;
+ background-color: #fff;
+ margin: 1em auto;
+ min-width: 190px;
+ clear: both;
+ padding:0;
+}
+
+/* Displays a 'vipps' information banner  */
+.woocommerce-info.vipps-info {
+ background-color: #fe5b24;
+}
+.woocommerce-info.mobilepay-info {
+ background-color: #5a78ff;
+}
+.express-banner-logo {
+  margin-left: 1ex;
+  margin-right: 1ex;
+  vertical-align: middle;
+}
+img.inline {
+ height: 2ex;
+ display:inline;
+}
+
+.vippsorange {
+ background-color: #fe5b24;
+}
+.vippsorange-light {
+ background-color: #fff4ec;
+}
+.vippspurple {
+ background-color: #551488;
+}
+.vippspurple2 {
+ background-color: #5E3DC2;
+}
+.vippspurple-light {
+ background-color: #8851F6;
+}
+.vippsdarkgray {
+ background-color: #161225;
+}
+
+
+.vipps_checkout_button_wrapper {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.vippsspinner {
+    width:125px;
+    height:125px;
+    display: none;
+    position:absolute;
+    top:50%;
+    left:50%;
+    margin-left: -62px;
+    margin-top: -62px;
+    transform:scale(0.6);
+        -o-transform:scale(0.6);
+        -ms-transform:scale(0.6);
+        -webkit-transform:scale(0.6);
+        -moz-transform:scale(0.6);
+}
+
+.vippsoverlay {
+    background: #e9e9e9;
+    position:fixed;
+    display: none;
+    top: 0;           
+    right: 0;        
+    bottom: 0;
+    left: 0;
+    opacity: 0.5;
+    z-index: 1000;
+}
+body.processing {
+ cursor: progress;
+}
+.processing .vippsoverlay {
+    display:block;
+}
+.processing .vippsspinner  {
+        display:block;
+}
+
+.vippsspinner {
+    --oncolor: rgba(254,90,36,0.97);
+}
+.vippsspinner.mobilepay {
+    --oncolor: rgba(90, 120, 255, 0.97);
+}
+
+.f_circleG{
+    position:absolute;
+    background-color:rgb(255,255,255);
+    height:22px;
+    width:22px;
+    border-radius:12px;
+        -o-border-radius:12px;
+        -ms-border-radius:12px;
+        -webkit-border-radius:12px;
+        -moz-border-radius:12px;
+    animation-name:f_fadeG;
+        -o-animation-name:f_fadeG;
+        -ms-animation-name:f_fadeG;
+        -webkit-animation-name:f_fadeG;
+        -moz-animation-name:f_fadeG;
+    animation-duration:1.2s;
+        -o-animation-duration:1.2s;
+        -ms-animation-duration:1.2s;
+        -webkit-animation-duration:1.2s;
+        -moz-animation-duration:1.2s;
+    animation-iteration-count:infinite;
+        -o-animation-iteration-count:infinite;
+        -ms-animation-iteration-count:infinite;
+        -webkit-animation-iteration-count:infinite;
+        -moz-animation-iteration-count:infinite;
+    animation-direction:normal;
+        -o-animation-direction:normal;
+        -ms-animation-direction:normal;
+        -webkit-animation-direction:normal;
+        -moz-animation-direction:normal;
+}
+#frotateG_01{
+    left:0;
+    top:51px;
+    animation-delay:0.45s;
+        -o-animation-delay:0.45s;
+        -ms-animation-delay:0.45s;
+        -webkit-animation-delay:0.45s;
+        -moz-animation-delay:0.45s;
+}
+#frotateG_02{
+    left:15px;
+    top:15px;
+    animation-delay:0.6s;
+        -o-animation-delay:0.6s;
+        -ms-animation-delay:0.6s;
+        -webkit-animation-delay:0.6s;
+        -moz-animation-delay:0.6s;
+}
+#frotateG_03{
+    left:51px;
+    top:0;
+    animation-delay:0.75s;
+        -o-animation-delay:0.75s;
+        -ms-animation-delay:0.75s;
+        -webkit-animation-delay:0.75s;
+        -moz-animation-delay:0.75s;
+}
+#frotateG_04{
+    right:15px;
+    top:15px;
+    animation-delay:0.9s;
+        -o-animation-delay:0.9s;
+        -ms-animation-delay:0.9s;
+        -webkit-animation-delay:0.9s;
+        -moz-animation-delay:0.9s;
+}
+#frotateG_05{
+    right:0;
+    top:51px;
+    animation-delay:1.05s;
+        -o-animation-delay:1.05s;
+        -ms-animation-delay:1.05s;
+        -webkit-animation-delay:1.05s;
+        -moz-animation-delay:1.05s;
+}
+#frotateG_06{
+    right:15px;
+    bottom:15px;
+    animation-delay:1.2s;
+        -o-animation-delay:1.2s;
+        -ms-animation-delay:1.2s;
+        -webkit-animation-delay:1.2s;
+        -moz-animation-delay:1.2s;
+}
+#frotateG_07{
+    left:51px;
+    bottom:0;
+    animation-delay:1.35s;
+        -o-animation-delay:1.35s;
+        -ms-animation-delay:1.35s;
+        -webkit-animation-delay:1.35s;
+        -moz-animation-delay:1.35s;
+}
+#frotateG_08{
+    left:15px;
+    bottom:15px;
+    animation-delay:1.5s;
+        -o-animation-delay:1.5s;
+        -ms-animation-delay:1.5s;
+        -webkit-animation-delay:1.5s;
+        -moz-animation-delay:1.5s;
+}
+@keyframes f_fadeG{
+    0%{
+        background-color:rgba(254,90,36,0.97);
+        background-color: var(--oncolor);
+    }
+    100%{
+        background-color:rgb(255,255,255);
+    }
+}
+@-o-keyframes f_fadeG{
+    0%{
+        background-color:rgba(254,90,36,0.97);
+        background-color: var(--oncolor);
+    }
+    100%{
+        background-color:rgb(255,255,255);
+    }
+}
+@-ms-keyframes f_fadeG{
+    0%{
+        background-color:rgba(254,90,36,0.97);
+        background-color: var(--oncolor);
+    }
+    100%{
+        background-color:rgb(255,255,255);
+    }
+}
+@-webkit-keyframes f_fadeG{
+    0%{
+        background-color:rgba(254,90,36,0.97);
+        background-color: var(--oncolor);
+    }
+
+    100%{
+        background-color:rgb(255,255,255);
+    }
+}
+@-moz-keyframes f_fadeG{
+    0%{
+        background-color:rgba(254,90,36,0.97);
+        background-color: var(--oncolor);
+    }
+
+    100%{
+        background-color:rgb(255,255,255);
+    }
+}

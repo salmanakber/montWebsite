@@ -1,0 +1,696 @@
+<?php
+/**
+ * Admin bootstrap and UI for the Fiken integration.
+ *
+ * @package   FikenBilag
+ */
+
+namespace FikenBilag;
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/** Optional includes if present */
+$__dir = __DIR__ . '/';
+if ( file_exists( $__dir . 'class-fiken-settings-page.php' ) ) {
+    require_once $__dir . 'class-fiken-settings-page.php';
+}
+if ( file_exists( $__dir . 'class-fiken-upgrade-page.php' ) ) {
+    require_once $__dir . 'class-fiken-upgrade-page.php';
+}
+
+include_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+if ( ! class_exists( '\FikenBilag\Fiken_Admin', false ) ) :
+
+class Fiken_Admin {
+
+    /** @var \FikenBilag\Fiken_Settings_Page|null */
+    private $settings_page;
+
+    /**
+     * Singleton helper (optional; used by AJAX or other places if needed)
+     */
+    private static $instance = null;
+    public static function instance() {
+        if ( ! self::$instance ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    public function __construct() {
+        if ( class_exists( '\FikenBilag\Fiken_Settings_Page' ) ) {
+            $this->settings_page = new \FikenBilag\Fiken_Settings_Page();
+        }
+
+        add_action( 'admin_menu', array( $this, 'register_admin_menu' ), 20 );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+
+        // Auto-check status in admin, throttled
+        add_action( 'admin_init', array( __CLASS__, 'maybe_refresh_subscription_state' ) );
+
+        // Keep submenu label in sync within same request
+        add_action( 'admin_head', array( $this, 'adjust_menu_labels' ), 99 );
+
+        // Dismissible admin notices (connection + low quota)
+        add_action( 'admin_notices', array( $this, 'render_admin_notices' ), 20 );
+    }
+
+    /** ------------------ MENUS ------------------ */
+
+    public function register_admin_menu() {
+        $cap = current_user_can( 'manage_woocommerce' ) ? 'manage_woocommerce' : 'manage_options';
+
+        add_menu_page(
+            'Fiken',
+            'Fiken',
+            $cap,
+            'fiken_innstillinger',
+            array( $this, 'render_settings_page' ),
+            'dashicons-media-spreadsheet',
+            56
+        );
+
+        add_submenu_page(
+            'fiken_innstillinger',
+            esc_html__( 'Settings', 'peki-fiken-integration-for-woocommerce' ),
+            esc_html__( 'Settings', 'peki-fiken-integration-for-woocommerce' ),
+            $cap,
+            'fiken_innstillinger',
+            array( $this, 'render_settings_page' )
+        );
+
+        // Label computed from current subscription state; corrected again in adjust_menu_labels()
+        add_submenu_page(
+            'fiken_innstillinger',
+            $this->get_subscription_menu_label(),
+            $this->get_subscription_menu_label(),
+            $cap,
+            'pekifiken_manage_subscription',
+            array( $this, 'render_upgrade_router' )
+        );
+    }
+
+    /** Settings page */
+    public function render_settings_page() {
+        if ( isset( $this->settings_page ) && method_exists( $this->settings_page, 'render' ) ) {
+            $this->settings_page->render();
+            return;
+        }
+        echo '<div class="wrap"><h1>Fiken</h1><p>' .
+            esc_html__( 'Settings page class is missing.', 'peki-fiken-integration-for-woocommerce' ) .
+        '</p></div>';
+    }
+
+    /** Upgrade/Account router (uses separate class if available) */
+    public function render_upgrade_router() {
+        if ( class_exists( '\FikenBilag\Fiken_Upgrade_Page' ) && method_exists( '\FikenBilag\Fiken_Upgrade_Page', 'render' ) ) {
+            return \FikenBilag\Fiken_Upgrade_Page::render();
+        }
+
+        // Minimal fallback if class is missing
+        if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to access this page.', 'peki-fiken-integration-for-woocommerce' ) );
+        }
+
+        $shop = site_url();
+        $url  = add_query_arg(
+            array( 'shop' => $shop ),
+            'https://peki.no/fiken/upgrade.php'
+        );
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html( $this->get_subscription_menu_label() ) . '</h1>';
+        echo '<p>' . esc_html__( 'Open the external portal to manage billing and subscription.', 'peki-fiken-integration-for-woocommerce' ) . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">' .
+            esc_html__( 'Open portal', 'peki-fiken-integration-for-woocommerce' ) . '</a></p>';
+        echo '</div>';
+    }
+
+    /** ------------------ ADMIN ASSETS ------------------ */
+
+    /** Admin CSS + inline JS (polling on our admin pages) */
+    public function enqueue_admin_assets( $hook ) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+        $our_pages = array( 'fiken_innstillinger', 'pekifiken_manage_subscription' );
+        $ver = defined( 'PEKIFIKEN_VERSION' ) ? PEKIFIKEN_VERSION : '1.0.0';
+
+        if ( in_array( $page, $our_pages, true ) ) {
+            // CSS
+            if ( defined( 'PEKIFIKEN_FILE' ) ) {
+                $style_url = plugins_url( 'assets/css/admin.css', PEKIFIKEN_FILE );
+                wp_enqueue_style( 'pekifiken_admin_css', $style_url, array(), $ver );
+            }
+
+            // Live polling (can be disabled via filter)
+            $enable_live = apply_filters( 'pekifiken_enable_live_status', true );
+            if ( $enable_live ) {
+                $nonce = wp_create_nonce( 'pekifiken_refresh_status' );
+                $interval_s = defined( 'PEKIFIKEN_STATE_THROTTLE_SEC' )
+                    ? max( 5, (int) PEKIFIKEN_STATE_THROTTLE_SEC )
+                    : ( 10 * MINUTE_IN_SECONDS ); // default 10 min
+                $interval_ms = $interval_s * 1000;
+
+                wp_register_script( 'pekifiken_admin_js', '', array( 'jquery' ), $ver, true );
+                wp_enqueue_script( 'pekifiken_admin_js' );
+
+                // Keep it small and dependency-free; updates status + small debug fields if present
+                wp_add_inline_script(
+                    'pekifiken_admin_js',
+                    "(function(w,d,$){
+                        var iv = {$interval_ms};
+                        function paint(res){
+                            if(!res || !res.success || !res.data) return;
+                            var data = res.data;
+                            var st = d.getElementById('pekifiken-substate');
+                            if(st){
+                                var s = (data.state||'pending');
+                                st.textContent = s.charAt(0).toUpperCase()+s.slice(1);
+                            }
+                            var ts = d.getElementById('pekifiken-last-sync');
+                            if(ts && data.time){ ts.textContent = data.time; }
+                            var httpEl = d.getElementById('pekifiken-last-http');
+                            if(httpEl && typeof data.http !== 'undefined' && data.http !== null){ httpEl.textContent = data.http; }
+                            var errEl = d.getElementById('pekifiken-last-error');
+                            if(errEl){ errEl.textContent = data.error ? data.error : ''; }
+                        }
+                        function tick(){
+                            $.post(ajaxurl, { action:'pekifiken_refresh_status', nonce:'{$nonce}' })
+                             .done(function(res){ paint(res); })
+                             .fail(function(xhr){
+                                 var httpEl = d.getElementById('pekifiken-last-http');
+                                 if(httpEl){ httpEl.textContent = xhr.status; }
+                                 var errEl = d.getElementById('pekifiken-last-error');
+                                 if(errEl){ errEl.textContent = 'AJAX ' + xhr.status; }
+                             });
+                        }
+                        $(function(){ tick(); setInterval(tick, iv); });
+                    })(window, document, jQuery);"
+                );
+            }
+        }
+    }
+
+    /** ------------------ MENU LABEL SYNC ------------------ */
+
+    /**
+     * Ensure submenu label reflects current subscription state
+     * even if state changed earlier in the request.
+     */
+    public function adjust_menu_labels() {
+        global $submenu;
+        if ( ! isset( $submenu['fiken_innstillinger'] ) || ! is_array( $submenu['fiken_innstillinger'] ) ) {
+            return;
+        }
+        $desired = $this->get_subscription_menu_label();
+        foreach ( $submenu['fiken_innstillinger'] as &$item ) {
+            // [0] = label, [2] = slug
+            if ( isset( $item[2] ) && $item[2] === 'pekifiken_manage_subscription' ) {
+                $item[0] = $desired;
+                break;
+            }
+        }
+    }
+
+    /**
+     * Menu label based on state:
+     * - active => "Account"
+     * - pending => "Upgrade"
+     */
+    private function get_subscription_menu_label() : string {
+        $state = (string) get_option( 'pekifiken_subscription_state', 'pending' );
+        if ( $state === 'active' ) {
+            return esc_html__( 'Account', 'peki-fiken-integration-for-woocommerce' );
+        }
+        return esc_html__( 'Upgrade', 'peki-fiken-integration-for-woocommerce' );
+    }
+
+    /** ------------------ AUTO REFRESH (THROTTLED) ------------------ */
+
+    /** Throttle for auto-refresh in admin */
+    public static function maybe_refresh_subscription_state() {
+        $ttl = defined( 'PEKIFIKEN_STATE_THROTTLE_SEC' ) ? (int) PEKIFIKEN_STATE_THROTTLE_SEC : ( 10 * MINUTE_IN_SECONDS );
+        if ( get_transient( 'pekifiken_state_throttle' ) ) {
+            return;
+        }
+        set_transient( 'pekifiken_state_throttle', 1, max( 5, $ttl ) );
+        self::refresh_subscription_state_from_server();
+    }
+
+    /**
+     * Fetch subscription status from peki.no and store as option.
+     * Signs with refresh_token (fallback: employee_token).
+     * DO NOT pre-encode parameters before add_query_arg (avoid double-encoding).
+     *
+     * Server is expected to return JSON:
+     * {
+     *   "state": "active|pending",
+     *   "is_pro": 0|1,                (optional)
+     *   "transfers_used": 12,         (optional)
+     *   "max_free": 15                (optional)
+     * }
+     * (Older servers may send "none" which we normalize to "pending".)
+     */
+    public static function refresh_subscription_state_from_server() {
+        $shop = site_url();
+
+        // 1) Secret (fiken_refresh_token), with fallbacks
+        $secret = (string) get_option( 'pekifiken_refresh_token', '' );
+        if ( $secret === '' ) {
+            $secret = (string) get_option( 'pekifiken_employee_token', '' );
+            if ( $secret === '' ) {
+                $secret = (string) get_option( 'fiken_employee_token', '' );
+                if ( $secret === '' ) {
+                    $secret = (string) get_option( 'wfb_employee_token', '' );
+                }
+            }
+        }
+
+        if ( $secret === '' ) {
+            update_option( 'pekifiken_subscription_state', 'pending', true );
+            update_option(
+                'pekifiken_sync_last',
+                wp_json_encode(
+                    array(
+                        'time' => current_time( 'mysql' ),
+                        'note' => 'No token available; state=pending',
+                    )
+                ),
+                true
+            );
+            return;
+        }
+
+        // 2) Server requires ts + nonce and signature over "shop|ts|nonce"
+        $ts    = (string) time();
+        $nonce = wp_generate_password( 16, false, false ); // [A-Za-z0-9], matches server regex
+        $payload = $shop . '|' . $ts . '|' . $nonce;
+
+        // base64url without padding
+        $raw_sig = hash_hmac( 'sha256', $payload, $secret, true );
+        $sig     = rtrim( strtr( base64_encode( $raw_sig ), '+/', '-_' ), '=' );
+
+        // 3) Build URL exactly as server expects (no manual rawurlencode)
+        $url = add_query_arg(
+            array(
+                'shop'  => $shop,
+                'ts'    => $ts,
+                'nonce' => $nonce,
+                'sig'   => $sig,
+                'alg'   => 'HMAC-SHA256',
+                'v'     => '2',
+            ),
+            'https://peki.no/fiken/status.php'
+        );
+
+        // 4) Call
+        $resp = wp_remote_get(
+            $url,
+            array(
+                'timeout'    => 12,
+                'user-agent' => 'PekiFikenPlugin/1.0; ' . $shop,
+            )
+        );
+
+        $info = array( 'time' => current_time( 'mysql' ) );
+        if ( is_wp_error( $resp ) ) {
+            $info['error'] = $resp->get_error_message();
+            update_option( 'pekifiken_sync_last', wp_json_encode( $info ), true );
+            if ( ! get_option( 'pekifiken_subscription_state', false ) ) {
+                update_option( 'pekifiken_subscription_state', 'pending', true );
+            }
+            return;
+        }
+
+        $code     = (int) wp_remote_retrieve_response_code( $resp );
+        $body_raw = (string) wp_remote_retrieve_body( $resp );
+        $data     = json_decode( $body_raw, true );
+
+        $info['http']  = $code;
+        $info['bytes'] = strlen( $body_raw );
+        $info['peek']  = substr( $body_raw, 0, 160 );
+
+        if ( $code !== 200 || ! is_array( $data ) ) {
+            $info['error'] = 'Non-200 or invalid JSON';
+            update_option( 'pekifiken_sync_last', wp_json_encode( $info ), true );
+            if ( ! get_option( 'pekifiken_subscription_state', false ) ) {
+                update_option( 'pekifiken_subscription_state', 'pending', true );
+            }
+            return;
+        }
+
+        // 5) Normalize server response:
+        // - prefer "is_pro" if present
+        // - else "state" ('active' or 'none'->pending)
+        // - else "status" ('active'/'pending'/etc.)
+        $state = 'pending';
+        if ( array_key_exists( 'is_pro', $data ) ) {
+            $state = ! empty( $data['is_pro'] ) ? 'active' : 'pending';
+        } elseif ( isset( $data['state'] ) ) {
+            $sv = strtolower( trim( (string) $data['state'] ) );
+            $state = ( $sv === 'active' ) ? 'active' : 'pending';
+        } elseif ( isset( $data['status'] ) ) {
+            $sv = strtolower( trim( (string) $data['status'] ) );
+            $state = ( $sv === 'active' ) ? 'active' : 'pending';
+        }
+
+        update_option( 'pekifiken_subscription_state', $state, true );
+        update_option( 'pekifiken_has_active_subscription', $state === 'active' ? '1' : '0', true );
+        $info['state'] = $state;
+        update_option( 'pekifiken_sync_last', wp_json_encode( $info ), true );
+
+        // 6) Store quota numbers if provided by server
+        if ( isset( $data['transfers_used'] ) ) {
+            update_option( 'pekifiken_transfers_used', (int) $data['transfers_used'], true );
+        }
+        if ( isset( $data['max_free'] ) ) {
+            update_option( 'pekifiken_transfers_limit', (int) $data['max_free'], true );
+        }
+        // Some servers may use alternative keys
+        if ( isset( $data['limit'] ) && ! isset( $data['max_free'] ) ) {
+            update_option( 'pekifiken_transfers_limit', (int) $data['limit'], true );
+        }
+        if ( isset( $data['quota_used'] ) && ! isset( $data['transfers_used'] ) ) {
+            update_option( 'pekifiken_transfers_used', (int) $data['quota_used'], true );
+        }
+        if ( isset( $data['quota_total'] ) && ! isset( $data['max_free'] ) && ! isset( $data['limit'] ) ) {
+            update_option( 'pekifiken_transfers_limit', (int) $data['quota_total'], true );
+        }
+    }
+
+    /** ------------------ DISMISSIBLE NOTICES ------------------ */
+
+    private function get_dismissed_notices() : array {
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            return array();
+        }
+        $arr = get_user_meta( $user_id, 'pekifiken_dismissed_notices', true );
+        return is_array( $arr ) ? $arr : array();
+    }
+
+    public function dismiss_notice( string $key ) : void {
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            return;
+        }
+        $arr        = $this->get_dismissed_notices();
+        $arr[ $key ] = time();
+        update_user_meta( $user_id, 'pekifiken_dismissed_notices', $arr );
+    }
+
+    /**
+     * Render admin notices (dismissible), WordPress.org friendly.
+     * - Missing connection
+     * - Low quota (<=10 left)
+     */
+    public function render_admin_notices() {
+        if ( ! is_admin() ) {
+            return;
+        }
+
+        // Show only on our pages or WooCommerce admin
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $page   = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        $is_our_page = in_array( $page, array( 'fiken_innstillinger', 'pekifiken_manage_subscription' ), true );
+        $is_wc = false;
+        if ( function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+            if ( $screen && ! empty( $screen->id ) && is_string( $screen->id ) ) {
+                $is_wc = ( strpos( $screen->id, 'woocommerce' ) !== false );
+            }
+        }
+        // Show on our pages always; on WC pages when detectable.
+        if ( ! $is_our_page && ! $is_wc ) {
+            return;
+        }
+
+        $dismissed = $this->get_dismissed_notices();
+
+        // --- Notice 1: Not connected to Fiken (no token) ---
+        $has_token = (bool) get_option( 'pekifiken_refresh_token' )
+            || (bool) get_option( 'pekifiken_employee_token' )
+            || (bool) get_option( 'fiken_employee_token' )
+            || (bool) get_option( 'wfb_employee_token' );
+
+        if ( ! $has_token && empty( $dismissed['not_connected'] ) ) {
+            $dismiss_url = wp_nonce_url( add_query_arg( 'pekifiken_dismiss', 'not_connected' ), 'pekifiken_dismiss_not_connected' );
+            $connect_url = admin_url( 'admin-post.php?action=pekifiken_start_connect' );
+            echo '<div class="notice notice-warning is-dismissible">';
+            echo '<p><strong>' . esc_html__( 'Fiken is not connected yet.', 'peki-fiken-integration-for-woocommerce' ) . '</strong> ';
+            echo esc_html__( 'Please connect to enable exports.', 'peki-fiken-integration-for-woocommerce' ) . '</p>';
+            echo '<p><a class="button button-primary" href="' . esc_url( $connect_url ) . '">' .
+                esc_html__( 'Connect to Fiken', 'peki-fiken-integration-for-woocommerce' ) . '</a></p>';
+            echo '<p><a href="' . esc_url( $dismiss_url ) . '">' .
+                esc_html__( 'Dismiss this notice', 'peki-fiken-integration-for-woocommerce' ) . '</a></p>';
+            echo '</div>';
+        }
+
+        // --- Notice 2: Low quota (<= 10 remaining) ---
+        $quota = $this->get_remaining_quota(); // array with keys: remaining, limit, used
+        if ( $quota && isset( $quota['remaining'] ) && is_numeric( $quota['remaining'] ) ) {
+            $remaining = (int) $quota['remaining'];
+            if ( $remaining <= 10 && empty( $dismissed['low_quota'] ) ) {
+                $dismiss_url = wp_nonce_url( add_query_arg( 'pekifiken_dismiss', 'low_quota' ), 'pekifiken_dismiss_low_quota' );
+                // Informational link – WordPress.org-friendly (no paywall in plugin UI)
+                $learn_url = 'https://peki.no/fiken/learn-more-quota.html';
+
+                echo '<div class="notice notice-info is-dismissible">';
+                /* translators: %d: remaining number of transfers */
+                echo '<p><strong>' . sprintf( esc_html__( 'You have %d transfers left this month.', 'peki-fiken-integration-for-woocommerce' ), $remaining ) . '</strong> ';
+                echo esc_html__( 'Learn how to increase your monthly limit.', 'peki-fiken-integration-for-woocommerce' ) . '</p>';
+                echo '<p><a class="button" href="' . esc_url( $learn_url ) . '" target="_blank" rel="noopener noreferrer">' .
+                    esc_html__( 'Learn more', 'peki-fiken-integration-for-woocommerce' ) . '</a></p>';
+                echo '<p><a href="' . esc_url( $dismiss_url ) . '">' .
+                    esc_html__( 'Dismiss this notice', 'peki-fiken-integration-for-woocommerce' ) . '</a></p>';
+                echo '</div>';
+            }
+        }
+    }
+
+    /**
+     * Returns array{used:int, limit:int, remaining:int} or null if unknown.
+     */
+    private function get_remaining_quota() : ?array {
+        $used  = get_option( 'pekifiken_transfers_used', null );
+        $limit = get_option( 'pekifiken_transfers_limit', null );
+        if ( $used === null || $limit === null ) {
+            return null;
+        }
+        $used      = (int) $used;
+        $limit     = (int) $limit;
+        $remaining = max( 0, $limit - $used );
+        return array(
+            'used'      => $used,
+            'limit'     => $limit,
+            'remaining' => $remaining,
+        );
+    }
+}
+
+endif;
+
+/** ------------------ BOOTSTRAP ------------------ */
+
+// Ensure the admin class is initialized so hooks (admin_notices etc.) register.
+add_action( 'plugins_loaded', function () {
+    \FikenBilag\Fiken_Admin::instance();
+}, 1 );
+
+/** ------------------ CONNECT FLOW HANDLERS (GLOBAL HOOKS) ------------------ */
+
+/** Start external connect (server-side redirect with CSRF state) */
+add_action( 'admin_post_pekifiken_start_connect', function() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Insufficient permissions.', 'peki-fiken-integration-for-woocommerce' ) );
+    }
+    check_admin_referer( 'pekifiken_start_connect', 'pekifiken_start_connect_nonce' );
+
+    $shop  = site_url();
+    $state = wp_generate_password( 20, false, false );
+
+    // Store state temporarily (10 min)
+    set_transient( 'pekifiken_connect_state_' . $state, 1, 10 * MINUTE_IN_SECONDS );
+
+    // Callback back to WP admin
+    $return = add_query_arg(
+        array(
+            'page'               => 'fiken_innstillinger',
+            'pekifiken_callback' => '1',
+            'state'              => $state,
+        ),
+        admin_url( 'admin.php' )
+    );
+
+    // External connect endpoint (DO NOT pre-encode parameters)
+    $connect_url = add_query_arg(
+        array(
+            'shop'   => $shop,
+            'return' => $return,
+            'state'  => $state,
+        ),
+        'https://peki.no/fiken/connect.php'
+    );
+
+    wp_safe_redirect( $connect_url );
+    exit;
+} );
+
+/**
+ * Handle connect callback (with/without pekifiken_callback=1)
+ */
+add_action( 'admin_init', function() {
+    if ( ! is_admin() ) {
+        return;
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $has_flag   = ( isset( $_GET['pekifiken_callback'] ) && $_GET['pekifiken_callback'] === '1' );
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $has_direct = isset( $_GET['employee_token'] );
+    if ( ! $has_flag && ! $has_direct ) {
+        return;
+    }
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_die( esc_html__( 'Insufficient permissions.', 'peki-fiken-integration-for-woocommerce' ) );
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $state          = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $employee_token = isset( $_GET['employee_token'] ) ? sanitize_text_field( wp_unslash( $_GET['employee_token'] ) ) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $connection_id  = isset( $_GET['connection_id'] ) ? sanitize_text_field( wp_unslash( $_GET['connection_id'] ) ) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $company_slug   = isset( $_GET['company_slug'] ) ? sanitize_text_field( wp_unslash( $_GET['company_slug'] ) ) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $refresh_token  = isset( $_GET['refresh_token'] ) ? sanitize_text_field( wp_unslash( $_GET['refresh_token'] ) ) : '';
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $state_from_srv = isset( $_GET['state_subscription'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['state_subscription'] ) ) ) : '';
+
+    // Verify CSRF state (must match transient from connect step)
+    if ( empty( $state ) || ! get_transient( 'pekifiken_connect_state_' . $state ) ) {
+        wp_safe_redirect(
+            add_query_arg(
+                array( 'page' => 'fiken_innstillinger', 'error' => 'state' ),
+                admin_url( 'admin.php' )
+            )
+        );
+        exit;
+    }
+    delete_transient( 'pekifiken_connect_state_' . $state );
+
+    if ( empty( $employee_token ) && empty( $refresh_token ) ) {
+        wp_safe_redirect(
+            add_query_arg(
+                array( 'page' => 'fiken_innstillinger', 'error' => 'token' ),
+                admin_url( 'admin.php' )
+            )
+        );
+        exit;
+    }
+
+    // Store secrets with autoload=no
+    if ( $employee_token !== '' ) {
+        update_option( 'pekifiken_employee_token', $employee_token, 'no' );
+    }
+    if ( $refresh_token !== '' ) {
+        update_option( 'pekifiken_refresh_token', $refresh_token, 'no' );
+    }
+    if ( $connection_id !== '' ) {
+        update_option( 'pekifiken_connection_id', $connection_id, 'no' );
+    }
+    if ( $company_slug !== '' ) {
+        update_option( 'pekifiken_company_slug', $company_slug, 'no' );
+    }
+
+    // Normalize subscription state: expect active|pending (older servers may send 'none' -> pending).
+    $valid_states = array( 'active', 'pending', 'none' );
+    $state_norm   = in_array( $state_from_srv, $valid_states, true ) ? $state_from_srv : 'pending';
+    if ( $state_norm !== 'active' ) {
+        $state_norm = 'pending';
+    }
+    update_option( 'pekifiken_subscription_state', $state_norm, true );
+    update_option( 'pekifiken_has_active_subscription', $state_norm === 'active' ? '1' : '0', true );
+
+    update_option(
+        'pekifiken_sync_last',
+        wp_json_encode(
+            array(
+                'time'  => current_time( 'mysql' ),
+                'note'  => $has_flag ? 'callback-flag' : 'callback-direct',
+                'state' => $state_norm,
+            )
+        ),
+        true
+    );
+
+    wp_safe_redirect(
+        add_query_arg(
+            array( 'page' => 'fiken_innstillinger', 'connected' => '1' ),
+            admin_url( 'admin.php' )
+        )
+    );
+    exit;
+} );
+
+/** AJAX: force refresh of status and return current state (+debug) */
+add_action( 'wp_ajax_pekifiken_refresh_status', function () {
+    if ( ! ( current_user_can( 'manage_woocommerce' ) || current_user_can( 'manage_options' ) ) ) {
+        wp_send_json_error( array( 'message' => 'forbidden' ), 403 );
+    }
+    check_ajax_referer( 'pekifiken_refresh_status', 'nonce' );
+
+    \FikenBilag\Fiken_Admin::refresh_subscription_state_from_server();
+
+    $state = (string) get_option( 'pekifiken_subscription_state', 'pending' );
+    $dbg   = json_decode( (string) get_option( 'pekifiken_sync_last', '' ), true );
+
+    $out = array( 'state' => $state );
+    if ( is_array( $dbg ) ) {
+        $out['time']  = isset( $dbg['time'] ) ? (string) $dbg['time'] : '';
+        $out['http']  = isset( $dbg['http'] ) ? (int) $dbg['http'] : null;
+        $out['error'] = isset( $dbg['error'] ) ? (string) $dbg['error'] : null;
+        $out['peek']  = isset( $dbg['peek'] ) ? (string) $dbg['peek'] : null;
+    }
+
+    wp_send_json_success( $out );
+} );
+
+/** Dismiss notice handler (per-user, persistent) */
+add_action( 'admin_init', function () {
+    if ( ! is_admin() ) {
+        return;
+    }
+
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $dismiss = isset( $_GET['pekifiken_dismiss'] ) ? sanitize_key( wp_unslash( $_GET['pekifiken_dismiss'] ) ) : '';
+    if ( ! $dismiss ) {
+        return;
+    }
+
+    if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+        return;
+    }
+
+    // Verify nonce
+    // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+    $nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'pekifiken_dismiss_' . $dismiss ) ) {
+        return;
+    }
+
+    $admin = \FikenBilag\Fiken_Admin::instance();
+    if ( method_exists( $admin, 'dismiss_notice' ) ) {
+        $admin->dismiss_notice( $dismiss );
+    }
+
+    // Redirect clean URL
+    wp_safe_redirect( remove_query_arg( array( 'pekifiken_dismiss', '_wpnonce' ) ) );
+    exit;
+} );

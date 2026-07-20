@@ -1,0 +1,114 @@
+/* Supplier Management Styles */
+.dc-supplier-management {
+    padding: 20px;
+}
+
+.dc-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.dc-page-header h1 {
+    margin: 0;
+}
+table .button {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.button {
+    color: white;
+    border: 0;
+}
+
+.dc-supplier-list-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 20px;
+}
+
+.dc-supplier-filters {
+    padding: 15px;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+.dc-search-input {
+    width: 100%;
+    max-width: 300px;
+}
+
+/* Supplier Form */
+.dc-supplier-form-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.dc-form-section {
+    margin-bottom: 15px;
+}
+
+.dc-form-section label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.dc-form-section input[type="text"],
+.dc-form-section input[type="email"],
+.dc-form-section input[type="tel"],
+.dc-form-section textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+.dc-form-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ccd0d4;
+}
+
+.dc-form-actions .button {
+    margin-right: 10px;
+}
+
+/* Table Styles */
+.wp-list-table {
+    margin-top: 0;
+}
+
+.wp-list-table th {
+    font-weight: 600;
+}
+
+.wp-list-table td {
+    vertical-align: middle;
+}
+
+.wp-list-table .button {
+    margin-right: 5px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    .dc-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .dc-page-header .button {
+        margin-top: 10px;
+    }
+    
+    .dc-form-section input[type="text"],
+    .dc-form-section input[type="email"],
+    .dc-form-section input[type="tel"],
+    .dc-form-section textarea {
+        max-width: 100%;
+    }
+} 

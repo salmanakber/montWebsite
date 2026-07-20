@@ -1,0 +1,245 @@
+.wfb-upgrade-page {
+    max-width: 800px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.wfb-pricing-box {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.wfb-pricing-title {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+.wfb-pricing-features {
+    list-style: none;
+    padding: 0;
+}
+
+.wfb-pricing-features li {
+    margin: 5px 0;
+}
+
+.wfb-transfer-status {
+    margin-bottom: 20px;
+}
+
+.wfb-progress {
+    background: #eee;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 20px;
+    margin-bottom: 10px;
+}
+
+.wfb-progress-bar {
+    background: #0073aa;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.wfb-action-buttons {
+    margin-top: 20px;
+}
+
+.wfb-action-buttons .button {
+    margin-right: 10px;
+}
+
+.wfb-stripe-style-upgrade {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 30px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+.wfb-upgrade-card {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.wfb-progress-section h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.wfb-progress-bar-container {
+    background: #e6ebf1;
+    border-radius: 9999px;
+    overflow: hidden;
+    height: 10px;
+}
+
+.wfb-progress-bar {
+    background: #635bff;
+    height: 10px;
+    transition: width 0.4s ease;
+}
+
+.wfb-progress-text {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #4d5e78;
+}
+
+.wfb-unlimited-offer {
+    background: #f6f9fc;
+    border: 1px solid #e6ebf1;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.wfb-unlimited-offer h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.wfb-unlimited-offer p {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #4d5e78;
+}
+
+.wfb-unlimited-offer ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.wfb-unlimited-offer ul li {
+    margin: 8px 0;
+    font-size: 15px;
+}
+
+.wfb-upgrade-btn {
+    background: #635bff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.wfb-upgrade-btn:hover {
+    background: #5a51e8;
+}
+
+
+/* Fiken Upgrade – compact badges and cards */
+.pekifiken-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    line-height: 1;
+    border: 1px solid transparent;
+}
+.pekifiken-badge.-free { background: #f1f1f1; color: #555; border-color: #ddd; }
+.pekifiken-badge.-active { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+.pekifiken-badge.-cancel { background: #fff3cd; color: #856404; border-color: #ffeaa7; }
+.pekifiken-badge.-growth { background: #e6f0ff; color: #0a58ca; border-color: #bcd0ff; }
+
+.pekifiken-checkbox-lg {
+	transform: scale(1.25);
+	transform-origin: left center;
+	margin-right: 8px;
+}
+
+.pekifiken-cards {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.pekifiken-card {
+    min-width: 240px;
+    max-width: 320px;
+    padding: 16px;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+.pekifiken-card h3 { margin: 0 0 8px; }
+.pekifiken-card p { margin: 6px 0; }
+
+/* -------- Fresh Upgrade UI -------- */
+.pf-hero {
+    position: relative;
+    padding: 24px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #5b8def, #7f53ac);
+    color: #fff;
+    box-shadow: 0 6px 24px rgba(0,0,0,.12);
+    margin: 12px 0 20px 0;
+}
+.pf-hero h2 { margin: 0 0 6px; color: #fff; }
+.pf-hero p { margin: 0; opacity: .95; }
+.pf-hero .pf-cta { margin-top: 12px; }
+
+.pf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.pf-card {
+    background: #fff;
+    border: 1px solid #e7e9ec;
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.06);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.pf-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+.pf-card h3 { margin: 0 0 6px; font-size: 18px; }
+.pf-card .pf-price { font-weight: 700; margin: 8px 0; }
+.pf-card .pf-meta { color: #5f6b7a; font-size: 13px; margin-bottom: 10px; }
+
+.pf-card--current { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(147,197,253,.35) inset; }
+.pf-card--disabled { opacity: .55; filter: grayscale(20%); }
+
+.pf-cta .button-primary { box-shadow: 0 2px 8px rgba(99,91,255,.28); }
+.pf-cta .button-primary:disabled,
+.pf-cta .button[disabled] { opacity:.6; cursor:not-allowed; box-shadow:none; }
+
+.pf-progress {
+    margin-top: 8px; 
+    background: #eef2f7; 
+    border-radius: 999px; 
+    height: 10px; 
+    overflow: hidden;
+}
+.pf-progress__bar { background:#635bff; height:100%; transition: width .3s ease; }
+.pf-usage-row { display:flex; justify-content:space-between; align-items:center; margin:8px 0; color:#475569; }
+.pf-small { font-size:12px; color:#64748b; }
+
+/* -------- Pretty Toggle Switch + Setting Row -------- */
+.pf-setting { display:flex; align-items:center; gap:14px; background:#fff; border:1px solid #e7e9ec; border-radius:8px; padding:12px 14px; box-shadow:0 1px 8px rgba(0,0,0,.04); margin:10px 0 18px; }
+.pf-setting__text { flex:1; }
+.pf-setting__text strong { display:block; margin:0 0 2px; }
+
+.pf-switch { position:relative; display:inline-block; width:44px; height:24px; }
+.pf-switch input { display:none; }
+.pf-switch__slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e1; transition:background .2s ease; border-radius:999px; }
+.pf-switch__slider:after { content:""; position:absolute; height:20px; width:20px; left:2px; top:2px; background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:transform .2s ease; }
+.pf-switch input:checked + .pf-switch__slider { background:#635bff; }
+.pf-switch input:checked + .pf-switch__slider:after { transform:translateX(20px); }

@@ -1,0 +1,55 @@
+# ==========================
+# WordPress Core
+# ==========================
+wp-admin/
+wp-includes/
+
+# Root files
+wp-config.php
+wp-config-local.php
+wp-config-sample.php
+
+# Uploads
+wp-content/uploads/
+
+# Cache
+wp-content/cache/
+wp-content/upgrade/
+wp-content/litespeed/
+
+# Backups
+wp-content/ai1wm-backups/
+wp-content/updraft/
+wp-content/backups/
+
+# Local/Test folders
+testing/
+phpmyadmin/
+
+# Logs
+*.log
+error_log
+debug.log
+
+# Local environment
+.env
+.env.*
+.user.ini
+.hcflag
+.litespeed_flag
+.htaccess.bk
+
+# Dependencies
+node_modules/
+vendor/
+
+# macOS
+.DS_Store
+
+# SQL
+*.sql
+
+# Archives
+*.zip
+*.tar
+*.gz

@@ -1,0 +1,257 @@
+# Norwegian (Bokmål) translation for Peki – Fiken Integration
+msgid ""
+msgstr ""
+"Project-Id-Version: Peki – Fiken Integration for WooCommerce 1.0.21\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-06 21:00+0000\n"
+"PO-Revision-Date: 2025-10-06 21:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Norwegian Bokmål\n"
+"Language: nb_NO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Notices
+msgid "Fiken is not connected yet."
+msgstr "Fiken er ikke tilkoblet ennå."
+
+msgid "Please connect to enable exports."
+msgstr "Vennligst koble til for å aktivere eksport."
+
+msgid "Connect to Fiken"
+msgstr "Koble til Fiken"
+
+msgid "You have reached your free monthly transfer limit (%d). Exports are paused until next month or you upgrade your plan."
+msgstr "Du har nådd grensen på %d gratis overføringer per måned. Eksport er satt på pause til neste måned eller du oppgraderer planen din."
+
+msgid "Upgrade plan"
+msgstr "Oppgrader plan"
+
+msgid "You have used %1$d of %2$d free transfers."
+msgstr "Du har brukt %1$d av %2$d gratis overføringer."
+
+msgid "Consider upgrading to avoid interruptions."
+msgstr "Vurder å oppgradere for å unngå avbrudd."
+
+msgid "You have reached your monthly transfer limit. Exports are paused until your quota resets or you upgrade your plan."
+msgstr "Du har nådd din månedlige overføringsgrense. Eksport er satt på pause til kvoten tilbakestilles eller du oppgraderer planen."
+
+msgid "Only %d transfers left this month."
+msgstr "Bare %d overføringer igjen denne måneden."
+
+# Settings page
+msgid "Fiken Integration Settings"
+msgstr "Fiken integrasjonsinnstillinger"
+
+msgid "Connection"
+msgstr "Tilkobling"
+
+msgid "Bank Account Mapping"
+msgstr "Bankkontotilordning"
+
+msgid "Advanced"
+msgstr "Avansert"
+
+msgid "Support"
+msgstr "Support"
+
+msgid "Fiken Connection"
+msgstr "Fiken-tilkobling"
+
+msgid "VAT registration status"
+msgstr "MVA-registreringsstatus"
+
+msgid "Not registered – integration disabled"
+msgstr "Ikke registrert – integrasjon deaktivert"
+
+msgid "Registered"
+msgstr "Registrert"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Connected"
+msgstr "Tilkoblet"
+
+msgid "Not connected"
+msgstr "Ikke tilkoblet"
+
+msgid "Connection ID"
+msgstr "Tilkoblings-ID"
+
+msgid "Token"
+msgstr "Token"
+
+msgid "Disconnect from Fiken"
+msgstr "Koble fra Fiken"
+
+msgid "This will remove local connection data. Continue?"
+msgstr "Dette vil fjerne lokal tilkoblingsdata. Fortsette?"
+
+msgid "Connected to Fiken."
+msgstr "Tilkoblet til Fiken."
+
+msgid "Disconnected from Fiken. Local credentials removed."
+msgstr "Frakoblet fra Fiken. Lokale påloggingsdata fjernet."
+
+msgid "Settings saved."
+msgstr "Innstillinger lagret."
+
+msgid "Connect failed: missing token from server."
+msgstr "Tilkobling feilet: mangler token fra server."
+
+msgid "Connect failed: state verification failed. Please try again."
+msgstr "Tilkobling feilet: statusverifisering mislyktes. Vennligst prøv igjen."
+
+msgid "VAT Export of goods and services"
+msgstr "MVA Utførsel av varer og tjenester"
+
+msgid "Save Settings"
+msgstr "Lagre innstillinger"
+
+msgid "Before you connect to Fiken"
+msgstr "Før du kobler til Fiken"
+
+msgid "Enable the Fiken API add-on: Fiken → Foretak → Tillegstjenester → API (NOK 99/month)."
+msgstr "Aktiver Fiken API-tillegget: Fiken → Foretak → Tillegstjenester → API (99 kr/måned)."
+
+msgid "Issue your first invoice: If your account has never issued an invoice, create and send one to initialize the invoice counter."
+msgstr "Utsted din første faktura: Hvis kontoen din aldri har utstedt en faktura, opprett og send en for å initialisere fakturatelleren."
+
+msgid "Need help?"
+msgstr "Trenger du hjelp?"
+
+msgid "Contact support"
+msgstr "Kontakt support"
+
+msgid "Select a registered bank account from Fiken to use for this payment method. This ensures voucher payments reconcile to the correct bank account in Fiken."
+msgstr "Velg en registrert bankkonto fra Fiken for denne betalingsmåten. Dette sikrer at bilagsbetalinger stemmes med riktig bankkonto i Fiken."
+
+msgid "WooCommerce is not active or no payment gateways are available."
+msgstr "WooCommerce er ikke aktivert eller ingen betalingsmåter er tilgjengelige."
+
+msgid "Default (1920:10001)"
+msgstr "Standard (1920:10001)"
+
+msgid "No employee token available. Please connect to Fiken first."
+msgstr "Ingen ansatt-token tilgjengelig. Vennligst koble til Fiken først."
+
+msgid "Invalid response from bank accounts API."
+msgstr "Ugyldig svar fra bankkonto-API."
+
+msgid "Company is not VAT registered in Fiken. Please register for VAT to use this integration."
+msgstr "Selskapet er ikke MVA-registrert i Fiken. Vennligst registrer for MVA for å bruke denne integrasjonen."
+
+msgid "Integration disabled:"
+msgstr "Integrasjon deaktivert:"
+
+msgid "Company is not VAT registered. The integration is disabled and settings are read-only."
+msgstr "Selskapet er ikke MVA-registrert. Integrasjonen er deaktivert og innstillingene er skrivebeskyttet."
+
+# Support
+msgid "Send a support message to our team. We will reply to your email."
+msgstr "Send en supportmelding til teamet vårt. Vi svarer på e-posten din."
+
+msgid "Your email"
+msgstr "Din e-post"
+
+msgid "Subject"
+msgstr "Emne"
+
+msgid "Brief summary of your issue"
+msgstr "Kort oppsummering av problemet ditt"
+
+msgid "Message"
+msgstr "Melding"
+
+msgid "Describe the problem and steps to reproduce."
+msgstr "Beskriv problemet og stegene for å reprodusere det."
+
+msgid "Send Support Request"
+msgstr "Send supportforespørsel"
+
+msgid "Support request sent. We will get back to you shortly."
+msgstr "Supportforespørsel sendt. Vi kommer tilbake til deg snart."
+
+msgid "Failed to send support request. Please try again later."
+msgstr "Kunne ikke sende supportforespørsel. Vennligst prøv igjen senere."
+
+# Upgrade page
+msgid "Subscription & Usage"
+msgstr "Abonnement og bruk"
+
+msgid "Free plan — 15 free transfers/month"
+msgstr "Gratis plan – 15 gratis overføringer/måned"
+
+msgid "Upgrade to unlock higher monthly limits and priority support."
+msgstr "Oppgrader for å låse opp høyere månedlige grenser og prioritert support."
+
+msgid "You are on the %s plan"
+msgstr "Du er på %s-planen"
+
+msgid "Your subscription will end at period end. You can renew or change plan anytime."
+msgstr "Abonnementet ditt avsluttes ved periodeslutt. Du kan fornye eller endre plan når som helst."
+
+msgid "Manage your subscription, payment method and invoices in the customer portal."
+msgstr "Administrer abonnement, betalingsmåte og fakturaer i kundeportalen."
+
+msgid "Auto-upgrade to prevent export stops"
+msgstr "Auto-oppgradering for å forhindre eksportstopp"
+
+msgid "When enabled, we will automatically upgrade your plan if you hit the monthly limit, so your transfers never stop."
+msgstr "Når aktivert, oppgraderer vi automatisk planen din hvis du når den månedlige grensen, slik at overføringene dine aldri stopper."
+
+msgid "Plans"
+msgstr "Planer"
+
+msgid "Up to %s transfers / month"
+msgstr "Opptil %s overføringer / måned"
+
+msgid "Current plan"
+msgstr "Nåværende plan"
+
+msgid "Downgrades are disabled. Use the portal to change your plan."
+msgstr "Nedgraderinger er deaktivert. Bruk portalen for å endre planen din."
+
+msgid "Not available"
+msgstr "Ikke tilgjengelig"
+
+msgid "Choose plan"
+msgstr "Velg plan"
+
+msgid "Open customer portal"
+msgstr "Åpne kundeportal"
+
+msgid "Need help? Contact support"
+msgstr "Trenger du hjelp? Kontakt support"
+
+msgid "Usage"
+msgstr "Bruk"
+
+msgid "Monthly usage"
+msgstr "Månedlig bruk"
+
+msgid "Resets on %s"
+msgstr "Tilbakestilles %s"
+
+msgid "Active until %s"
+msgstr "Aktiv til %s"
+
+# Common
+msgid "Settings"
+msgstr "Innstillinger"
+
+msgid "Manage Subscription"
+msgstr "Administrer abonnement"
+
+msgid "Go Pro"
+msgstr "Bli Pro"
+
+msgid "You do not have permission to access these settings."
+msgstr "Du har ikke tillatelse til å få tilgang til disse innstillingene."
+
+msgid "You do not have sufficient permissions to access this page."
+msgstr "Du har ikke tilstrekkelige tillatelser til å få tilgang til denne siden."
+
