@@ -372,12 +372,7 @@ public function dc_product_manager_redirect() {
             $category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : 0;
             $fabric_no = isset($_POST['fabric_no']) ? sanitize_text_field($_POST['fabric_no']) : '';
             $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
-            $multicurrency_prices = array();
-            if (isset($_POST['multicurrency_prices']) && is_array($_POST['multicurrency_prices'])) {
-                foreach ($_POST['multicurrency_prices'] as $code => $value) {
-                    $multicurrency_prices[sanitize_text_field($code)] = $value;
-                }
-            }
+            $multicurrency_prices = DC_Multi_Currency::parse_prices_from_request($_POST);
             $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
             $moq = isset($_POST['moq']) ? intval($_POST['moq']) : 0;
             $b2b_product = isset($_POST['b2b_product']) ? sanitize_text_field($_POST['b2b_product']) : 'no';
@@ -463,6 +458,7 @@ public function dc_product_manager_redirect() {
                     }
                 }
 
+                // Save multi-currency on parent + ALL variations and clear WC caches.
                 DC_Multi_Currency::save_prices_for_product($product_id, $multicurrency_prices, $wc_product);
                 
                 // Update parent product price range
@@ -631,13 +627,9 @@ public function ajax_bulk_delete_products() {
         }
 
         // Multi-currency prices
-        if (isset($_POST['multicurrency_prices']) && is_array($_POST['multicurrency_prices'])) {
-            $update_data['multicurrency_prices'] = array();
-            foreach ($_POST['multicurrency_prices'] as $code => $value) {
-                if ($value !== '' && $value !== null) {
-                    $update_data['multicurrency_prices'][sanitize_text_field($code)] = $value;
-                }
-            }
+        $parsed_mc = DC_Multi_Currency::parse_prices_from_request($_POST);
+        if (!empty($parsed_mc)) {
+            $update_data['multicurrency_prices'] = $parsed_mc;
         }
         
         // If no data to update

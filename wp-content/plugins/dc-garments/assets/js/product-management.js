@@ -631,6 +631,7 @@ function formatPrice(price, currency) {
                 title: $productCustomTitle.is(':checked') ? $productCustomTitleInput.val() : $productTitlePreview.text(),
             price: $productPrice.val(),
             multicurrency_prices: multicurrencyPrices,
+            multicurrency_prices_json: JSON.stringify(multicurrencyPrices),
             stock: $productStock.val(),
                 moq: $productMOQ.val(),
                 b2b_product: $productB2BStatus.val(),
@@ -969,6 +970,7 @@ $('#dc-bulk-delete-button').on('click', function (e) {
         });
         if (Object.keys(multicurrencyPrices).length) {
             updateData.multicurrency_prices = multicurrencyPrices;
+            updateData.multicurrency_prices_json = JSON.stringify(multicurrencyPrices);
         }
         
         if ($bulkStock.val() !== '') {
