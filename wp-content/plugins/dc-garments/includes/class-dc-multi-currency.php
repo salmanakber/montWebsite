@@ -15,6 +15,9 @@ class DC_Multi_Currency {
 
     const META_KEY = '_dc_multicurrency_prices';
 
+    /** @var bool Prevent recursive price filter loops. */
+    private static $filtering = false;
+
     public static function get_currencies() {
         $currencies = array();
         foreach (DC_Region_Currency::get_regions() as $region) {
@@ -23,20 +26,14 @@ class DC_Multi_Currency {
         return $currencies;
     }
 
-    /**
-     * Get stored multi-currency prices for a product/variation.
-     */
     public static function get_prices($product_id) {
         $prices = get_post_meta($product_id, self::META_KEY, true);
         return is_array($prices) ? $prices : array();
     }
 
-    /**
-     * Save multi-currency prices.
-     */
     public static function save_prices($product_id, $prices) {
         $clean = array();
-        foreach (self::get_currencies() as $code => $region) {
+        foreach (array_keys(self::get_currencies()) as $code) {
             if (isset($prices[$code]) && $prices[$code] !== '' && $prices[$code] !== null) {
                 $clean[$code] = wc_format_decimal($prices[$code]);
             }
@@ -46,24 +43,25 @@ class DC_Multi_Currency {
     }
 
     /**
-     * Resolve price for the active currency with fallback to WC default price.
+     * Resolve price for active currency using raw meta only (no WC getters).
      */
     public static function resolve_price($product, $currency = null) {
-        if (!$product) {
+        if (!$product || self::$filtering) {
             return '';
         }
 
-        $currency = $currency ?: DC_Region_Currency::get_current_currency();
+        $currency = $currency ? $currency : DC_Region_Currency::get_current_currency();
         $product_id = $product->get_id();
         $prices = self::get_prices($product_id);
 
-        if (!empty($prices[$currency])) {
+        if (isset($prices[$currency]) && $prices[$currency] !== '') {
             return $prices[$currency];
         }
 
-        $default_price = $product->get_meta('_regular_price');
+        // Raw meta only — never call get_price()/get_regular_price() (would recurse).
+        $default_price = get_post_meta($product_id, '_regular_price', true);
         if ($default_price === '' || $default_price === null) {
-            $default_price = $product->get_meta('_price');
+            $default_price = get_post_meta($product_id, '_price', true);
         }
 
         return $default_price;
@@ -79,22 +77,33 @@ class DC_Multi_Currency {
         add_filter('woocommerce_get_variation_prices_hash', array($this, 'variation_prices_hash'), 10, 3);
         add_filter('woocommerce_currency_symbol', array($this, 'filter_currency_symbol'), 10, 2);
         add_filter('woocommerce_price_format', array($this, 'filter_price_format'), 10, 2);
-        add_filter('woocommerce_get_price_decimals', array($this, 'filter_price_decimals'));
+        add_filter('woocommerce_price_num_decimals', array($this, 'filter_price_decimals'), 10, 1);
     }
 
     public function filter_price($price, $product) {
+        if (self::$filtering) {
+            return $price;
+        }
+
+        self::$filtering = true;
         $resolved = self::resolve_price($product);
-        return $resolved !== '' ? $resolved : $price;
+        self::$filtering = false;
+
+        return ($resolved !== '' && $resolved !== null) ? $resolved : $price;
     }
 
     public function filter_variation_price($price, $variation, $product) {
+        if (self::$filtering) {
+            return $price;
+        }
+
+        self::$filtering = true;
         $resolved = self::resolve_price($variation);
-        return $resolved !== '' ? $resolved : $price;
+        self::$filtering = false;
+
+        return ($resolved !== '' && $resolved !== null) ? $resolved : $price;
     }
 
-    /**
-     * Bust variation price cache when currency changes.
-     */
     public function variation_prices_hash($hash, $product, $display) {
         $hash[] = DC_Region_Currency::get_current_currency();
         $hash[] = DC_Region_Currency::get_current_region_slug();
@@ -111,33 +120,22 @@ class DC_Multi_Currency {
     }
 
     public function filter_price_format($format, $currency_pos) {
+        // Read cookie/slug directly — do not call get_woocommerce_currency() (recursion risk).
         $currency = DC_Region_Currency::get_current_currency();
         if ($currency === 'NOK') {
             return '%2$s %1$s';
-        }
-        if ($currency === 'VND') {
-            return '%1$s%2$s';
         }
         return $format;
     }
 
     public function filter_price_decimals($decimals) {
-        static $resolving = false;
-        if ($resolving) {
-            return $decimals;
-        }
-        $resolving = true;
         $currency = DC_Region_Currency::get_current_currency();
-        $resolving = false;
         if ($currency === 'VND') {
             return 0;
         }
         return $decimals;
     }
 
-    /**
-     * Apply multi-currency prices to all variations of a variable product.
-     */
     public static function save_prices_for_product($product_id, $prices, $wc_product = null) {
         if (!$wc_product) {
             $wc_product = wc_get_product($product_id);
@@ -155,28 +153,33 @@ class DC_Multi_Currency {
         }
     }
 
-    /**
-     * Get prices for CRM edit form (from parent or first variation).
-     */
     public static function get_product_edit_prices($product_id) {
-        $wc_product = wc_get_product($product_id);
-        if (!$wc_product) {
-            return array();
-        }
-
         $prices = self::get_prices($product_id);
         if (!empty($prices)) {
             return $prices;
         }
 
+        $wc_product = wc_get_product($product_id);
+        if (!$wc_product) {
+            return array();
+        }
+
         if ($wc_product->is_type('variable')) {
             $children = $wc_product->get_children();
             if (!empty($children)) {
-                return self::get_prices($children[0]);
+                $var_prices = self::get_prices($children[0]);
+                if (!empty($var_prices)) {
+                    return $var_prices;
+                }
             }
         }
 
-        $default = $wc_product->get_regular_price();
-        return $default ? array('NOK' => $default) : array();
+        // Raw meta — avoid get_regular_price() recursion.
+        $default = get_post_meta($product_id, '_regular_price', true);
+        if ($default === '') {
+            $default = get_post_meta($product_id, '_price', true);
+        }
+
+        return $default !== '' ? array('NOK' => $default) : array();
     }
 }

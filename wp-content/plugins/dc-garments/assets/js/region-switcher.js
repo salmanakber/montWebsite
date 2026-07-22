@@ -2,30 +2,30 @@
     'use strict';
 
     function openPanel($switcher) {
-        $switcher.find('.dc-region-panel, .dc-region-overlay').removeAttr('hidden');
+        // Close any other open panels first.
+        $('.dc-region-switcher').each(function () {
+            closePanel($(this));
+        });
+
+        $switcher.find('.dc-region-panel, .dc-region-overlay')
+            .removeAttr('hidden')
+            .attr('aria-hidden', 'false');
         $switcher.find('.dc-region-trigger').attr('aria-expanded', 'true');
         $('body').addClass('dc-region-open');
     }
 
     function closePanel($switcher) {
-        $switcher.find('.dc-region-panel, .dc-region-overlay').attr('hidden', true);
+        $switcher.find('.dc-region-panel, .dc-region-overlay')
+            .attr('hidden', true)
+            .attr('aria-hidden', 'true');
         $switcher.find('.dc-region-trigger').attr('aria-expanded', 'false');
         $('body').removeClass('dc-region-open');
     }
 
-    function updateTrigger($switcher, region) {
-        if (!dc_region.regions[region]) return;
-        var r = dc_region.regions[region];
-        var label = r.label + ' • ' + r.display;
-        $switcher.find('.dc-region-trigger-value').contents().filter(function () {
-            return this.nodeType === 3;
-        }).first().replaceWith(label + ' ');
-        $switcher.find('.dc-region-panel-selected').text(label);
-        $switcher.attr('data-current', region);
-    }
-
     function switchRegion(region, $switcher) {
-        if (!dc_region.regions[region]) return;
+        if (typeof dc_region === 'undefined' || !dc_region.regions[region]) {
+            return;
+        }
 
         $switcher.addClass('dc-region-loading');
 
@@ -35,14 +35,23 @@
             region: region,
             redirect_url: window.location.href
         }).done(function (response) {
-            if (response.success && response.data.redirect) {
+            if (response && response.success && response.data && response.data.redirect) {
                 window.location.href = response.data.redirect;
             } else {
-                window.location.reload();
+                // Fallback: same page with query arg.
+                var q = (dc_region.queryVar || 'dc_region') + '=' + encodeURIComponent(region);
+                var url = window.location.href.split('#')[0];
+                url = url.replace(new RegExp('([?&])' + (dc_region.queryVar || 'dc_region') + '=[^&]*', 'i'), '$1');
+                url = url.replace(/[?&]$/, '');
+                url += (url.indexOf('?') === -1 ? '?' : '&') + q;
+                window.location.href = url;
             }
         }).fail(function () {
             $switcher.removeClass('dc-region-loading');
-            window.location.reload();
+            var q = (dc_region.queryVar || 'dc_region') + '=' + encodeURIComponent(region);
+            var url = window.location.href.split('#')[0];
+            url += (url.indexOf('?') === -1 ? '?' : '&') + q;
+            window.location.href = url;
         });
     }
 
@@ -50,7 +59,12 @@
         e.preventDefault();
         e.stopPropagation();
         var $switcher = $(this).closest('.dc-region-switcher');
-        openPanel($switcher);
+        var isOpen = $(this).attr('aria-expanded') === 'true';
+        if (isOpen) {
+            closePanel($switcher);
+        } else {
+            openPanel($switcher);
+        }
     });
 
     $(document).on('click', '.dc-region-close, .dc-region-overlay', function (e) {
@@ -63,7 +77,7 @@
         var region = $(this).data('region');
         var $switcher = $(this).closest('.dc-region-switcher');
 
-        if (region === $switcher.attr('data-current')) {
+        if (String(region) === String($switcher.attr('data-current'))) {
             closePanel($switcher);
             return;
         }

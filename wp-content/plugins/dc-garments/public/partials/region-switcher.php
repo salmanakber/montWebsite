@@ -7,39 +7,48 @@
  * @var string $current_slug
  * @var array  $current
  * @var array  $regions
+ * @var string $panel_id
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+if (empty($current) || !is_array($current)) {
+    $current = array(
+        'label'   => 'International',
+        'display' => '$ USD',
+    );
+}
+
 $current_label = $current['label'] . ' • ' . $current['display'];
+$panel_id = !empty($panel_id) ? $panel_id : 'dc-region-panel';
 ?>
 <div class="dc-region-switcher" data-current="<?php echo esc_attr($current_slug); ?>">
-    <button type="button" class="dc-region-trigger" aria-expanded="false" aria-controls="dc-region-panel">
-        <span class="dc-region-trigger-label"><?php esc_html_e('Region / Currency', 'dc-product-manager'); ?></span>
+    <button type="button" class="dc-region-trigger" aria-expanded="false" aria-controls="<?php echo esc_attr($panel_id); ?>">
+        <span class="dc-region-trigger-label">Region / Currency</span>
         <span class="dc-region-trigger-value">
-            <?php echo esc_html($current_label); ?>
+            <span class="dc-region-trigger-text"><?php echo esc_html($current_label); ?></span>
             <svg class="dc-region-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                 <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </span>
     </button>
 
-    <div id="dc-region-panel" class="dc-region-panel" hidden>
+    <div id="<?php echo esc_attr($panel_id); ?>" class="dc-region-panel" hidden aria-hidden="true">
         <div class="dc-region-panel-header">
             <div class="dc-region-panel-current">
-                <span class="dc-region-panel-label"><?php esc_html_e('Region / Currency', 'dc-product-manager'); ?></span>
+                <span class="dc-region-panel-label">Region / Currency</span>
                 <span class="dc-region-panel-selected"><?php echo esc_html($current_label); ?></span>
             </div>
-            <button type="button" class="dc-region-close" aria-label="<?php esc_attr_e('Close', 'dc-product-manager'); ?>">
+            <button type="button" class="dc-region-close" aria-label="Close">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                     <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
                 </svg>
             </button>
         </div>
 
-        <p class="dc-region-panel-title"><?php esc_html_e('SELECT YOUR REGION / CURRENCY', 'dc-product-manager'); ?></p>
+        <p class="dc-region-panel-title">SELECT YOUR REGION / CURRENCY</p>
 
         <ul class="dc-region-list" role="listbox">
             <?php foreach ($regions as $slug => $region) : ?>
@@ -65,5 +74,5 @@ $current_label = $current['label'] . ' • ' . $current['display'];
         </ul>
     </div>
 
-    <div class="dc-region-overlay" hidden></div>
+    <div class="dc-region-overlay" hidden aria-hidden="true"></div>
 </div>

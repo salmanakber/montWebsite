@@ -4,6 +4,7 @@
     position: relative;
     padding-left: 12px;
     font-family: inherit;
+    z-index: 5;
 }
 
 .dc-region-trigger {
@@ -41,11 +42,17 @@
     opacity: 0.6;
 }
 
+/* CRITICAL: display:flex must NOT apply when hidden, or panel always shows */
+.dc-region-panel[hidden],
+.dc-region-overlay[hidden] {
+    display: none !important;
+}
+
 .dc-region-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
-    z-index: 9998;
+    z-index: 99998;
 }
 
 .dc-region-panel {
@@ -55,12 +62,16 @@
     width: 100%;
     max-width: 420px;
     height: 100vh;
+    height: 100dvh;
     background: #fff;
-    z-index: 9999;
-    display: flex;
+    z-index: 99999;
     flex-direction: column;
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
     overflow-y: auto;
+}
+
+.dc-region-panel:not([hidden]) {
+    display: flex;
 }
 
 .dc-region-panel-header {
@@ -195,7 +206,11 @@
     opacity: 0.4;
 }
 
-/* Header layout: switchers side by side */
+body.dc-region-open {
+    overflow: hidden;
+}
+
+/* Header layout */
 .mont_header_switchers {
     display: flex;
     align-items: center;
@@ -215,7 +230,6 @@
     color: rgba(255, 255, 255, 0.65);
 }
 
-/* Mobile: show switchers in overlay, hide desktop-only in nav */
 @media (max-width: 768px) {
     .mont_header_nav-left .mont_header_switchers--desktop {
         display: none;
