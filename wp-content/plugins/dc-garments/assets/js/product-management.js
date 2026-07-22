@@ -482,11 +482,17 @@ jQuery(document).ready(function($) {
         return { class: 'good', text: 'In Stock' };
     }
 
-function formatPrice(price) {
+function formatPrice(price, currency) {
     if (!price) return 'N/A';
-    return new Intl.NumberFormat('nb-NO', {
+    currency = currency || (dc_product_manager.defaultCurrency || 'NOK');
+    var localeMap = { USD: 'en-US', EUR: 'de-DE', NOK: 'nb-NO', VND: 'vi-VN' };
+    var locale = localeMap[currency] || 'en-US';
+    var decimals = currency === 'VND' ? 0 : 2;
+    return new Intl.NumberFormat(locale, {
         style: 'currency',
-        currency: 'NOK'
+        currency: currency,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
     }).format(price);
 }
 
@@ -945,19 +951,36 @@ $('#dc-bulk-delete-button').on('click', function (e) {
         };
         
         // Only include fields that have values
-        var $bulkPrice = $('#dc-bulk-price');
         var $bulkStock = $('#dc-bulk-stock');
+        var $bulkMoq = $('#dc-bulk-moq');
+        var $bulkB2b = $('#dc-bulk-b2b');
         var $bulkSupplierPrice = $('#dc-bulk-supplier-price');
         var $bulkQuality = $('#dc-bulk-quality');
         var $bulkFabricWidth = $('#dc-bulk-fabric-width');
         var $bulkWeight = $('#dc-bulk-weight');
-        
-        if ($bulkPrice.val() !== '') {
-            updateData.price = $bulkPrice.val();
+
+        var multicurrencyPrices = {};
+        $('.dc-bulk-multicurrency-price').each(function() {
+            var code = $(this).data('currency');
+            var val = $(this).val();
+            if (code && val !== '') {
+                multicurrencyPrices[code] = val;
+            }
+        });
+        if (Object.keys(multicurrencyPrices).length) {
+            updateData.multicurrency_prices = multicurrencyPrices;
         }
         
         if ($bulkStock.val() !== '') {
             updateData.stock = $bulkStock.val();
+        }
+
+        if ($bulkMoq.val() !== '') {
+            updateData.moq = $bulkMoq.val();
+        }
+
+        if ($bulkB2b.val() !== '') {
+            updateData.b2b_product = $bulkB2b.val();
         }
         
         if ($bulkSupplierPrice.val() !== '') {
@@ -1003,8 +1026,10 @@ $('#dc-bulk-delete-button').on('click', function (e) {
                     showNotification('success', message);
                     
                     // Clear form
-                    $bulkPrice.val('');
                     $bulkStock.val('');
+                    $bulkMoq.val('');
+                    $bulkB2b.val('');
+                    $('.dc-bulk-multicurrency-price').val('');
                     $bulkSupplierPrice.val('');
                     $bulkQuality.val('');
                     $bulkFabricWidth.val('');
@@ -1276,13 +1301,15 @@ $('#dc-bulk-delete-button').on('click', function (e) {
 
     // Bulk Edit Modal Functions
     function openBulkEditModal() {
+        $('#dc-bulk-selected-count').text('(' + selectedProducts.length + ' selected)');
         $('#dc-bulk-edit-modal').fadeIn(200);
     }
 
     function closeBulkEditModal() {
         $('#dc-bulk-edit-modal').fadeOut(200);
         // Clear form fields
-        $('#dc-bulk-price, #dc-bulk-stock, #dc-bulk-supplier-price, #dc-bulk-quality, #dc-bulk-fabric-width, #dc-bulk-weight').val('');
+        $('#dc-bulk-stock, #dc-bulk-moq, #dc-bulk-b2b, .dc-bulk-multicurrency-price, #dc-bulk-supplier-price, #dc-bulk-quality, #dc-bulk-fabric-width, #dc-bulk-weight').val('');
+        $('#dc-bulk-b2b').val('');
     }
 
     // Update bulk actions visibility

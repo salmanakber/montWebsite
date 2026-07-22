@@ -87,21 +87,54 @@ if (!defined('ABSPATH')) {
             <div id="dc-bulk-edit-modal" class="dc-modal">
                 <div class="dc-modal-content">
                     <div class="dc-modal-header">
-                        <h3><?php _e('Bulk Edit Products', 'dc-product-manager'); ?></h3>
+                        <h3><?php _e('Bulk Edit Products', 'dc-product-manager'); ?> <span id="dc-bulk-selected-count" class="dc-bulk-selected-count"></span></h3>
                         <button class="dc-modal-close">&times;</button>
                     </div>
                     <div class="dc-modal-body">
+                        <p class="dc-bulk-edit-hint"><?php _e('Only fill in the fields you want to update. Empty fields will be left unchanged.', 'dc-product-manager'); ?></p>
                         <div class="dc-bulk-edit-fields">
-                            <div class="dc-form-row">
+                            <h4><?php _e('Prices by Region', 'dc-product-manager'); ?></h4>
+                            <div class="dc-multicurrency-grid dc-bulk-multicurrency-grid">
+                                <?php foreach (\DC_Product_Manager\DC_Region_Currency::get_regions() as $slug => $region) :
+                                    $code = $region['currency'];
+                                ?>
                                 <div class="dc-form-group">
-                                    <label for="dc-bulk-price"><?php _e('Price', 'dc-product-manager'); ?></label>
-                                    <input type="number" id="dc-bulk-price" step="0.01" placeholder="<?php _e('Leave empty to keep current value', 'dc-product-manager'); ?>">
+                                    <label for="dc-bulk-price-<?php echo esc_attr(strtolower($code)); ?>">
+                                        <?php echo esc_html($region['label'] . ' (' . $region['display'] . ')'); ?>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="dc-bulk-price-<?php echo esc_attr(strtolower($code)); ?>"
+                                        class="dc-bulk-multicurrency-price"
+                                        data-currency="<?php echo esc_attr($code); ?>"
+                                        step="<?php echo $code === 'VND' ? '1' : '0.01'; ?>"
+                                        placeholder="<?php esc_attr_e('No change', 'dc-product-manager'); ?>"
+                                    >
                                 </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <h4><?php _e('Stock & Product Info', 'dc-product-manager'); ?></h4>
+                            <div class="dc-form-row">
                                 <div class="dc-form-group">
                                     <label for="dc-bulk-stock"><?php _e('Stock', 'dc-product-manager'); ?></label>
                                     <input type="number" id="dc-bulk-stock" placeholder="<?php _e('Leave empty to keep current value', 'dc-product-manager'); ?>">
                                 </div>
+                                <div class="dc-form-group">
+                                    <label for="dc-bulk-moq"><?php _e('MOQ', 'dc-product-manager'); ?></label>
+                                    <input type="number" id="dc-bulk-moq" min="1" placeholder="<?php _e('Leave empty to keep current value', 'dc-product-manager'); ?>">
+                                </div>
+                                <div class="dc-form-group">
+                                    <label for="dc-bulk-b2b"><?php _e('B2B Product', 'dc-product-manager'); ?></label>
+                                    <select id="dc-bulk-b2b">
+                                        <option value=""><?php _e('No change', 'dc-product-manager'); ?></option>
+                                        <option value="no"><?php _e('No', 'dc-product-manager'); ?></option>
+                                        <option value="yes"><?php _e('Yes', 'dc-product-manager'); ?></option>
+                                    </select>
+                                </div>
                             </div>
+
+                            <h4><?php _e('Supplier Details', 'dc-product-manager'); ?></h4>
                             <div class="dc-form-row">
                                 <div class="dc-form-group">
                                     <label for="dc-bulk-supplier-price"><?php _e('Supplier Price', 'dc-product-manager'); ?></label>

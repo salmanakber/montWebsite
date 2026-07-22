@@ -37,8 +37,13 @@
                     <span></span>
                     <span></span>
                 </div>
-                <div class="mont_header_language-switcher">
-					<?php echo do_shortcode('[gtranslate]');  ?>
+                <div class="mont_header_switchers mont_header_switchers--desktop">
+                    <div class="mont_header_language-switcher">
+                        <?php echo do_shortcode('[gtranslate]'); ?>
+                    </div>
+                    <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
+                        <?php echo do_shortcode('[dc_region_switcher]'); ?>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="mont_header_logo">
@@ -87,8 +92,13 @@
             <div class="mont_header_mobile_close">
 <!--                 <i data-lucide="x"></i> -->
             </div>
-            <div class="mont_header_language-switcher">
-       				<?php echo do_shortcode('[gtranslate]');  ?>
+            <div class="mont_header_switchers">
+                <div class="mont_header_language-switcher">
+                    <?php echo do_shortcode('[gtranslate]'); ?>
+                </div>
+                <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
+                    <?php echo do_shortcode('[dc_region_switcher]'); ?>
+                <?php endif; ?>
             </div>
             <!-- Main Mobile Menu -->
             <div class="mont_header_mobile_main_menu">

@@ -619,6 +619,26 @@ public function ajax_bulk_delete_products() {
         if (isset($_POST['weight']) && $_POST['weight'] !== '') {
             $update_data['weight'] = sanitize_text_field($_POST['weight']);
         }
+
+        // MOQ
+        if (isset($_POST['moq']) && $_POST['moq'] !== '') {
+            $update_data['moq'] = intval($_POST['moq']);
+        }
+
+        // B2B status
+        if (isset($_POST['b2b_product']) && $_POST['b2b_product'] !== '') {
+            $update_data['b2b_product'] = sanitize_text_field($_POST['b2b_product']);
+        }
+
+        // Multi-currency prices
+        if (isset($_POST['multicurrency_prices']) && is_array($_POST['multicurrency_prices'])) {
+            $update_data['multicurrency_prices'] = array();
+            foreach ($_POST['multicurrency_prices'] as $code => $value) {
+                if ($value !== '' && $value !== null) {
+                    $update_data['multicurrency_prices'][sanitize_text_field($code)] = $value;
+                }
+            }
+        }
         
         // If no data to update
         if (empty($update_data)) {
@@ -638,78 +658,7 @@ public function ajax_bulk_delete_products() {
             }
             
             try {
-                // Handle variable products
-                if ($product->is_type('variable')) {
-    $variations = $product->get_children();
-    foreach ($variations as $variation_id) {
-        $variation = wc_get_product($variation_id);
-        if ($variation) {
-            if (isset($update_data['price'])) {
-                $variation->set_price($update_data['price']);
-                $variation->set_regular_price($update_data['price']);
-            }
-
-            if (isset($update_data['stock'])) {
-                $variation->set_manage_stock(true); // <-- Important!
-                $variation->set_stock_quantity($update_data['stock']);
-                $variation->set_stock_status($update_data['stock'] > 0 ? 'instock' : 'outofstock');
-            }
-
-            // Meta data
-            if (isset($update_data['supplier_price'])) {
-                update_post_meta($variation_id, '_supplier_price', $update_data['supplier_price']);
-            }
-
-            if (isset($update_data['quality'])) {
-                update_post_meta($variation_id, '_quality', $update_data['quality']);
-            }
-
-            if (isset($update_data['fabric_width'])) {
-                update_post_meta($variation_id, '_fabric_width', $update_data['fabric_width']);
-            }
-
-            if (isset($update_data['weight'])) {
-                update_post_meta($variation_id, '_weight', $update_data['weight']);
-            }
-
-            $variation->save();
-            wc_delete_product_transients($variation_id); // Clear cache
-        }
-    }
-}
-else {
-                    // Update price for simple products
-                    if (isset($update_data['price'])) {
-                        $product->set_price($update_data['price']);
-                        $product->set_regular_price($update_data['price']);
-                    }
-                    
-                    // Update stock for simple products
-                    if (isset($update_data['stock'])) {
-                        $product->set_stock_quantity($update_data['stock']);
-                        $product->set_stock_status($update_data['stock'] > 0 ? 'instock' : 'outofstock');
-                    }
-                    
-                    // Update meta data for simple products
-                    if (isset($update_data['supplier_price'])) {
-                        update_post_meta($product_id, '_supplier_price', $update_data['supplier_price']);
-                    }
-                    
-                    if (isset($update_data['quality'])) {
-                        update_post_meta($product_id, '_quality', $update_data['quality']);
-                    }
-                    
-                    if (isset($update_data['fabric_width'])) {
-                        update_post_meta($product_id, '_fabric_width', $update_data['fabric_width']);
-                    }
-                    
-                    if (isset($update_data['weight'])) {
-                        update_post_meta($product_id, '_weight', $update_data['weight']);
-                    }
-                    
-                    $product->save();
-                }
-                
+                $this->apply_bulk_updates_to_product($product_id, $product, $update_data);
                 $updated_count++;
             } catch (Exception $e) {
                 $errors[] = sprintf(__('Error updating product ID %d: %s', 'dc-product-manager'), $product_id, $e->getMessage());
@@ -730,6 +679,115 @@ else {
                 'message' => __('No products were updated', 'dc-product-manager'),
                 'errors' => $errors
             ));
+        }
+    }
+
+    /**
+     * Apply bulk update fields to a single product.
+     */
+    private function apply_bulk_updates_to_product($product_id, $product, $update_data) {
+        if (isset($update_data['moq'])) {
+            update_post_meta($product_id, '_moq', $update_data['moq']);
+        }
+
+        if (isset($update_data['b2b_product'])) {
+            update_post_meta($product_id, '_b2b_product', $update_data['b2b_product']);
+        }
+
+        $effective_price = null;
+        if (!empty($update_data['multicurrency_prices'])) {
+            $existing = DC_Multi_Currency::get_prices($product_id);
+            $merged = array_merge($existing, $update_data['multicurrency_prices']);
+            DC_Multi_Currency::save_prices_for_product($product_id, $merged, $product);
+
+            if (!empty($merged['NOK'])) {
+                $effective_price = floatval($merged['NOK']);
+            } else {
+                $effective_price = floatval(reset($merged));
+            }
+        } elseif (isset($update_data['price'])) {
+            $effective_price = floatval($update_data['price']);
+        }
+
+        if ($product->is_type('variable')) {
+            $variations = $product->get_children();
+            foreach ($variations as $variation_id) {
+                $variation = wc_get_product($variation_id);
+                if (!$variation) {
+                    continue;
+                }
+
+                if ($effective_price !== null) {
+                    $variation->set_price($effective_price);
+                    $variation->set_regular_price($effective_price);
+                }
+
+                if (isset($update_data['stock'])) {
+                    $variation->set_manage_stock(true);
+                    $variation->set_stock_quantity($update_data['stock']);
+                    $variation->set_stock_status($update_data['stock'] > 0 ? 'instock' : 'outofstock');
+                }
+
+                if (!empty($update_data['multicurrency_prices'])) {
+                    $existing_var = DC_Multi_Currency::get_prices($variation_id);
+                    $merged_var = array_merge($existing_var, $update_data['multicurrency_prices']);
+                    DC_Multi_Currency::save_prices($variation_id, $merged_var);
+                }
+
+                $this->apply_bulk_meta_to_post($variation_id, $update_data);
+                $variation->save();
+                wc_delete_product_transients($variation_id);
+            }
+
+            if ($effective_price !== null && !empty($variations)) {
+                update_post_meta($product_id, '_min_variation_price', $effective_price);
+                update_post_meta($product_id, '_max_variation_price', $effective_price);
+                update_post_meta($product_id, '_min_variation_regular_price', $effective_price);
+                update_post_meta($product_id, '_max_variation_regular_price', $effective_price);
+                update_post_meta($product_id, '_min_price_variation_id', $variations[0]);
+                update_post_meta($product_id, '_max_price_variation_id', $variations[0]);
+            }
+
+            wc_delete_product_transients($product_id);
+            return;
+        }
+
+        if ($effective_price !== null) {
+            $product->set_price($effective_price);
+            $product->set_regular_price($effective_price);
+        }
+
+        if (isset($update_data['stock'])) {
+            $product->set_stock_quantity($update_data['stock']);
+            $product->set_stock_status($update_data['stock'] > 0 ? 'instock' : 'outofstock');
+        }
+
+        if (!empty($update_data['multicurrency_prices'])) {
+            $existing = DC_Multi_Currency::get_prices($product_id);
+            $merged = array_merge($existing, $update_data['multicurrency_prices']);
+            DC_Multi_Currency::save_prices_for_product($product_id, $merged, $product);
+        }
+
+        $this->apply_bulk_meta_to_post($product_id, $update_data);
+        $product->save();
+        wc_delete_product_transients($product_id);
+    }
+
+    /**
+     * Apply shared meta fields during bulk update.
+     */
+    private function apply_bulk_meta_to_post($post_id, $update_data) {
+        if (isset($update_data['supplier_price'])) {
+            update_post_meta($post_id, '_supplier_price', $update_data['supplier_price']);
+        }
+        if (isset($update_data['quality'])) {
+            update_post_meta($post_id, '_quality', $update_data['quality']);
+        }
+        if (isset($update_data['fabric_width'])) {
+            update_post_meta($post_id, '_fabric_width', $update_data['fabric_width']);
+        }
+        if (isset($update_data['weight'])) {
+            update_post_meta($post_id, '_weight', $update_data['weight']);
         }
     }
 } 

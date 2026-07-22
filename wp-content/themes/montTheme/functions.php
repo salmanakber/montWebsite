@@ -56,8 +56,12 @@ add_action('wp_footer', 'dynamic_b2b_b2c_menu'); // Use wp_footer to inject scri
 add_filter('woocommerce_price_format', 'custom_woocommerce_price_format', 10, 2);
 
 function custom_woocommerce_price_format($format, $currency_pos) {
-    if (get_woocommerce_currency() === 'NOK') {
-        return 'NOK %1$s%2$s'; // Places NOK at the end
+    $currency = class_exists('DC_Product_Manager\\DC_Region_Currency')
+        ? \DC_Product_Manager\DC_Region_Currency::get_current_currency()
+        : get_woocommerce_currency();
+
+    if ($currency === 'NOK') {
+        return '%2$s %1$s';
     }
     return $format;
 }
@@ -67,10 +71,10 @@ add_filter('woocommerce_currency_symbol', 'change_currency_symbol', 10, 2);
 add_filter('woocommerce_get_price_html', 'move_currency_symbol_to_end', 10, 2);
 
 function change_currency_symbol($currency_symbol, $currency) {
-	if ($currency == 'NOK') {
-        return ''; // Set NOK as currency symbol
+    if ($currency === 'NOK') {
+        return '';
     }
-    // return $currency_symbol;
+    return $currency_symbol;
 }
 
 function move_currency_symbol_to_end($price, $product) {

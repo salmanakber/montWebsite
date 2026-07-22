@@ -254,6 +254,40 @@
     width: 100%;
 }
 
+.dc-bulk-selected-count {
+    font-weight: 400;
+    color: #888;
+    font-size: 14px;
+}
+
+.dc-bulk-edit-hint {
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 16px;
+}
+
+.dc-bulk-edit-fields h4 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin: 20px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+}
+
+.dc-bulk-edit-fields h4:first-child {
+    margin-top: 0;
+}
+
+.dc-bulk-multicurrency-grid {
+    margin-bottom: 8px;
+}
+
+.dc-modal-content {
+    max-width: 640px;
+}
+
 @media (max-width: 600px) {
     .dc-multicurrency-grid {
         grid-template-columns: 1fr;

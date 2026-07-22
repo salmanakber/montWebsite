@@ -242,6 +242,13 @@ class Endpoint_Handler {
                 array('wp-admin'),
                 DC_PRODUCT_MANAGER_VERSION
             );
+
+            wp_enqueue_style(
+                'dc-region-switcher',
+                DC_PM_PLUGIN_URL . 'assets/css/region-switcher.css',
+                array(),
+                DC_PRODUCT_MANAGER_VERSION
+            );
             
                       wp_enqueue_style(
                 'dc-crm-styles-supplier-management',
@@ -329,6 +336,8 @@ class Endpoint_Handler {
                 'adminUrl' => admin_url(),
                 'siteUrl' => home_url('/'),
                 'nonce' => wp_create_nonce('dc-product-management-nonce'),
+                'defaultCurrency' => 'NOK',
+                'currencies' => array('USD', 'EUR', 'NOK', 'VND'),
                 'i18n' => array(
                     'loading' => __('Loading...', 'dc-product-manager'),
                     'saving' => __('Saving...', 'dc-product-manager'),
@@ -343,7 +352,9 @@ class Endpoint_Handler {
                     'stock' => __('Stock', 'dc-product-manager'),
                     'edit' => __('Edit', 'dc-product-manager'),
                     'lowStock' => __('Low Stock Alert', 'dc-product-manager'),
-                    'lowStockMessage' => __('Some products have low stock', 'dc-product-manager')
+                    'lowStockMessage' => __('Some products have low stock', 'dc-product-manager'),
+                    'requiredFields' => __('Please fill in at least one field to update', 'dc-product-manager'),
+                    'productUpdated' => __('Product updated successfully', 'dc-product-manager'),
                 )
             ));
 			
