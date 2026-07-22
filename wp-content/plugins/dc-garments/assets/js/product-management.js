@@ -600,6 +600,20 @@ function formatPrice(price) {
             }
             
             // Prepare form data
+            var multicurrencyPrices = {};
+            $('.dc-multicurrency-price').each(function() {
+                var currency = $(this).data('currency');
+                var val = $(this).val();
+                if (currency && val !== '') {
+                    multicurrencyPrices[currency] = val;
+                }
+            });
+            if ($('#dc-price-nok').length && $('#dc-price-nok').val()) {
+                $productPrice.val($('#dc-price-nok').val());
+            } else if (Object.keys(multicurrencyPrices).length) {
+                $productPrice.val(Object.values(multicurrencyPrices)[0]);
+            }
+
             var formData = {
             action: 'dc_update_product',
                 nonce: dc_product_manager.nonce,
@@ -610,6 +624,7 @@ function formatPrice(price) {
             fabric_no: $productFabricNo.val(),
                 title: $productCustomTitle.is(':checked') ? $productCustomTitleInput.val() : $productTitlePreview.text(),
             price: $productPrice.val(),
+            multicurrency_prices: multicurrencyPrices,
             stock: $productStock.val(),
                 moq: $productMOQ.val(),
                 b2b_product: $productB2BStatus.val(),

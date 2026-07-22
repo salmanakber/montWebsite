@@ -24,6 +24,7 @@ add_filter('body_class', function($classes) {
 // Enqueue CRM styles
 wp_enqueue_style('dc-crm-styles', DC_PM_PLUGIN_URL . 'public/css/dc-crm.css', array(), DC_PM_VERSION);
 wp_enqueue_style('dc-product-management', DC_PM_PLUGIN_URL . 'assets/css/product-management.css', array(), DC_PM_VERSION);
+wp_enqueue_style('dc-region-switcher', DC_PM_PLUGIN_URL . 'assets/css/region-switcher.css', array(), DC_PM_VERSION);
 
 // Enqueue scripts
 wp_enqueue_script('dc-product-management', DC_PM_PLUGIN_URL . 'assets/js/product-management.js', array('jquery'), DC_PM_VERSION, true);
@@ -208,9 +209,33 @@ if ($featured_image_url) {
                         </div>
                         
                         <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-price"><?php _e('Price', 'dc-product-manager'); ?></label>
-                                <input type="number" id="dc-product-price" value="<?php echo esc_attr($product_data['price']); ?>" step="0.01">
+                            <div class="dc-form-group dc-form-group--full">
+                                <label><?php _e('Prices by Region', 'dc-product-manager'); ?></label>
+                                <p class="description"><?php _e('Set a price for each currency. If a currency is empty, the default NOK price is used on the storefront.', 'dc-product-manager'); ?></p>
+                                <div class="dc-multicurrency-grid">
+                                    <?php
+                                    $mc_prices = isset($product_data['multicurrency_prices']) ? $product_data['multicurrency_prices'] : array();
+                                    foreach (\DC_Product_Manager\DC_Region_Currency::get_regions() as $slug => $region) :
+                                        $code = $region['currency'];
+                                        $val = isset($mc_prices[$code]) ? $mc_prices[$code] : '';
+                                    ?>
+                                    <div class="dc-form-group">
+                                        <label for="dc-price-<?php echo esc_attr(strtolower($code)); ?>">
+                                            <?php echo esc_html($region['label'] . ' (' . $region['display'] . ')'); ?>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="dc-price-<?php echo esc_attr(strtolower($code)); ?>"
+                                            class="dc-multicurrency-price"
+                                            data-currency="<?php echo esc_attr($code); ?>"
+                                            value="<?php echo esc_attr($val); ?>"
+                                            step="<?php echo $code === 'VND' ? '1' : '0.01'; ?>"
+                                            min="0"
+                                        >
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <input type="hidden" id="dc-product-price" value="<?php echo esc_attr($product_data['price']); ?>">
                             </div>
                         </div>
                         

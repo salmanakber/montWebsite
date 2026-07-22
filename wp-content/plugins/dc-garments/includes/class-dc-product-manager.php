@@ -190,6 +190,12 @@ class DC_Product_Manager {
          */
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-crm-manager.php';
 
+        /**
+         * Region/currency switcher and multi-currency pricing.
+         */
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-region-currency.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-multi-currency.php';
+
         $this->loader = new \DC_Product_Manager\DC_Product_Manager_Loader();
     }
 
@@ -228,6 +234,12 @@ class DC_Product_Manager {
         // Initialize notification system
         $notification_system = new \DC_Product_Manager\Notification_System();
         $notification_system->init();
+
+        // Region/currency switcher and multi-currency pricing
+        $region_currency = new \DC_Product_Manager\DC_Region_Currency();
+        $region_currency->init();
+        $multi_currency = new \DC_Product_Manager\DC_Multi_Currency();
+        $multi_currency->init();
         
         // Add menu items
         $this->loader->add_action('admin_menu', $this, 'add_admin_menu');
@@ -440,6 +452,7 @@ class DC_Product_Manager {
                 'category_id' => get_post_meta($product->ID, '_category_id', true),
                 'fabric_no' => get_post_meta($product->ID, '_fabric_no', true),
                 'price' => $wc_product->get_price(),
+                'multicurrency_prices' => \DC_Product_Manager\DC_Multi_Currency::get_product_edit_prices($product->ID),
                 'stock' => $wc_product->get_stock_quantity(),
                 'moq' => get_post_meta($product->ID, '_moq', true),
                 'b2b_product' => get_post_meta($product->ID, '_b2b_product', true),

@@ -80,9 +80,32 @@ $suppliers = get_posts(array(
             <h2><?php _e('Pricing & Stock', 'dc-product-manager'); ?></h2>
             
             <div class="dc-form-row">
-                <div class="dc-form-group">
-                    <label for="dc-product-price"><?php _e('Price', 'dc-product-manager'); ?></label>
-                    <input type="number" id="dc-product-price" name="price" value="<?php echo esc_attr($product_data['price']); ?>" step="0.01" min="0" required>
+                <div class="dc-form-group dc-form-group--full">
+                    <label><?php _e('Prices by Region', 'dc-product-manager'); ?></label>
+                    <div class="dc-multicurrency-grid">
+                        <?php
+                        $mc_prices = isset($product_data['multicurrency_prices']) ? $product_data['multicurrency_prices'] : array();
+                        foreach (\DC_Product_Manager\DC_Region_Currency::get_regions() as $slug => $region) :
+                            $code = $region['currency'];
+                            $val = isset($mc_prices[$code]) ? $mc_prices[$code] : '';
+                        ?>
+                        <div class="dc-form-group">
+                            <label for="dc-price-<?php echo esc_attr(strtolower($code)); ?>">
+                                <?php echo esc_html($region['label'] . ' (' . $region['display'] . ')'); ?>
+                            </label>
+                            <input
+                                type="number"
+                                id="dc-price-<?php echo esc_attr(strtolower($code)); ?>"
+                                class="dc-multicurrency-price"
+                                data-currency="<?php echo esc_attr($code); ?>"
+                                value="<?php echo esc_attr($val); ?>"
+                                step="<?php echo $code === 'VND' ? '1' : '0.01'; ?>"
+                                min="0"
+                            >
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <input type="hidden" id="dc-product-price" name="price" value="<?php echo esc_attr($product_data['price']); ?>">
                 </div>
                 
                 <div class="dc-form-group">

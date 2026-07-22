@@ -154,6 +154,7 @@ class Endpoint_Handler {
                 'category_id' => get_post_meta($product->ID, '_category_id', true),
                 'fabric_no' => get_post_meta($product->ID, '_fabric_no', true),
                 'price' => $wc_product->get_price(),
+                'multicurrency_prices' => DC_Multi_Currency::get_product_edit_prices($product->ID),
                 'stock' => $wc_product->get_stock_quantity(),
                 'moq' => get_post_meta($product->ID, '_moq', true),
                 'b2b_product' => get_post_meta($product->ID, '_b2b_product', true),

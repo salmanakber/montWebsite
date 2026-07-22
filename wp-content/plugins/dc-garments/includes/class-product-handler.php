@@ -171,6 +171,7 @@ public function dc_product_manager_redirect() {
                 'category_id' => get_post_meta($product->ID, '_category_id', true),
                 'fabric_no' => get_post_meta($product->ID, '_fabric_no', true),
                 'price' => $wc_product->get_price(),
+                'multicurrency_prices' => DC_Multi_Currency::get_product_edit_prices($product->ID),
                 'stock' => $wc_product->get_stock_quantity(),
                 'moq' => get_post_meta($product->ID, '_moq', true),
                 'b2b_product' => get_post_meta($product->ID, '_b2b_product', true),
@@ -262,6 +263,7 @@ public function dc_product_manager_redirect() {
                 'title' => $product->post_title,
                 'sku' => $wc_product->get_sku(),
                 'price' => $wc_product->get_price(),
+                'multicurrency_prices' => DC_Multi_Currency::get_product_edit_prices($product->ID),
                 'stock' => $wc_product->get_stock_quantity(),
                 'stock_status' => $wc_product->get_stock_status(),
 			   'image' => get_post_meta( $product->ID, '_dc_product_image', true) ? : wp_get_attachment_image_url(get_post_thumbnail_id($product->ID), 'large'),
@@ -370,6 +372,12 @@ public function dc_product_manager_redirect() {
             $category_id = isset($_POST['category_id']) ? intval($_POST['category_id']) : 0;
             $fabric_no = isset($_POST['fabric_no']) ? sanitize_text_field($_POST['fabric_no']) : '';
             $price = isset($_POST['price']) ? floatval($_POST['price']) : 0;
+            $multicurrency_prices = array();
+            if (isset($_POST['multicurrency_prices']) && is_array($_POST['multicurrency_prices'])) {
+                foreach ($_POST['multicurrency_prices'] as $code => $value) {
+                    $multicurrency_prices[sanitize_text_field($code)] = $value;
+                }
+            }
             $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
             $moq = isset($_POST['moq']) ? intval($_POST['moq']) : 0;
             $b2b_product = isset($_POST['b2b_product']) ? sanitize_text_field($_POST['b2b_product']) : 'no';
@@ -432,27 +440,36 @@ public function dc_product_manager_redirect() {
                     wp_send_json_error('No variations found for this product');
                     return;
                 }
+
+                $effective_price = $price;
+                if (!empty($multicurrency_prices['NOK'])) {
+                    $effective_price = floatval($multicurrency_prices['NOK']);
+                } elseif (!empty($multicurrency_prices)) {
+                    $effective_price = floatval(reset($multicurrency_prices));
+                }
                 
                 foreach ($variations as $variation_id) {
                     $variation = wc_get_product($variation_id);
                     if ($variation) {
                         try {
-                            $variation->set_regular_price($price);
-                            $variation->set_price($price);
+                            $variation->set_regular_price($effective_price);
+                            $variation->set_price($effective_price);
                             $variation->save();
-                            error_log('Updated variation: ' . $variation_id . ' with price: ' . $price);
+                            error_log('Updated variation: ' . $variation_id . ' with price: ' . $effective_price);
                         } catch (Exception $e) {
                             error_log('Error updating variation ' . $variation_id . ': ' . $e->getMessage());
                             throw $e;
                         }
                     }
                 }
+
+                DC_Multi_Currency::save_prices_for_product($product_id, $multicurrency_prices, $wc_product);
                 
                 // Update parent product price range
                 try {
                     // Calculate min and max prices
-                    $min_price = $price;
-                    $max_price = $price;
+                    $min_price = $effective_price;
+                    $max_price = $effective_price;
                     
                     // Update price meta
                     update_post_meta($product_id, '_min_price_variation_id', $variations[0]);
@@ -468,8 +485,15 @@ public function dc_product_manager_redirect() {
                     throw $e;
                 }
             } else {
-                $wc_product->set_regular_price($price);
-                $wc_product->set_price($price);
+                $effective_price = $price;
+                if (!empty($multicurrency_prices['NOK'])) {
+                    $effective_price = floatval($multicurrency_prices['NOK']);
+                } elseif (!empty($multicurrency_prices)) {
+                    $effective_price = floatval(reset($multicurrency_prices));
+                }
+                $wc_product->set_regular_price($effective_price);
+                $wc_product->set_price($effective_price);
+                DC_Multi_Currency::save_prices_for_product($product_id, $multicurrency_prices, $wc_product);
             }
             
             try {
