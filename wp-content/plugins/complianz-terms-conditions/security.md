@@ -1,8 +1,21 @@
 # Security Policy
 
-The security of our software products is essential to us and our customers. In spite of our care, procedures and best efforts it is possible that there are vulnerabilities in our software products. If you find any, please tell us as soon as possible so we can fix them.
+## Supported Versions
+
+Use this section to tell people about which versions of your project are
+currently being supported with security updates.
+
+| Version | Supported          |
+| ------- | ------------------ |
+| 5.1.x   | :white_check_mark: |
+| 5.0.x   | :x:                |
+| 4.0.x   | :white_check_mark: |
+| < 4.0   | :x:                |
 
 ## Reporting a Vulnerability
 
-To report a security issue, please [email us](mailto:security@really-simple-plugins.com) with a description of the issue, the steps you took to create the issue, affected versions, and, if known, mitigations for the issue.
-Please read our [Coordinated Vulnerability Disclosure Policy](https://really-simple-plugins.com/security) before reporting any vulnerabilities.
+Use this section to tell people how to report a vulnerability.
+
+Tell them where to go, how often they can expect to get an update on a
+reported vulnerability, what to expect if the vulnerability is accepted or
+declined, etc.
