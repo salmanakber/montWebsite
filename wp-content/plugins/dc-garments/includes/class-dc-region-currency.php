@@ -20,9 +20,9 @@ class DC_Region_Currency {
      * Region definitions: slug => config.
      */
     public static function get_regions() {
-        return apply_filters('dc_regions', array(
+        $regions = array(
             'intl' => array(
-                'label'       => __('International', 'dc-product-manager'),
+                'label'       => 'International',
                 'currency'    => 'USD',
                 'symbol'      => '$',
                 'display'     => '$ USD',
@@ -31,7 +31,7 @@ class DC_Region_Currency {
                 'countries'   => array(),
             ),
             'it' => array(
-                'label'       => __('Italy', 'dc-product-manager'),
+                'label'       => 'Italy',
                 'currency'    => 'EUR',
                 'symbol'      => '€',
                 'display'     => '€ EUR',
@@ -40,7 +40,7 @@ class DC_Region_Currency {
                 'countries'   => array('IT'),
             ),
             'no' => array(
-                'label'       => __('Norway', 'dc-product-manager'),
+                'label'       => 'Norway',
                 'currency'    => 'NOK',
                 'symbol'      => 'kr',
                 'display'     => 'kr NOK',
@@ -49,7 +49,7 @@ class DC_Region_Currency {
                 'countries'   => array('NO'),
             ),
             'vn' => array(
-                'label'       => __('Việt Nam', 'dc-product-manager'),
+                'label'       => 'Việt Nam',
                 'currency'    => 'VND',
                 'symbol'      => '₫',
                 'display'     => '₫ VND',
@@ -57,7 +57,15 @@ class DC_Region_Currency {
                 'flag'        => 'vn',
                 'countries'   => array('VN'),
             ),
-        ));
+        );
+
+        if (did_action('init')) {
+            foreach ($regions as $slug => $region) {
+                $regions[$slug]['label'] = __($region['label'], 'dc-product-manager');
+            }
+        }
+
+        return apply_filters('dc_regions', $regions);
     }
 
     public static function get_region($slug = null) {
@@ -234,7 +242,7 @@ class DC_Region_Currency {
         add_action('wp_ajax_dc_switch_region', array($this, 'ajax_switch_region'));
         add_action('wp_ajax_nopriv_dc_switch_region', array($this, 'ajax_switch_region'));
         add_filter('woocommerce_currency', array($this, 'filter_woocommerce_currency'));
-        add_filter('locale', array($this, 'filter_locale'));
+        add_filter('locale', array($this, 'filter_locale'), 20);
         add_action('wp_head', array($this, 'sync_wpml_language'), 1);
     }
 
@@ -275,6 +283,10 @@ class DC_Region_Currency {
     }
 
     public function filter_locale($locale) {
+        if (!did_action('init')) {
+            return $locale;
+        }
+
         $lang_map = array(
             'en' => 'en_US',
             'it' => 'it_IT',

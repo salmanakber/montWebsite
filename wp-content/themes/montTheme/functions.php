@@ -7,15 +7,20 @@ require_once get_template_directory(). '/codeFunction/product-helper.php';
 require_once get_template_directory(). '/codeFunction/load-more-scroll-class.php';
 require_once get_template_directory(). '/codeFunction/discount.php';
 
-if( function_exists('acf_add_options_page') ) {
-	acf_add_options_page(array(
-        'page_title'    => 'Product Setting',     // Title displayed on the options page
-        'menu_title'    => 'Product Setting',     // Title displayed in the WordPress menu
-        'menu_slug'     => 'product-page-setting', // Unique menu slug
-        'capability'    => 'manage_options',      // Admin capability required
-        'redirect'      => false
+function mont_theme_register_acf_options_page() {
+    if (!function_exists('acf_add_options_page')) {
+        return;
+    }
+
+    acf_add_options_page(array(
+        'page_title' => 'Product Setting',
+        'menu_title' => 'Product Setting',
+        'menu_slug'  => 'product-page-setting',
+        'capability' => 'manage_options',
+        'redirect'   => false,
     ));
 }
+add_action('acf/init', 'mont_theme_register_acf_options_page');
 
 
 function dynamic_b2b_b2c_menu() {
