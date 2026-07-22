@@ -17,6 +17,16 @@ class DC_Region_Currency {
     const COOKIE_DAYS = 30;
 
     /**
+     * Prevent recursive resolution during locale/currency filters.
+     */
+    private static $resolving = false;
+
+    /**
+     * Cached region slug for the current request.
+     */
+    private static $cached_slug = null;
+
+    /**
      * Region definitions: slug => config.
      */
     public static function get_regions() {
@@ -59,13 +69,21 @@ class DC_Region_Currency {
             ),
         );
 
-        if (did_action('init')) {
-            foreach ($regions as $slug => $region) {
-                $regions[$slug]['label'] = __($region['label'], 'dc-product-manager');
-            }
-        }
-
         return apply_filters('dc_regions', $regions);
+    }
+
+    /**
+     * Translate region labels for display (call only after init, outside locale filters).
+     */
+    public static function get_regions_translated() {
+        $regions = self::get_regions();
+        if (!did_action('init')) {
+            return $regions;
+        }
+        foreach ($regions as $slug => $region) {
+            $regions[$slug]['label'] = __($region['label'], 'dc-product-manager');
+        }
+        return $regions;
     }
 
     public static function get_region($slug = null) {
@@ -77,13 +95,33 @@ class DC_Region_Currency {
     }
 
     public static function get_current_region_slug() {
+        if (self::$cached_slug !== null) {
+            return self::$cached_slug;
+        }
+
+        if (self::$resolving) {
+            return 'intl';
+        }
+
+        self::$resolving = true;
+
+        $slug = 'intl';
         if (isset($_COOKIE[self::COOKIE_NAME])) {
-            $slug = sanitize_key($_COOKIE[self::COOKIE_NAME]);
-            if (self::get_region($slug)) {
-                return $slug;
+            $cookie_slug = sanitize_key($_COOKIE[self::COOKIE_NAME]);
+            if (self::get_region($cookie_slug)) {
+                $slug = $cookie_slug;
+            }
+        } else {
+            $slug = self::detect_region_from_ip();
+            if (!self::get_region($slug)) {
+                $slug = 'intl';
             }
         }
-        return self::detect_region_from_ip();
+
+        self::$cached_slug = $slug;
+        self::$resolving = false;
+
+        return $slug;
     }
 
     public static function get_current_region() {
@@ -118,10 +156,6 @@ class DC_Region_Currency {
      * Detect region from visitor IP (cached per IP for 24h).
      */
     public static function detect_region_from_ip() {
-        if (isset($_COOKIE[self::COOKIE_NAME])) {
-            return sanitize_key($_COOKIE[self::COOKIE_NAME]);
-        }
-
         $ip = self::get_client_ip();
         if (!$ip || $ip === '127.0.0.1' || strpos($ip, '192.168.') === 0) {
             return 'intl';
@@ -242,8 +276,6 @@ class DC_Region_Currency {
         add_action('wp_ajax_dc_switch_region', array($this, 'ajax_switch_region'));
         add_action('wp_ajax_nopriv_dc_switch_region', array($this, 'ajax_switch_region'));
         add_filter('woocommerce_currency', array($this, 'filter_woocommerce_currency'));
-        add_filter('locale', array($this, 'filter_locale'), 20);
-        add_action('wp_head', array($this, 'sync_wpml_language'), 1);
     }
 
     /**
@@ -253,49 +285,23 @@ class DC_Region_Currency {
         if (isset($_COOKIE[self::COOKIE_NAME])) {
             return;
         }
-        if (is_admin() || wp_doing_ajax()) {
+        if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
             return;
         }
         $detected = self::detect_region_from_ip();
+        if (!self::get_region($detected)) {
+            $detected = 'intl';
+        }
         self::set_region_cookie($detected);
-    }
-
-    /**
-     * Keep WPML language in sync with selected region.
-     */
-    public function sync_wpml_language() {
-        if (!defined('ICL_LANGUAGE_CODE')) {
-            return;
-        }
-        $region = self::get_current_region();
-        $target_lang = $region['lang'];
-        global $sitepress;
-        if ($sitepress && method_exists($sitepress, 'get_current_language')) {
-            $current = $sitepress->get_current_language();
-            if ($current !== $target_lang && !is_admin()) {
-                do_action('wpml_switch_language', $target_lang);
-            }
-        }
+        self::$cached_slug = $detected;
     }
 
     public function filter_woocommerce_currency($currency) {
-        return self::get_current_currency();
-    }
-
-    public function filter_locale($locale) {
-        if (!did_action('init')) {
-            return $locale;
+        if (self::$resolving) {
+            return $currency;
         }
-
-        $lang_map = array(
-            'en' => 'en_US',
-            'it' => 'it_IT',
-            'nb' => 'nb_NO',
-            'no' => 'nb_NO',
-            'vi' => 'vi_VN',
-        );
-        $lang = self::get_current_lang();
-        return isset($lang_map[$lang]) ? $lang_map[$lang] : $locale;
+        $region = self::get_region(self::get_current_region_slug());
+        return $region ? $region['currency'] : $currency;
     }
 
     public function register_shortcode() {
@@ -319,7 +325,7 @@ class DC_Region_Currency {
 
         $current = self::get_current_region_slug();
         $regions = array();
-        foreach (self::get_regions() as $slug => $region) {
+        foreach (self::get_regions_translated() as $slug => $region) {
             $regions[$slug] = array(
                 'label'    => $region['label'],
                 'currency' => $region['currency'],
@@ -351,6 +357,7 @@ class DC_Region_Currency {
         }
 
         self::set_region_cookie($region_slug);
+        self::$cached_slug = $region_slug;
 
         $redirect = isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '';
         if (!$redirect) {
@@ -369,7 +376,7 @@ class DC_Region_Currency {
     public function render_switcher($atts = array()) {
         $current_slug = self::get_current_region_slug();
         $current = self::get_region($current_slug);
-        $regions = self::get_regions();
+        $regions = self::get_regions_translated();
 
         ob_start();
         include DC_PM_PLUGIN_DIR . 'public/partials/region-switcher.php';

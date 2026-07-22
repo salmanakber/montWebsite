@@ -121,12 +121,18 @@ class DC_Multi_Currency {
         return $format;
     }
 
-    public function filter_price_decimals() {
+    public function filter_price_decimals($decimals) {
+        static $resolving = false;
+        if ($resolving) {
+            return $decimals;
+        }
+        $resolving = true;
         $currency = DC_Region_Currency::get_current_currency();
+        $resolving = false;
         if ($currency === 'VND') {
             return 0;
         }
-        return wc_get_price_decimals();
+        return $decimals;
     }
 
     /**
