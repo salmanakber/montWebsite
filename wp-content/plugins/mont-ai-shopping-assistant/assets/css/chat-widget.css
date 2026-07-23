@@ -14,8 +14,13 @@
 }
 
 .mont-ai-root[hidden],
-.mont-ai-panel[hidden] {
+.mont-ai-panel[hidden],
+.mont-ai-panel:not(.is-open) {
 	display: none !important;
+}
+
+.mont-ai-panel.is-open {
+	display: flex !important;
 }
 
 .mont-ai-bubble {

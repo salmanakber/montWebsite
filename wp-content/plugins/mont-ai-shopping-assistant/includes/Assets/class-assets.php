@@ -23,7 +23,8 @@ class Assets {
 	 */
 	public function register() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue' ) );
-		add_action( 'wp_footer', array( $this, 'render_widget' ), 50 );
+		// Print markup BEFORE footer scripts (priority 20) so JS can bind clicks.
+		add_action( 'wp_footer', array( $this, 'render_widget' ), 5 );
 	}
 
 	/**
