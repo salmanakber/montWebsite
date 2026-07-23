@@ -1,16 +1,17 @@
 <?php
 /**
- * Catalog search with synonym expansion + WooCommerce fallback.
+ * Catalog search — WooCommerce products for the chat widget.
  *
- * Used for reliable "show me shirts" flows without burning AI tool rounds.
+ * Intentionally avoids get_price_html() / heavy product builders that can
+ * conflict with multi-currency filters and crash the REST request.
  *
  * @package Mont_AI_Assistant
  */
 
 namespace Mont_AI_Assistant\Services;
 
-use Mont_AI_Assistant\Product\Product_Index;
-use Mont_AI_Assistant\Product\Product_Knowledge;
+use Mont_AI_Assistant\Language\Language_Manager;
+use Mont_AI_Assistant\Plugin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,41 +21,41 @@ defined( 'ABSPATH' ) || exit;
 class Catalog_Search {
 
 	/**
-	 * Synonym / intent expansions for shirt shopping.
+	 * Synonym expansions.
 	 *
-	 * @return array<string,string[]>
+	 * @return array
 	 */
 	private function synonyms() {
 		return array(
-			'business'  => array( 'business', 'formal', 'office', 'dress', 'classic', 'shirt' ),
-			'classic'   => array( 'classic', 'traditional', 'oxford', 'dress', 'shirt' ),
-			'oxford'    => array( 'oxford', 'shirt', 'classic' ),
-			'casual'    => array( 'casual', 'linen', 'relaxed', 'shirt' ),
-			'wedding'   => array( 'wedding', 'white', 'formal', 'dress', 'shirt' ),
-			'linen'     => array( 'linen', 'lin', 'shirt' ),
-			'shirt'     => array( 'shirt', 'skjorte', 'camicia' ),
-			'shirts'    => array( 'shirt', 'skjorte', 'camicia' ),
-			'blue'      => array( 'blue', 'blå', 'blu', 'light blue' ),
-			'white'     => array( 'white', 'hvit', 'bianco' ),
-			'black'     => array( 'black', 'svart', 'nero' ),
+			'business' => array( 'business', 'formal', 'office', 'dress', 'classic' ),
+			'classic'  => array( 'classic', 'oxford', 'dress' ),
+			'oxford'   => array( 'oxford' ),
+			'casual'   => array( 'casual', 'linen' ),
+			'wedding'  => array( 'wedding', 'white' ),
+			'linen'    => array( 'linen', 'lin' ),
+			'shirt'    => array( 'shirt', 'skjorte', 'camicia' ),
+			'shirts'   => array( 'shirt', 'skjorte', 'camicia' ),
+			'blue'     => array( 'blue', 'blå', 'blu' ),
+			'white'    => array( 'white', 'hvit', 'bianco' ),
+			'black'    => array( 'black', 'svart', 'nero' ),
 		);
 	}
 
 	/**
-	 * Build search terms from user message + recent history.
+	 * Build search terms.
 	 *
 	 * @param string $message Message.
 	 * @param array  $history History.
 	 * @return string[]
 	 */
 	public function build_terms( $message, array $history = array() ) {
-		$blob = strtolower( $message );
+		$blob = strtolower( (string) $message );
 		foreach ( array_reverse( $history ) as $h ) {
 			if ( empty( $h['content'] ) ) {
 				continue;
 			}
 			$blob .= ' ' . strtolower( (string) $h['content'] );
-			break; // last user/assistant turn is enough context
+			break;
 		}
 
 		$terms = array();
@@ -64,30 +65,28 @@ class Catalog_Search {
 			}
 		}
 
-		// Raw words longer than 2 chars.
-		$words = preg_split( '/[^a-z0-9àáäåæøöü]+/u', $blob );
+		$words = preg_split( '/[^a-z0-9]+/i', $blob );
+		$skip  = array( 'the', 'and', 'for', 'need', 'want', 'show', 'some', 'please', 'list', 'with', 'from', 'that', 'this', 'have', 'looking', 'am', 'are' );
 		foreach ( (array) $words as $w ) {
-			if ( strlen( $w ) >= 3 && ! in_array( $w, array( 'the', 'and', 'for', 'need', 'want', 'show', 'some', 'please', 'list', 'with', 'from', 'that', 'this', 'have', 'looking' ), true ) ) {
+			$w = strtolower( trim( $w ) );
+			if ( strlen( $w ) >= 3 && ! in_array( $w, $skip, true ) ) {
 				$terms[] = $w;
 			}
 		}
 
 		$terms = array_values( array_unique( array_filter( $terms ) ) );
-		if ( ! $terms ) {
-			$terms = array( 'shirt' );
-		}
-		return $terms;
+		return $terms ? $terms : array( 'shirt' );
 	}
 
 	/**
-	 * Whether this message should trigger a direct catalog browse (skip AI tool gambling).
+	 * Whether to run catalog browse.
 	 *
 	 * @param string $message Message.
 	 * @param array  $history History.
 	 * @return bool
 	 */
 	public function should_browse( $message, array $history = array() ) {
-		$text = strtolower( trim( $message ) );
+		$text = strtolower( trim( (string) $message ) );
 		$patterns = array(
 			'show', 'list', 'see', 'browse', 'options', 'choose', 'which',
 			'shirt', 'shirts', 'skjorte', 'camicia',
@@ -100,12 +99,11 @@ class Catalog_Search {
 				return true;
 			}
 		}
-		// Follow-up after assistant asked clarifying question about shirts.
 		foreach ( array_reverse( $history ) as $h ) {
-			if ( ( $h['role'] ?? '' ) !== 'assistant' ) {
+			if ( ! isset( $h['role'] ) || 'assistant' !== $h['role'] ) {
 				continue;
 			}
-			$prev = strtolower( (string) ( $h['content'] ?? '' ) );
+			$prev = strtolower( (string) ( isset( $h['content'] ) ? $h['content'] : '' ) );
 			if ( false !== strpos( $prev, 'shirt' ) || false !== strpos( $prev, 'looking for' ) || false !== strpos( $prev, 'occasion' ) ) {
 				return true;
 			}
@@ -115,155 +113,186 @@ class Catalog_Search {
 	}
 
 	/**
-	 * Search index + WooCommerce fallback. Returns cards + choice UI.
+	 * Search products. Never throws.
 	 *
 	 * @param string $message Message.
 	 * @param array  $history History.
 	 * @param int    $limit   Limit.
-	 * @return array{cards:array,choices:?array,count:int,query:string}
+	 * @return array
 	 */
 	public function search( $message, array $history = array(), $limit = 6 ) {
-		$terms = $this->build_terms( $message, $history );
-		$query = implode( ' ', array_slice( $terms, 0, 6 ) );
-		$index = new Product_Index();
-		$knowledge = new Product_Knowledge();
+		$empty = array(
+			'cards'   => array(),
+			'choices' => null,
+			'count'   => 0,
+			'query'   => '',
+			'terms'   => array(),
+		);
 
-		$hits = array();
-		$seen = array();
+		try {
+			$limit = max( 1, min( 12, (int) $limit ) );
+			$terms = $this->build_terms( $message, $history );
+			$query = implode( ' ', array_slice( $terms, 0, 5 ) );
 
-		// Try each important term against the index.
-		foreach ( array_slice( $terms, 0, 8 ) as $term ) {
-			foreach ( $index->search( $term, $limit ) as $hit ) {
-				$id = isset( $hit['id'] ) ? (int) $hit['id'] : 0;
-				if ( ! $id || isset( $seen[ $id ] ) ) {
+			$ids = $this->query_product_ids( $query, $terms, $limit );
+			$cards = array();
+			$choice_items = array();
+
+			foreach ( $ids as $id ) {
+				$card = $this->safe_card( (int) $id );
+				if ( ! $card ) {
 					continue;
 				}
-				$seen[ $id ] = true;
-				$hits[] = $hit;
-				if ( count( $hits ) >= $limit ) {
-					break 2;
-				}
+				$cards[] = $card;
+				$choice_items[] = array(
+					'label'      => $card['name'],
+					'value'      => 'I want product #' . $card['id'] . ': ' . $card['name'],
+					'image'      => $card['image'],
+					'sub'        => $card['price'],
+					'product_id' => $card['id'],
+				);
 			}
+
+			$choices = null;
+			if ( $choice_items ) {
+				$choices = array(
+					'title'   => 'Tap a shirt to select it',
+					'field'   => 'product_id',
+					'type'    => 'product_cards',
+					'choices' => $choice_items,
+				);
+			}
+
+			return array(
+				'cards'   => $cards,
+				'choices' => $choices,
+				'count'   => count( $cards ),
+				'query'   => $query,
+				'terms'   => $terms,
+			);
+		} catch ( \Throwable $e ) {
+			Plugin::log( 'Catalog_Search::search error', array( 'error' => $e->getMessage() ) );
+			return $empty;
+		}
+	}
+
+	/**
+	 * Resolve product IDs via WP_Query (most reliable).
+	 *
+	 * @param string $query Query string.
+	 * @param array  $terms Terms.
+	 * @param int    $limit Limit.
+	 * @return int[]
+	 */
+	private function query_product_ids( $query, array $terms, $limit ) {
+		$ids = array();
+
+		// 1) Keyword search.
+		$q = new \WP_Query(
+			array(
+				'post_type'              => 'product',
+				'post_status'            => 'publish',
+				's'                      => $query ? $query : 'shirt',
+				'posts_per_page'         => $limit,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+		if ( ! empty( $q->posts ) ) {
+			$ids = array_map( 'intval', $q->posts );
 		}
 
-		// Full query string.
-		if ( count( $hits ) < $limit ) {
-			foreach ( $index->search( $query, $limit ) as $hit ) {
-				$id = isset( $hit['id'] ) ? (int) $hit['id'] : 0;
-				if ( ! $id || isset( $seen[ $id ] ) ) {
-					continue;
-				}
-				$seen[ $id ] = true;
-				$hits[] = $hit;
-				if ( count( $hits ) >= $limit ) {
-					break;
-				}
-			}
-		}
-
-		// WooCommerce fallback (index empty or thin).
-		if ( count( $hits ) < 2 && function_exists( 'wc_get_products' ) ) {
-			$wc_ids = array();
-			try {
-				$wc_ids = wc_get_products(
+		// 2) Try single important terms.
+		if ( count( $ids ) < 2 ) {
+			foreach ( array_slice( $terms, 0, 5 ) as $term ) {
+				$q2 = new \WP_Query(
 					array(
-						'status' => 'publish',
-						'limit'  => $limit,
-						'return' => 'ids',
-						's'      => $query,
+						'post_type'              => 'product',
+						'post_status'            => 'publish',
+						's'                      => $term,
+						'posts_per_page'         => $limit,
+						'fields'                 => 'ids',
+						'no_found_rows'          => true,
+						'update_post_meta_cache' => false,
+						'update_post_term_cache' => false,
 					)
 				);
-				if ( empty( $wc_ids ) ) {
-					$wc_ids = wc_get_products(
-						array(
-							'status' => 'publish',
-							'limit'  => $limit,
-							'return' => 'ids',
-							's'      => 'shirt',
-						)
-					);
-				}
-				if ( empty( $wc_ids ) ) {
-					$wc_ids = wc_get_products(
-						array(
-							'status'  => 'publish',
-							'limit'   => $limit,
-							'return'  => 'ids',
-							'orderby' => 'date',
-							'order'   => 'DESC',
-						)
-					);
-				}
-			} catch ( \Throwable $e ) {
-				$wc_ids = array();
-			}
-
-			foreach ( (array) $wc_ids as $id ) {
-				$id = (int) $id;
-				if ( isset( $seen[ $id ] ) ) {
-					continue;
-				}
-				$payload = null;
-				try {
-					$payload = $index->get( $id );
-				} catch ( \Throwable $e ) {
-					$payload = null;
-				}
-				if ( ! $payload && function_exists( 'wc_get_product' ) ) {
-					$product = wc_get_product( $id );
-					if ( ! $product ) {
-						continue;
+				foreach ( (array) $q2->posts as $pid ) {
+					$pid = (int) $pid;
+					if ( ! in_array( $pid, $ids, true ) ) {
+						$ids[] = $pid;
 					}
-					$payload = array(
-						'id'   => $id,
-						'name' => $product->get_name(),
-					);
-				}
-				if ( ! $payload ) {
-					continue;
-				}
-				$seen[ $id ] = true;
-				$hits[] = $payload;
-				if ( count( $hits ) >= $limit ) {
-					break;
+					if ( count( $ids ) >= $limit ) {
+						break 2;
+					}
 				}
 			}
 		}
 
-		$cards = array();
-		$choice_items = array();
-		foreach ( $hits as $hit ) {
-			$id = isset( $hit['id'] ) ? (int) $hit['id'] : 0;
-			$card = $knowledge->card( $id );
-			if ( ! $card ) {
-				continue;
-			}
-			$cards[] = $card;
-			$choice_items[] = array(
-				'label'      => $card['name'],
-				'value'      => 'I want product #' . $card['id'] . ': ' . $card['name'],
-				'image'      => $card['image'],
-				'sub'        => $card['price'],
-				'product_id' => $card['id'],
+		// 3) Latest published products as last resort.
+		if ( count( $ids ) < 1 ) {
+			$q3 = new \WP_Query(
+				array(
+					'post_type'              => 'product',
+					'post_status'            => 'publish',
+					'posts_per_page'         => $limit,
+					'orderby'                => 'date',
+					'order'                  => 'DESC',
+					'fields'                 => 'ids',
+					'no_found_rows'          => true,
+					'update_post_meta_cache' => false,
+					'update_post_term_cache' => false,
+				)
 			);
+			$ids = array_map( 'intval', (array) $q3->posts );
 		}
 
-		$choices = null;
-		if ( $choice_items ) {
-			$choices = array(
-				'title'   => 'Tap a shirt to select it',
-				'field'   => 'product_id',
-				'type'    => 'product_cards',
-				'choices' => $choice_items,
-			);
+		return array_slice( array_values( array_unique( $ids ) ), 0, $limit );
+	}
+
+	/**
+	 * Build a chat card without price_html (avoids multi-currency recursion).
+	 *
+	 * @param int $product_id Product ID.
+	 * @return array|null
+	 */
+	private function safe_card( $product_id ) {
+		$product_id = (int) $product_id;
+		if ( $product_id < 1 ) {
+			return null;
 		}
+
+		$post = get_post( $product_id );
+		if ( ! $post || 'product' !== $post->post_type || 'publish' !== $post->post_status ) {
+			return null;
+		}
+
+		$image = '';
+		$thumb = get_post_thumbnail_id( $product_id );
+		if ( $thumb ) {
+			$src = wp_get_attachment_image_src( $thumb, 'medium' );
+			if ( ! empty( $src[0] ) ) {
+				$image = $src[0];
+			}
+		}
+
+		// Raw meta only — do not call WC price getters/filters.
+		$price = get_post_meta( $product_id, '_price', true );
+		if ( '' === $price || null === $price ) {
+			$price = get_post_meta( $product_id, '_regular_price', true );
+		}
+		$currency = function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '';
+		$price_label = ( '' !== $price && null !== $price ) ? trim( $currency . ' ' . $price ) : '';
 
 		return array(
-			'cards'   => $cards,
-			'choices' => $choices,
-			'count'   => count( $cards ),
-			'query'   => $query,
-			'terms'   => $terms,
+			'id'        => $product_id,
+			'name'      => get_the_title( $product_id ),
+			'price'     => $price_label,
+			'image'     => $image,
+			'permalink' => get_permalink( $product_id ),
+			'in_stock'  => true,
 		);
 	}
 
@@ -279,19 +308,19 @@ class Catalog_Search {
 		$language = Language_Manager::normalize( $language );
 		if ( $count < 1 ) {
 			$map = array(
-				'en' => "I could not find matching shirts just now. Tell me a colour, fabric (e.g. linen), or style and I will try again.",
-				'it' => "Non trovo camicie corrispondenti al momento. Dimmi un colore, un tessuto o uno stile e riprovo.",
-				'nb' => "Jeg fant ingen matchende skjorter akkurat nå. Si en farge, stoff eller stil, så prøver jeg igjen.",
-				'vi' => "Hiện tôi chưa tìm thấy áo phù hợp. Cho tôi biết màu, chất liệu hoặc kiểu dáng để tìm lại nhé.",
+				'en' => 'I could not find matching shirts just now. Tell me a colour, fabric (e.g. linen), or style and I will try again.',
+				'it' => 'Non trovo camicie corrispondenti al momento. Dimmi un colore, un tessuto o uno stile e riprovo.',
+				'nb' => 'Jeg fant ingen matchende skjorter akkurat nå. Si en farge, stoff eller stil, så prøver jeg igjen.',
+				'vi' => 'Hiện tôi chưa tìm thấy áo phù hợp. Cho tôi biết màu, chất liệu hoặc kiểu dáng để tìm lại nhé.',
 			);
 			return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 		}
 
 		$map = array(
-			'en' => "Here are some shirts that fit what you described. Tap one to select it — or tell me a colour/fabric if you want a tighter match.",
-			'it' => "Ecco alcune camicie in linea con quello che cerchi. Tocca una per selezionarla — oppure dimmi colore/tessuto per affinare.",
-			'nb' => "Her er noen skjorter som passer det du beskrev. Trykk for å velge — eller si farge/stoff hvis du vil snevre inn.",
-			'vi' => "Đây là một số áo phù hợp với mô tả của bạn. Chạm để chọn — hoặc cho thêm màu/chất liệu nếu muốn lọc kỹ hơn.",
+			'en' => 'Here are some shirts from our shop. Tap one to select it — or tell me a colour/fabric for a tighter match.',
+			'it' => 'Ecco alcune camicie dal nostro shop. Tocca una per selezionarla — oppure dimmi colore/tessuto per affinare.',
+			'nb' => 'Her er noen skjorter fra butikken. Trykk for å velge — eller si farge/stoff hvis du vil snevre inn.',
+			'vi' => 'Đây là một số áo trong cửa hàng. Chạm để chọn — hoặc cho thêm màu/chất liệu nếu muốn lọc kỹ hơn.',
 		);
 		return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 	}

@@ -41,11 +41,11 @@ class Product_Knowledge {
 			'status'           => $product->get_status(),
 			'short_description'=> wp_strip_all_tags( $product->get_short_description() ),
 			'description'      => wp_strip_all_tags( $product->get_description() ),
-			'price'            => $product->get_price(),
+			'price'            => $product->get_regular_price(),
 			'regular_price'    => $product->get_regular_price(),
 			'sale_price'       => $product->get_sale_price(),
-			'price_html'       => wp_strip_all_tags( $product->get_price_html() ),
-			'currency'         => get_woocommerce_currency(),
+			'price_html'       => '',
+			'currency'         => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '',
 			'stock_status'     => $product->get_stock_status(),
 			'stock_quantity'   => $product->get_stock_quantity(),
 			'in_stock'         => $product->is_in_stock(),
@@ -71,15 +71,41 @@ class Product_Knowledge {
 	 * @return array|null
 	 */
 	public function card( $product_id ) {
-		$product = wc_get_product( $product_id );
+		$product_id = (int) $product_id;
+		$product    = function_exists( 'wc_get_product' ) ? wc_get_product( $product_id ) : null;
 		if ( ! $product ) {
-			return null;
+			// Fallback without WC object.
+			$post = get_post( $product_id );
+			if ( ! $post || 'product' !== $post->post_type ) {
+				return null;
+			}
+			$thumb = get_post_thumbnail_id( $product_id );
+			$image = $thumb ? wp_get_attachment_image_url( $thumb, 'medium' ) : '';
+			$price = get_post_meta( $product_id, '_price', true );
+			return array(
+				'id'        => $product_id,
+				'name'      => get_the_title( $product_id ),
+				'price'     => (string) $price,
+				'image'     => $image ? $image : '',
+				'permalink' => get_permalink( $product_id ),
+				'in_stock'  => true,
+			);
 		}
+
+		// Avoid get_price_html() — can recurse with multi-currency filters.
+		$raw_price = get_post_meta( $product_id, '_price', true );
+		if ( '' === $raw_price || null === $raw_price ) {
+			$raw_price = $product->get_regular_price();
+		}
+		$currency = function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '';
+		$image_id = $product->get_image_id();
+		$image    = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
+
 		return array(
 			'id'        => $product_id,
 			'name'      => $product->get_name(),
-			'price'     => wp_strip_all_tags( $product->get_price_html() ),
-			'image'     => wp_get_attachment_url( $product->get_image_id() ),
+			'price'     => ( '' !== $raw_price && null !== $raw_price ) ? trim( $currency . ' ' . $raw_price ) : '',
+			'image'     => $image ? $image : '',
 			'permalink' => get_permalink( $product_id ),
 			'in_stock'  => $product->is_in_stock(),
 		);

@@ -78,29 +78,16 @@ class Chat_Service {
 
 		// 2) Browse / show shirts — WooCommerce only. Never call AI here.
 		if ( ! $picked_id && $catalog->should_browse( $message, $history ) && ! $this->is_followup_option_answer( $message, $history ) ) {
-			try {
-				$found = $catalog->search( $message, $history, 6 );
-				return $this->response(
-					$catalog->browse_message( $language, isset( $found['count'] ) ? (int) $found['count'] : 0, $message ),
-					isset( $found['cards'] ) ? $found['cards'] : array(),
-					isset( $found['choices'] ) ? $found['choices'] : null,
-					false,
-					'catalog',
-					false,
-					$language
-				);
-			} catch ( \Throwable $e ) {
-				Plugin::log( 'Catalog search failed', array( 'error' => $e->getMessage() ) );
-				return $this->response(
-					__( 'I could not load products right now. Please try again in a moment.', 'mont-ai-assistant' ),
-					array(),
-					null,
-					false,
-					'catalog',
-					false,
-					$language
-				);
-			}
+			$found = $catalog->search( $message, $history, 6 );
+			return $this->response(
+				$catalog->browse_message( $language, isset( $found['count'] ) ? (int) $found['count'] : 0, $message ),
+				isset( $found['cards'] ) ? $found['cards'] : array(),
+				isset( $found['choices'] ) ? $found['choices'] : null,
+				false,
+				'catalog',
+				false,
+				$language
+			);
 		}
 
 		// 3) Product picked / option taps — local order builder (no API).
