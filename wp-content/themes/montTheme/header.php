@@ -93,9 +93,9 @@
 <!--                 <i data-lucide="x"></i> -->
             </div>
             <div class="mont_header_switchers">
-                <div class="mont_header_language-switcher">
-                    <?php echo do_shortcode('[gtranslate]'); ?>
-                </div>
+                <!-- <div class="mont_header_language-switcher">
+                    <?php// echo do_shortcode('[gtranslate]'); ?>
+                </div> -->
                 <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
                     <?php echo do_shortcode('[dc_region_switcher]'); ?>
                 <?php endif; ?>
