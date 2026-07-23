@@ -58,9 +58,9 @@ class Groq_Provider implements Provider_Interface {
 				$last_error = $e;
 				$msg = $e->getMessage();
 
-				// Rate limit / transient — backoff and retry.
+				// Rate limit / transient — longer backoff (helps free-tier 429s).
 				if ( false !== strpos( $msg, 'HTTP 429' ) || false !== strpos( $msg, 'HTTP 503' ) ) {
-					usleep( (int) ( 700000 * $attempts ) ); // 0.7s, 1.4s, …
+					sleep( min( 6, $attempts * 2 ) ); // 2s, 4s, 6s
 					continue;
 				}
 

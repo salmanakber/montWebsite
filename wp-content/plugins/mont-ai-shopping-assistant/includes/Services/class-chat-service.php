@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Chat_Service {
 
-	const MAX_TOOL_ROUNDS = 4;
+	const MAX_TOOL_ROUNDS = 2;
 
 	/**
 	 * Handle a user message.
@@ -46,6 +46,28 @@ class Chat_Service {
 			);
 		}
 
+		// Product selected from a card — continue with AI (or light path).
+		$picked_id = $this->extract_product_id( $message );
+
+		// Browse / "show me shirts" — search WooCommerce directly so we always
+		// show real products (and avoid burning Groq tool-loop quota).
+		$catalog = new Catalog_Search();
+		if ( ! $picked_id && $catalog->should_browse( $message, $history ) ) {
+			$found = $catalog->search( $message, $history, 6 );
+			if ( $found['count'] > 0 ) {
+				return $this->response(
+					$catalog->browse_message( $language, $found['count'], $message ),
+					$found['cards'],
+					$found['choices'],
+					false,
+					'catalog',
+					false,
+					$language
+				);
+			}
+			// Empty catalog — fall through to AI with a soft message preference.
+		}
+
 		$tools   = new Tool_Executor();
 		$manager = new Provider_Manager();
 
@@ -71,10 +93,18 @@ class Chat_Service {
 			'content' => $message,
 		);
 
-		$definitions  = $tools->definitions();
-		$cards        = array();
-		$choices      = null;
-		$cart_updated = false;
+		// If they picked a product card, nudge the model to load options (one tool round).
+		if ( $picked_id ) {
+			$messages[] = array(
+				'role'    => 'system',
+				'content' => 'The customer selected product ID ' . $picked_id . '. Call get_custom_options then present_choices for body_fit only. Do not invent products.',
+			);
+		}
+
+		$definitions   = $tools->definitions();
+		$cards         = array();
+		$choices       = null;
+		$cart_updated  = false;
 		$provider_used = '';
 		$used_fallback = false;
 
@@ -93,6 +123,21 @@ class Chat_Service {
 				$content    = trim( (string) $result['content'] );
 
 				if ( empty( $tool_calls ) ) {
+					// If the model talked about products but returned no cards, show catalog instead of invented names.
+					if ( empty( $cards ) && $this->mentions_products( $content ) ) {
+						$found = $catalog->search( $message, $history, 6 );
+						if ( $found['count'] > 0 ) {
+							return $this->response(
+								$catalog->browse_message( $language, $found['count'], $message ),
+								$found['cards'],
+								$found['choices'],
+								false,
+								'catalog',
+								$used_fallback,
+								$language
+							);
+						}
+					}
 					return $this->response( $content, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
 				}
 
@@ -173,9 +218,9 @@ class Chat_Service {
 		} catch ( \Exception $e ) {
 			Plugin::log( 'Chat failed', array( 'error' => $e->getMessage() ) );
 
-			$friendly = __( 'I am a bit busy right now (high demand). Please tap send again in a moment.', 'mont-ai-assistant' );
+			$friendly = __( 'I am still looking that up — please tap send once more in a couple of seconds.', 'mont-ai-assistant' );
 			if ( false !== stripos( $e->getMessage(), '429' ) ) {
-				$friendly = __( 'The assistant is temporarily rate-limited. Please wait a few seconds and try again.', 'mont-ai-assistant' );
+				$friendly = __( 'High demand right now. Wait 3–5 seconds, then send the same message again — I will continue.', 'mont-ai-assistant' );
 			}
 
 			return array(
@@ -247,12 +292,10 @@ GREETINGS & SMALL TALK (CRITICAL)
 - Do NOT jump into order building on "hi".
 
 NATURAL SALES FLOW
-1. Understand the need (chat first).
-2. When they describe a product need → search_products.
-3. Let them pick a product from cards.
-4. Then get_custom_options.
-5. Then present_choices ONE option at a time (fit → size → collar → cuff → quantity).
-6. validate_selection → add_to_cart → confirm.
+1. Understand the need (chat first) — but as soon as they ask to see / list / browse shirts, products must come from the catalog UI (cards), never invented names like "Oxford" unless they are real WooCommerce products shown as cards.
+2. Never invent product names, fabrics, or styles that are not returned by tools/catalog.
+3. After they tap a product card → get_custom_options → present_choices one option at a time.
+4. validate_selection → add_to_cart → confirm.
 
 VISUAL CHOICES
 - Use present_choices only while configuring a chosen product.
@@ -262,6 +305,7 @@ VISUAL CHOICES
 OUTPUT
 - Prefer conversation over forms.
 - When showing choices, one short line of copy is enough — buttons do the rest.
+- If you are unsure what is in stock, ask a clarifying question OR wait for catalog cards — do not invent a collection.
 PROMPT;
 
 		$parts   = array( $base );
@@ -278,6 +322,36 @@ PROMPT;
 		}
 
 		return implode( "\n\n", $parts );
+	}
+
+	/**
+	 * Extract product id from "I want product #123" style messages.
+	 *
+	 * @param string $message Message.
+	 * @return int
+	 */
+	private function extract_product_id( $message ) {
+		if ( preg_match( '/product\s*#?\s*(\d+)/i', $message, $m ) ) {
+			return (int) $m[1];
+		}
+		return 0;
+	}
+
+	/**
+	 * Rough check that the model invented a product pitch without tools.
+	 *
+	 * @param string $content Content.
+	 * @return bool
+	 */
+	private function mentions_products( $content ) {
+		$content = strtolower( (string) $content );
+		$needles = array( 'oxford', 'shirt', 'camicia', 'skjorte', 'we have', 'our collection', 'styles include', 'popular' );
+		foreach ( $needles as $n ) {
+			if ( false !== strpos( $content, $n ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

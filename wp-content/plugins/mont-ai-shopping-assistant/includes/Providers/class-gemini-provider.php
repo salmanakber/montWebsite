@@ -169,7 +169,7 @@ class Gemini_Provider implements Provider_Interface {
 			} catch ( \Exception $e ) {
 				$last = $e;
 				if ( false !== strpos( $e->getMessage(), 'HTTP 429' ) || false !== strpos( $e->getMessage(), 'HTTP 503' ) ) {
-					usleep( (int) ( 800000 * $attempts ) );
+					sleep( min( 6, $attempts * 2 ) );
 					continue;
 				}
 				throw $e;

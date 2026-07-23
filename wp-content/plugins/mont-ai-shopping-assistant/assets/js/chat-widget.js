@@ -31,6 +31,7 @@
 		var history = [];
 		var busy = false;
 		var lastSendAt = 0;
+		var autoRetryLeft = 1;
 		var language = localStorage.getItem(STORAGE_LANG) || cfg.defaultLang || 'en';
 
 		function clearSessionHistory() {
@@ -335,13 +336,14 @@
 			});
 		}
 
-		function sendText(text) {
+		function sendText(text, opts) {
+			opts = opts || {};
 			text = (text || '').trim();
 			if (!text || busy) return;
 
 			// Soft client debounce against rapid double-taps / rate limits.
 			var now = Date.now();
-			if (now - lastSendAt < 800) return;
+			if (!opts.isRetry && now - lastSendAt < 800) return;
 			lastSendAt = now;
 
 			if (input) {
@@ -349,9 +351,12 @@
 				autoGrow();
 			}
 
-			appendMessage('user', text);
-			history.push({ role: 'user', content: text });
-			saveHistory();
+			if (!opts.isRetry) {
+				appendMessage('user', text);
+				history.push({ role: 'user', content: text });
+				saveHistory();
+				autoRetryLeft = 1;
+			}
 
 			setBusy(true);
 			showTyping();
@@ -381,6 +386,19 @@
 					hideTyping();
 					var data = payload.data || {};
 					var msg = data.message || ((cfg.i18n && cfg.i18n.error) || 'Error');
+					var isRateLimit = /high demand|rate-limited|couple of seconds|3–5 seconds|3-5 seconds/i.test(msg);
+
+					// Auto-retry once after a short wait (saves the user from spam-clicking).
+					if ((data.retryable || isRateLimit) && autoRetryLeft > 0 && !opts.isRetry) {
+						autoRetryLeft -= 1;
+						appendMessage('assistant', 'One moment — retrying…');
+						window.setTimeout(function () {
+							setBusy(false);
+							sendText(text, { isRetry: true });
+						}, 3500);
+						return;
+					}
+
 					appendMessage('assistant', msg, {
 						cards: data.cards || [],
 						choices: data.choices || null,
@@ -388,12 +406,12 @@
 					});
 					history.push({ role: 'assistant', content: msg });
 					saveHistory();
+					setBusy(false);
+					if (input) input.focus();
 				})
 				.catch(function (err) {
 					hideTyping();
 					appendMessage('assistant', err.message || (cfg.i18n && cfg.i18n.error) || 'Error');
-				})
-				.finally(function () {
 					setBusy(false);
 					if (input) input.focus();
 				});
