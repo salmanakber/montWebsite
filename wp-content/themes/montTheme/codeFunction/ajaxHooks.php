@@ -24,27 +24,29 @@ class ajaxHooks
 	}
 
 	public function mytheme_enqueue_styles() {
-    wp_enqueue_style('mont-style', get_template_directory_uri(). '/assets/style.css');
-    wp_enqueue_style('mont-style-product-page', get_template_directory_uri(). '/assets/product-page.css');
-    wp_enqueue_style('mont-style-gallery', get_template_directory_uri(). '/assets/productGallery.css');
+    $theme_dir = get_template_directory();
+    $theme_uri = get_template_directory_uri();
+
+    wp_enqueue_style('mont-style', $theme_uri . '/assets/style.css', array(), filemtime($theme_dir . '/assets/style.css'));
+    wp_enqueue_style('mont-style-product-page', $theme_uri . '/assets/product-page.css', array(), filemtime($theme_dir . '/assets/product-page.css'));
+    wp_enqueue_style('mont-style-gallery', $theme_uri . '/assets/productGallery.css', array(), filemtime($theme_dir . '/assets/productGallery.css'));
 
     wp_enqueue_style('googleFonts', 'https://fonts.googleapis.com');
     wp_enqueue_style('googleFontspre', 'https://fonts.gstatic.com');
     wp_enqueue_style('googleFonts-fonts', 'https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
  	
 
-    wp_enqueue_script('mont-gallery-js', get_template_directory_uri(). '/assets/productGallery.js');
-    wp_enqueue_script('mont-header-js', get_template_directory_uri(). '/assets/header.js');
-     wp_enqueue_script('mont-discount-js', get_template_directory_uri(). '/assets/discount.js');
-    wp_enqueue_script('mont-gallery-size-js', get_template_directory_uri(). '/assets/custom-sizes.js');
-    wp_enqueue_script('mont-gallery-size-javascript', get_template_directory_uri(). '/assets/custom-sizes-javascript.js');
-    wp_enqueue_script('mont-custom-jquery', get_template_directory_uri(). '/assets/custom.js');
-    wp_enqueue_script('mont-cart-js', get_template_directory_uri(). '/assets/cart.js', array('jquery'), filemtime(get_template_directory() . '/assets/cart.js'), true);
+    wp_enqueue_script('mont-gallery-js', $theme_uri . '/assets/productGallery.js', array('jquery'), filemtime($theme_dir . '/assets/productGallery.js'), true);
+    wp_enqueue_script('mont-product-gallery-slider', $theme_uri . '/assets/product-gallery-slider.js', array(), filemtime($theme_dir . '/assets/product-gallery-slider.js'), true);
+    wp_enqueue_script('mont-header-js', $theme_uri . '/assets/header.js', array('jquery'), filemtime($theme_dir . '/assets/header.js'), true);
+    wp_enqueue_script('mont-discount-js', $theme_uri . '/assets/discount.js', array('jquery'), null, true);
+    wp_enqueue_script('mont-gallery-size-js', $theme_uri . '/assets/custom-sizes.js', array('jquery'), null, true);
+    wp_enqueue_script('mont-gallery-size-javascript', $theme_uri . '/assets/custom-sizes-javascript.js', array('jquery'), null, true);
+    wp_enqueue_script('mont-custom-jquery', $theme_uri . '/assets/custom.js', array('jquery'), null, true);
+    wp_enqueue_script('mont-cart-js', $theme_uri . '/assets/cart.js', array('jquery'), filemtime($theme_dir . '/assets/cart.js'), true);
     wp_enqueue_script('lucide-icon', 'https://unpkg.com/lucide@latest');
 
-
-
-    wp_enqueue_script('mont-variation-ajax', get_template_directory_uri() . '/assets/variation-ajax.js', array('jquery'), filemtime(get_template_directory() . '/assets/variation-ajax.js'), true);
+    wp_enqueue_script('mont-variation-ajax', $theme_uri . '/assets/variation-ajax.js', array('jquery'), filemtime($theme_dir . '/assets/variation-ajax.js'), true);
     wp_localize_script('mont-variation-ajax', 'ajaxurl', array('url' => admin_url('admin-ajax.php')));
 
 }

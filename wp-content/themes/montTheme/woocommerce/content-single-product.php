@@ -227,7 +227,7 @@ div#mont_backButton { z-index: 999; }
     .mont_layout_sixty, .mont_layout_fourty { width: 100%; padding-right: 0; position: static; }
     .mont_top_layout { flex-direction: column; }
 }
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .mont_single_product_container {
         padding: 0 0 40px;
     }
@@ -248,135 +248,8 @@ div#mont_backButton { z-index: 999; }
         margin: 8px 12px;
     }
 
-    /* Mobile: single-column slider for images AND video (same design) */
-    .mont_gallery_wrapper-unified {
-        position: relative;
-        width: 100%;
-        overflow: hidden;
-    }
-    .mont_gallery_grid_wrapper,
-    .mont_gallery_grid_wrapper#mont_gallery_track {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        grid-template-columns: none !important;
-        grid-template-rows: none !important;
-        gap: 0 !important;
-        width: 100%;
-        overflow-x: auto !important;
-        overflow-y: hidden;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-    }
-    .mont_gallery_grid_wrapper::-webkit-scrollbar {
-        display: none;
-    }
-    /* Critical: video intrinsic size must not break one-slide-per-view */
-    .mont_gallery_item,
-    .mont_gallery_item.video-trigger,
-    .mont_gallery_item.initially-hidden {
-        display: block !important;
-        flex: 0 0 100% !important;
-        flex-shrink: 0 !important;
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
-        aspect-ratio: 3 / 4;
-        position: relative;
-        overflow: hidden;
-        box-sizing: border-box;
-    }
-    .mont_gallery_item video,
-    .mont_gallery_item img,
-    .mont_gallery_main-video,
-    .mont_gallery_main-image {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 100% !important;
-        min-width: 0 !important;
-        object-fit: cover !important;
-        display: block;
-    }
-    /* Keep play/pause usable while swiping the track */
-    .mont_gallery_item video {
-        pointer-events: none;
-    }
-    .mont_gallery_item .mont_video_overlay_btn {
-        pointer-events: auto;
-        z-index: 7;
-    }
-    .mont_see_more_container {
-        display: none !important;
-    }
+    /* Mobile slider rules live in product-page.css + product-gallery-slider.js */
 
-    .mont_gallery_nav {
-        display: flex !important;
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        transform: translateY(-50%);
-        justify-content: space-between;
-        pointer-events: none;
-        z-index: 8;
-        padding: 0 8px;
-    }
-    .mont_gallery_nav_btn {
-        pointer-events: auto;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: none;
-        background: rgba(255, 255, 255, 0.85);
-        color: #111;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-        padding: 0;
-    }
-    .mont_gallery_nav_btn svg {
-        width: 18px;
-        height: 18px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 1.5;
-    }
-    .mont_gallery_nav_btn:disabled {
-        opacity: 0.35;
-        cursor: default;
-    }
-    .mont_gallery_dots {
-        display: flex !important;
-        justify-content: center;
-        gap: 6px;
-        padding: 10px 0 4px;
-    }
-    .mont_gallery_dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #ccc;
-        border: none;
-        padding: 0;
-        cursor: pointer;
-    }
-    .mont_gallery_dot.is-active {
-        background: #111;
-    }
-
-    .mont_product-title {
-        font-size: 20px;
-        line-height: 1.3;
-    }
-    .mont_product-info {
-        flex-wrap: wrap;
-        gap: 8px;
-    }
     .collar-options {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px;
@@ -392,7 +265,7 @@ div#mont_backButton { z-index: 999; }
     }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
     .mont_gallery_nav,
     .mont_gallery_dots {
         display: none !important;
@@ -773,77 +646,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 2. Mobile gallery slider
-    (function initMobileGallerySlider() {
-        const track = document.getElementById('mont_gallery_track');
-        if (!track) return;
-
-        const items = Array.from(track.querySelectorAll('.mont_gallery_item'));
-        if (items.length < 2) return;
-
-        const prevBtn = document.querySelector('.mont_gallery_prev');
-        const nextBtn = document.querySelector('.mont_gallery_next');
-        const dotsWrap = document.getElementById('mont_gallery_dots');
-        let index = 0;
-
-        if (dotsWrap) {
-            items.forEach((_, i) => {
-                const dot = document.createElement('button');
-                dot.type = 'button';
-                dot.className = 'mont_gallery_dot' + (i === 0 ? ' is-active' : '');
-                dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
-                dot.addEventListener('click', () => goTo(i));
-                dotsWrap.appendChild(dot);
-            });
-        }
-
-        function isMobile() {
-            return window.matchMedia('(max-width: 768px)').matches;
-        }
-
-        function goTo(i) {
-            if (!isMobile()) return;
-            index = Math.max(0, Math.min(i, items.length - 1));
-            const slideWidth = track.clientWidth || items[index].getBoundingClientRect().width;
-            track.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
-            updateUI();
-            // Pause videos that are not the active slide (keep play button working on active)
-            items.forEach((item, idx) => {
-                const vid = item.querySelector('video');
-                if (!vid) return;
-                if (idx === index) return;
-                try { vid.pause(); } catch (e) {}
-            });
-        }
-
-        function updateUI() {
-            if (dotsWrap) {
-                dotsWrap.querySelectorAll('.mont_gallery_dot').forEach((d, i) => {
-                    d.classList.toggle('is-active', i === index);
-                });
-            }
-            if (prevBtn) prevBtn.disabled = index <= 0;
-            if (nextBtn) nextBtn.disabled = index >= items.length - 1;
-        }
-
-        function syncIndexFromScroll() {
-            if (!isMobile()) return;
-            const slideWidth = track.clientWidth || 1;
-            index = Math.round(track.scrollLeft / slideWidth);
-            index = Math.max(0, Math.min(index, items.length - 1));
-            updateUI();
-        }
-
-        if (prevBtn) prevBtn.addEventListener('click', () => goTo(index - 1));
-        if (nextBtn) nextBtn.addEventListener('click', () => goTo(index + 1));
-        track.addEventListener('scroll', () => {
-            window.clearTimeout(track._scrollTimer);
-            track._scrollTimer = window.setTimeout(syncIndexFromScroll, 80);
-        }, { passive: true });
-
-        updateUI();
-        window.addEventListener('resize', updateUI);
-    })();
+    // Mobile gallery slider is handled by assets/product-gallery-slider.js
 
     // ============================================
     // LIGHTBOX LOGIC
@@ -875,7 +678,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     triggers.forEach(trigger => {
         trigger.addEventListener('click', function() {
-            // On mobile, don't open lightbox for simple swipe browsing — still allow tap to zoom/view
+            // On mobile slider mode, skip lightbox for video play button area only
+            if (window.matchMedia('(max-width: 1024px)').matches && this.classList.contains('video-trigger')) {
+                // Still allow lightbox open on video slide tap (outside play btn)
+            }
             const type = this.getAttribute('data-media-type');
             const src = this.getAttribute('data-src');
 
