@@ -25,9 +25,8 @@
     font-weight: 300;
     color: #989797;
     letter-spacing: 0.02em;
-    margin-bottom: 2px;
-    /* Align with country name (flag 16px + gap 6px) */
-    padding-left: 22px;
+    margin-bottom: -3px;
+    padding-left: 34px;
 }
 
 .dc-region-trigger-value {
