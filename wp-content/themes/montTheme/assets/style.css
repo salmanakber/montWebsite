@@ -841,7 +841,9 @@ color: inherit;
                 }
                 
                 .category-active {
-                    background: #e0e0e0;
+                    background: rgba(148, 148, 152, 0.14) !important;
+                    color: #3a3a3a !important;
+                    font-weight: 600;
                 }
 
 

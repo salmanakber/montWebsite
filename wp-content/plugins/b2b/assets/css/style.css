@@ -937,439 +937,85 @@ ul#b2bmenu {
 .b2b-size-list {
     width: 231px;
 }
-.row {
-   /* Legacy rule neutralized — scoped below to B2B only */
-   display: revert;
-   grid-template-columns: revert;
-   gap: revert;
-}
-
-.b2b-details-page .row,
-.tab-pane-monte-b2b .row,
-.mont_single_product_container .row,
-#myTabContent .row {
-   display: grid;
-   grid-template-columns: repeat(4, 1fr);
-   gap: 9px;
-}
-
-
-
-/* Slider container styles */
-.category-slider-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* Wrapper for the slider */
-.category-slider-wrapper {
-  overflow-x: hidden;
-  width: 100%;
-}
-
-/* The slider itself */
-.category-slider {
-  display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  transition: transform 0.3s ease;
-  white-space: nowrap;
-  justify-content: center;
-}
-
-/* Individual category items */
-.category-item.mont-cat-item {
-  flex: 0 0 auto;
-  border-right: 1px solid #e5e7eb;
-  padding: 0;
-}
-
-.category-item:first-child {
-  border-left: 1px solid #e5e7eb;
-}
-
-/* Category buttons */
-.nav-link-monte-b2b {
-  display: block;
-  padding: 15px 47px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: #333;
-  white-space: nowrap;
-  transition: background-color 0.2s;
-}
-
-.nav-link-monte-b2b:hover {
-  background-color: #f9fafb;
-}
-
-.nav-link-monte-b2b.active {
-  font-weight: 600;
-  color: #000;
-  position: relative;
-}
-
-.nav-link-monte-b2b.active::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background-color: #000;
-}
-
-/* Active list item */
-.active-li {
-  background-color: #f9fafb;
-}
-
-/* Slider navigation arrows */
-.slider-arrow {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: absolute;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.prev-arrow {
-  left: 5px;
-}
-
-.next-arrow {
-  right: 5px;
-}
-
-/* Hide arrows when not needed */
-.slider-arrow.hidden {
-  display: none;
-}
-
-
-.guide-table-data {
-    overflow-x: auto;
-    margin-bottom: 40px;
-}
-.guide-table-data table {
-    overflow: hidden;
-    width: 100%;
-    margin: 0 auto;
-    border-collapse: collapse;
-}
-.guide-table-data td {
-    position: relative;
-}
-
-.guide-table-data th, .guide-table-data td {
-    text-align: left;
-    padding: 15px 14px;
-    position: relative;
-    font-size: 13px;
-    font-weight: 300;
-    border: 1px solid #ccc;
-    outline: 0;
-}
-.guide-table-data th {
-    background-color: #968d00;
-    color: white;
-}
-
-
-
-@media (max-width: 740px){
-
-  .disflx {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-}
-.order-data-b2b-monte {
-    width: 96%;
-}
-
- .row {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-    gap: 2px;
-}
-
-}   
-
 
 /* =========================================================
-   Monte B2B — responsive overrides (listing + PDP)
+   B2B listing — safe product grid (do NOT touch global .row)
    ========================================================= */
 
-/* Scope the aggressive grid so it does not break site-wide .row */
-.b2b-details-page .row,
-.tab-pane-monte-b2b .row,
-.mont_single_product_container .row {
-   display: grid;
-   grid-template-columns: repeat(4, 1fr);
-   gap: 9px;
+.b2b-listing-page .category-slider-container.mont-cat-tabs,
+.category-slider-container.mont-cat-tabs {
+  border: none;
+  border-bottom: none;
+  margin: 24px auto 20px;
+  width: min(1180px, 95%);
+  display: block;
 }
 
-/* Prefer product grid inside listing only */
+.b2b-listing-page #myTabContent,
+.tabb2b {
+  width: min(1180px, 95%);
+  margin: 0 auto 40px;
+}
+
+/* Products live in .container-fluid > .row > .col-sm-3 */
 .tab-pane-monte-b2b {
-   display: block;
+  display: block !important;
+}
+
+.tab-pane-monte-b2b .container-fluid {
+  padding-left: 0;
+  padding-right: 0;
+  width: 100%;
+}
+
+.tab-pane-monte-b2b .container-fluid > .row {
+  display: flex !important;
+  flex-wrap: wrap;
+  margin-left: -8px;
+  margin-right: -8px;
 }
 
 .tab-pane-monte-b2b .col-sm-3 {
-   width: 100%;
-   max-width: 100%;
+  flex: 0 0 25%;
+  max-width: 25%;
+  width: 25%;
+  padding: 8px;
+  box-sizing: border-box;
 }
 
 .tab-pane-monte-b2b .col-sm-3 img {
-   width: 100%;
-   height: auto !important;
-   max-height: 420px;
-   object-fit: cover;
-   aspect-ratio: 3 / 4;
+  width: 100%;
+  height: auto !important;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
 }
 
-/* Category tabs — scrollable on small screens */
-ul#b2bmenu,
-.b2b-monte-nav {
-   display: flex;
-   flex-wrap: nowrap;
-   overflow-x: auto;
-   -webkit-overflow-scrolling: touch;
-   gap: 0;
-   justify-content: flex-start;
-   scrollbar-width: thin;
+.tab-pane-monte-b2b .product-name-b2b {
+  margin-top: 8px !important;
 }
 
-li.nav-item-b2b {
-   flex: 0 0 auto;
-}
-
-li.nav-item-b2b button,
-.nav-item-b2b button {
-   padding: 10px 22px !important;
-   white-space: nowrap;
-}
-
-/* Listing product grid */
-.tab-pane-monte-b2b > .row,
-#myTabContent .tab-pane-monte-b2b {
-   display: grid !important;
-   grid-template-columns: repeat(4, minmax(0, 1fr));
-   gap: 16px;
-}
-
-.tab-pane-monte-b2b .col-sm-3 {
-   width: auto !important;
-   max-width: none !important;
-   flex: none !important;
-}
-
-/* Fix invalid selector from legacy CSS */
-.column-right-top {
-   margin-top: 0;
-}
-
-/* PDP layout */
-.mont_single_product_container .mont_top_layout {
-   display: flex;
-   flex-wrap: wrap;
-   gap: 20px;
-   align-items: flex-start;
-}
-
-.mont_single_product_container .mont_layout_sixty,
-.mont_single_product_container .mont_layout_fourty,
-div#details-column {
-   width: 100%;
-   min-width: 0 !important;
-   max-width: 100%;
-}
-
-@media (min-width: 992px) {
-   .mont_single_product_container .mont_layout_sixty {
-      width: 55%;
-      flex: 1 1 55%;
-   }
-   .mont_single_product_container .mont_layout_fourty,
-   div#details-column {
-      width: 42%;
-      flex: 1 1 40%;
-      position: sticky;
-      top: 88px;
-   }
-}
-
-/* Size / fit grids on PDP */
-.mont_single_product_container .row {
-   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-}
-
-.b2b-size-list {
-   width: 100% !important;
-   max-width: 100%;
-}
-
-.b2b-size-list ul {
-   display: grid;
-   grid-template-columns: repeat(2, minmax(0, 1fr));
-   gap: 8px 12px;
-   list-style: none;
-   padding: 0;
-   margin: 0;
-}
-
-.b2b-size-list li {
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   gap: 8px;
-}
-
-.b2b-size-input {
-   width: 72px;
-   max-width: 100%;
-   min-height: 40px;
-   font-size: 16px !important; /* avoid iOS zoom */
-}
-
-.b2b-add-to-cart-button a,
-.b2b-add-to-cart-button button,
-.monte-b2b-order-btn,
-button.b2b-save-colour {
-   font-size: 14px !important;
-   min-height: 44px;
-   padding: 10px 14px !important;
-}
-
-/* Modals */
-.monte-b2b-modal-content {
-   width: min(640px, 94vw);
-   max-height: 90vh;
-   overflow: auto;
-}
-
-.mont-b2b-form input,
-.mont-b2b-form select,
-.mont-b2b-form textarea {
-   width: 100% !important;
-   max-width: 100%;
-   box-sizing: border-box;
-   min-height: 42px;
-   font-size: 16px;
-}
-
-/* Tablet */
 @media (max-width: 991px) {
-   .tab-pane-monte-b2b > .row,
-   #myTabContent .tab-pane-monte-b2b {
-      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-   }
-
-   .col-img-6 {
-      width: 50% !important;
-   }
-
-   .mont_single_product_container .mont_top_layout {
-      flex-direction: column;
-   }
-
-   div#details-column {
-      position: relative !important;
-      top: auto !important;
-   }
+  .tab-pane-monte-b2b .col-sm-3 {
+    flex: 0 0 33.333%;
+    max-width: 33.333%;
+    width: 33.333%;
+  }
 }
 
-/* Mobile */
 @media (max-width: 767px) {
-   .tab-pane-monte-b2b > .row,
-   #myTabContent .tab-pane-monte-b2b {
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      gap: 10px !important;
-   }
-
-   .tab-pane-monte-b2b .col-sm-3 img {
-      max-height: 260px;
-   }
-
-   .product-name-b2b {
-      font-size: 12px !important;
-      margin-top: 6px !important;
-   }
-
-   li.nav-item-b2b button,
-   .nav-item-b2b button {
-      padding: 8px 14px !important;
-      font-size: 13px;
-   }
-
-   .mont_single_product_container .row {
-      grid-template-columns: 1fr !important;
-   }
-
-   .b2b-size-list ul {
-      grid-template-columns: 1fr;
-   }
-
-   .col-img-6,
-   .column-left-top,
-   .column-right-top {
-      width: 100% !important;
-      max-width: 100% !important;
-      flex: 1 1 100% !important;
-   }
-
-   .b2b-details,
-   .b2b-details-page {
-      width: 100% !important;
-      margin: 0 auto;
-      padding: 12px;
-      box-sizing: border-box;
-   }
-
-   .moq {
-      margin-bottom: 14px;
-   }
-
-   .guide-table-data {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-   }
-
-   .monte-b2b-modal-content {
-      margin: 8vh auto;
-      width: 94%;
-   }
-
-   /* Floating cart bubble — keep clear of AI widget */
-   .bubble_b2b_cart_button,
-   #bubble_b2b_cart_button,
-   .b2b-cart-bubble {
-      bottom: 88px !important;
-      right: 16px !important;
-   }
+  .tab-pane-monte-b2b .col-sm-3 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    width: 50%;
+  }
 }
 
-/* Very small phones */
 @media (max-width: 420px) {
-   .tab-pane-monte-b2b > .row,
-   #myTabContent .tab-pane-monte-b2b {
-      grid-template-columns: 1fr !important;
-   }
-
-   .tab-pane-monte-b2b .col-sm-3 img {
-      max-height: 340px;
-   }
+  .tab-pane-monte-b2b .col-sm-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    width: 100%;
+  }
 }
