@@ -60,7 +60,7 @@ class Chat_Service {
 		$language = Language_Manager::normalize( $language );
 		$message  = sanitize_textarea_field( $message );
 
-		// Fast path: greetings / small talk — no tools, no API burn.
+		// 1) Greetings — local, no API.
 		if ( $this->is_simple_greeting( $message ) ) {
 			return $this->response(
 				$this->greeting_reply( $language, $context ),
@@ -73,34 +73,89 @@ class Chat_Service {
 			);
 		}
 
-		// Product selected from a card — continue with AI (or light path).
 		$picked_id = $this->extract_product_id( $message );
+		$catalog   = new Catalog_Search();
 
-		// Browse / "show me shirts" — search WooCommerce directly so we always
-		// show real products (and avoid burning Groq tool-loop quota).
-		$catalog = new Catalog_Search();
-		if ( ! $picked_id && $catalog->should_browse( $message, $history ) ) {
+		// 2) Browse / show shirts — WooCommerce only. Never call AI here.
+		if ( ! $picked_id && $catalog->should_browse( $message, $history ) && ! $this->is_followup_option_answer( $message, $history ) ) {
 			try {
 				$found = $catalog->search( $message, $history, 6 );
-				if ( ! empty( $found['count'] ) ) {
-					return $this->response(
-						$catalog->browse_message( $language, (int) $found['count'], $message ),
-						isset( $found['cards'] ) ? $found['cards'] : array(),
-						isset( $found['choices'] ) ? $found['choices'] : null,
-						false,
-						'catalog',
-						false,
-						$language
-					);
-				}
+				return $this->response(
+					$catalog->browse_message( $language, isset( $found['count'] ) ? (int) $found['count'] : 0, $message ),
+					isset( $found['cards'] ) ? $found['cards'] : array(),
+					isset( $found['choices'] ) ? $found['choices'] : null,
+					false,
+					'catalog',
+					false,
+					$language
+				);
 			} catch ( \Throwable $e ) {
 				Plugin::log( 'Catalog search failed', array( 'error' => $e->getMessage() ) );
-				// Fall through to AI path.
+				return $this->response(
+					__( 'I could not load products right now. Please try again in a moment.', 'mont-ai-assistant' ),
+					array(),
+					null,
+					false,
+					'catalog',
+					false,
+					$language
+				);
 			}
 		}
 
-		$tools   = new Tool_Executor();
+		// 3) Product picked / option taps — local order builder (no API).
+		$builder = new Order_Builder();
+		$local   = $builder->maybe_handle( $message, $history, $language );
+		if ( is_array( $local ) ) {
+			return $this->response(
+				isset( $local['message'] ) ? $local['message'] : '',
+				isset( $local['cards'] ) ? $local['cards'] : array(),
+				isset( $local['choices'] ) ? $local['choices'] : null,
+				! empty( $local['cart_updated'] ),
+				isset( $local['provider'] ) ? $local['provider'] : 'local',
+				false,
+				$language
+			);
+		}
+
+		// 4) Free-form questions only → AI providers.
+		return $this->handle_with_ai( $message, $history, $language, $context );
+	}
+
+	/**
+	 * True when the user is tapping an option after a product was already chosen.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return bool
+	 */
+	private function is_followup_option_answer( $message, array $history ) {
+		if ( $this->extract_product_id( $message ) ) {
+			return true;
+		}
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			if ( preg_match( '/product\s*#?\s*\d+/i', (string) $h['content'] ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * AI path for free-form help (FAQ, delivery, advice).
+	 *
+	 * @param string $message  Message.
+	 * @param array  $history  History.
+	 * @param string $language Language.
+	 * @param array  $context  Context.
+	 * @return array
+	 */
+	private function handle_with_ai( $message, array $history, $language, array $context ) {
 		$manager = new Provider_Manager();
+		$catalog = new Catalog_Search();
 
 		$messages   = array();
 		$messages[] = array(
@@ -124,15 +179,7 @@ class Chat_Service {
 			'content' => $message,
 		);
 
-		// If they picked a product card, nudge the model to load options (one tool round).
-		if ( $picked_id ) {
-			$messages[] = array(
-				'role'    => 'system',
-				'content' => 'The customer selected product ID ' . $picked_id . '. Call get_custom_options then present_choices for body_fit only. Do not invent products.',
-			);
-		}
-
-		$definitions   = $tools->definitions();
+		$definitions   = array();
 		$cards         = array();
 		$choices       = null;
 		$cart_updated  = false;
@@ -140,127 +187,39 @@ class Chat_Service {
 		$used_fallback = false;
 
 		try {
-			for ( $round = 0; $round < self::MAX_TOOL_ROUNDS; $round++ ) {
-				if ( $round > 0 ) {
-					// Small pause to reduce Groq/Gemini 429 rate limits during tool loops.
-					usleep( 350000 );
-				}
+			// Text-only — avoid tool-call schema failures that were breaking chat.
+			$result = $manager->chat( $messages, array(), array() );
+			$provider_used = $result['provider'];
+			$used_fallback = ! empty( $result['used_fallback'] );
+			$content       = trim( (string) $result['content'] );
 
-				$result = $manager->chat( $messages, $definitions, array() );
-				$provider_used = $result['provider'];
-				$used_fallback = ! empty( $result['used_fallback'] ) || $used_fallback;
-
-				$tool_calls = isset( $result['tool_calls'] ) ? $result['tool_calls'] : array();
-				$content    = trim( (string) $result['content'] );
-
-				if ( empty( $tool_calls ) ) {
-					// If the model talked about products but returned no cards, show catalog instead of invented names.
-					if ( empty( $cards ) && $this->mentions_products( $content ) ) {
-						try {
-							$found = $catalog->search( $message, $history, 6 );
-							if ( ! empty( $found['count'] ) ) {
-								return $this->response(
-									$catalog->browse_message( $language, (int) $found['count'], $message ),
-									isset( $found['cards'] ) ? $found['cards'] : array(),
-									isset( $found['choices'] ) ? $found['choices'] : null,
-									false,
-									'catalog',
-									$used_fallback,
-									$language
-								);
-							}
-						} catch ( \Throwable $e ) {
-							Plugin::log( 'Catalog fallback failed', array( 'error' => $e->getMessage() ) );
-						}
-					}
-					return $this->response( $content, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
-				}
-
-				$messages[] = array(
-					'role'       => 'assistant',
-					'content'    => $content,
-					'tool_calls' => $tool_calls,
-				);
-
-				foreach ( $tool_calls as $tc ) {
-					$fn_name = isset( $tc['function']['name'] ) ? $tc['function']['name'] : '';
-					$fn_args = array();
-					if ( ! empty( $tc['function']['arguments'] ) ) {
-						$decoded = json_decode( $tc['function']['arguments'], true );
-						$fn_args = is_array( $decoded ) ? $decoded : array();
-					}
-
-					$tool_result = $tools->execute( $fn_name, $fn_args );
-
-					if ( ! empty( $tool_result['cards'] ) && is_array( $tool_result['cards'] ) ) {
-						$cards = array_merge( $cards, $tool_result['cards'] );
-					}
-
-					// Only surface choice buttons from explicit present_choices,
-					// product search, or failed validate/add_to_cart — never from get_custom_options alone.
-					$allow_choices = in_array(
-						$fn_name,
-						array( 'present_choices', 'search_products', 'validate_selection', 'add_to_cart' ),
-						true
+			if ( empty( $cards ) && $this->mentions_products( $content ) ) {
+				$found = $catalog->search( $message, $history, 6 );
+				if ( ! empty( $found['count'] ) ) {
+					return $this->response(
+						$catalog->browse_message( $language, (int) $found['count'], $message ),
+						$found['cards'],
+						$found['choices'],
+						false,
+						'catalog',
+						$used_fallback,
+						$language
 					);
-					if ( $allow_choices && ! empty( $tool_result['choices'] ) && is_array( $tool_result['choices'] ) ) {
-						$choices = $tool_result['choices'];
-					}
-					if ( ! empty( $tool_result['cart_updated'] ) ) {
-						$cart_updated = true;
-					}
-
-					// If present_choices ran, we can stop after this round with a short message.
-					$stop_after_choices = ( 'present_choices' === $fn_name && ! empty( $tool_result['choices'] ) );
-
-					$messages[] = array(
-						'role'         => 'tool',
-						'tool_call_id' => isset( $tc['id'] ) ? $tc['id'] : '',
-						'name'         => $fn_name,
-						'content'      => wp_json_encode( $tool_result ),
-					);
-
-					if ( $stop_after_choices ) {
-						$msg = $content ? $content : ( isset( $choices['title'] ) ? $choices['title'] : 'Please choose an option:' );
-						return $this->response( $msg, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
-					}
 				}
 			}
 
-			$final = $manager->chat(
-				array_merge(
-					$messages,
-					array(
-						array(
-							'role'    => 'user',
-							'content' => 'Give the customer a short final reply. If they still need to choose an option, say so briefly — buttons may already be on screen.',
-						),
-					)
-				),
-				array(),
-				array()
-			);
-
-			return $this->response(
-				trim( (string) $final['content'] ),
-				$cards,
-				$choices,
-				$cart_updated,
-				$final['provider'],
-				$used_fallback || ! empty( $final['used_fallback'] ),
-				$language
-			);
+			return $this->response( $content, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
 		} catch ( \Throwable $e ) {
-			Plugin::log( 'Chat failed', array( 'error' => $e->getMessage() ) );
+			Plugin::log( 'Chat AI failed', array( 'error' => $e->getMessage() ) );
 
-			// Last resort: still try to show products from the catalog.
+			// Prefer showing products over a fake rate-limit message.
 			try {
 				$found = $catalog->search( $message, $history, 6 );
 				if ( ! empty( $found['count'] ) ) {
 					return $this->response(
 						$catalog->browse_message( $language, (int) $found['count'], $message ),
-						isset( $found['cards'] ) ? $found['cards'] : array(),
-						isset( $found['choices'] ) ? $found['choices'] : null,
+						$found['cards'],
+						$found['choices'],
 						false,
 						'catalog',
 						true,
@@ -270,23 +229,40 @@ class Chat_Service {
 			} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
 			}
 
-			$friendly = __( 'I am still looking that up — please tap send once more in a couple of seconds.', 'mont-ai-assistant' );
-			if ( false !== stripos( $e->getMessage(), '429' ) ) {
-				$friendly = __( 'High demand right now. Wait 3–5 seconds, then send the same message again — I will continue.', 'mont-ai-assistant' );
+			$error_code = 'provider_error';
+			$friendly   = __( 'I could not reach the AI assistant just now. You can still ask me to show shirts (e.g. “show business shirts”) and I will list products from the shop.', 'mont-ai-assistant' );
+
+			if ( preg_match( '/HTTP 429/', $e->getMessage() ) ) {
+				$error_code = 'rate_limit';
+				$friendly   = __( 'The AI provider is busy (rate limit). Product search still works — try “show me shirts”.', 'mont-ai-assistant' );
+			} elseif ( false !== stripos( $e->getMessage(), 'not configured' ) ) {
+				$error_code = 'not_configured';
+				$friendly   = __( 'AI keys are not configured yet. You can still browse products — try “show me shirts”.', 'mont-ai-assistant' );
+			} elseif ( false !== stripos( $e->getMessage(), 'Failed to call a function' ) || false !== stripos( $e->getMessage(), 'tool call validation' ) ) {
+				$error_code = 'tool_error';
+				$friendly   = __( 'I had trouble with that request format. Try asking to show products, or pick a shirt from a list.', 'mont-ai-assistant' );
 			}
 
-			return array(
+			$out = array(
 				'success'       => false,
 				'message'       => $friendly,
-				'cards'         => $this->unique_cards( $cards ),
-				'choices'       => $choices,
-				'cart_updated'  => $cart_updated,
+				'cards'         => array(),
+				'choices'       => null,
+				'cart_updated'  => false,
 				'provider'      => $provider_used,
 				'used_fallback' => $used_fallback,
 				'language'      => $language,
 				'timestamp'     => gmdate( 'c' ),
-				'retryable'     => true,
+				'retryable'     => false,
+				'error_code'    => $error_code,
 			);
+
+			$settings = Plugin::settings();
+			if ( ! empty( $settings['enable_debug'] ) ) {
+				$out['debug_error'] = $e->getMessage();
+			}
+
+			return $out;
 		}
 	}
 
