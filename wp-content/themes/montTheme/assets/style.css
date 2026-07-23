@@ -955,12 +955,12 @@ ul#b2bmenu {
 .nav-link-monte-b2b.active {
     font-weight: 600;
     position: relative;
-    background: #949498;
-    color: white;
+    background: rgba(148, 148, 152, 0.12) !important;
+    color: #3a3a3a !important;
 }
 
 .nav-link-monte-b2b.active::after{
-background-color: transparent;
+background-color: #949498 !important;
 }
 	.mont-cat-item {
     border: 1px solid #949498 !important;

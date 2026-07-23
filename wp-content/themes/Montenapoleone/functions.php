@@ -183,6 +183,10 @@ function my_assets()
   wp_enqueue_style('responsive', get_stylesheet_directory_uri() . '/css/responsive.css');
   wp_enqueue_style('custom_css', get_stylesheet_directory_uri() . '/css/custom_css.css');
   wp_enqueue_style('style_css', get_stylesheet_directory_uri() . '/css/style_css.css');
+  $cat_tabs = get_stylesheet_directory() . '/assets/category-tabs.css';
+  if ( file_exists( $cat_tabs ) ) {
+    wp_enqueue_style( 'mont-category-tabs', get_stylesheet_directory_uri() . '/assets/category-tabs.css', array( 'style_css' ), (string) filemtime( $cat_tabs ) );
+  }
 
 
 

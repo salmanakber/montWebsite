@@ -1,0 +1,342 @@
+/**
+ * Monte B2B single product (PDP) — cleaner, responsive layout.
+ */
+
+.b2b-pdp {
+	--b2b-primary: #949498;
+	--b2b-ink: #2f3033;
+	--b2b-muted: #6f7074;
+	--b2b-line: #e8e8ea;
+	--b2b-soft: #f7f7f8;
+	width: min(1180px, 100%);
+	margin: 0 auto;
+	padding: 12px 16px 48px;
+	box-sizing: border-box;
+}
+
+.b2b-pdp__layout.mont_top_layout {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 28px;
+	align-items: flex-start;
+}
+
+.b2b-pdp__gallery.mont_layout_sixty,
+.b2b-pdp__panel.mont_layout_fourty,
+.b2b-pdp #details-column {
+	width: 100%;
+	min-width: 0 !important;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+@media (min-width: 992px) {
+	.b2b-pdp__gallery.mont_layout_sixty {
+		flex: 1 1 54%;
+		width: 54%;
+	}
+	.b2b-pdp__panel.mont_layout_fourty,
+	.b2b-pdp #details-column {
+		flex: 1 1 40%;
+		width: 40%;
+		position: sticky;
+		top: 96px;
+	}
+}
+
+.b2b-pdp .mont_back_button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 14px;
+	cursor: pointer;
+	color: var(--b2b-muted);
+	font-size: 14px;
+}
+
+.b2b-pdp__moq.moq {
+	border: 1px solid var(--b2b-line);
+	border-radius: 10px;
+	background: #f3faf4;
+	padding: 12px 14px;
+	margin-bottom: 16px;
+}
+
+.b2b-pdp__moq span {
+	color: #2f6b3a;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.b2b-pdp__summary {
+	margin-bottom: 18px;
+}
+
+.b2b-pdp__summary h1,
+.b2b-pdp__summary h2,
+.b2b-pdp__summary .product-title,
+.b2b-pdp__summary p {
+	color: var(--b2b-ink);
+}
+
+.b2b-pdp__card {
+	background: #fff;
+	border: 1px solid var(--b2b-line);
+	border-radius: 12px;
+	padding: 16px 16px 14px;
+	margin-bottom: 14px;
+	box-sizing: border-box;
+}
+
+.b2b-pdp__card h4,
+.b2b-pdp__card .b2b-h4,
+.b2b-pdp .size-type h4 {
+	margin: 0 0 6px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--b2b-ink);
+	font-family: "Rubik", "Figtree", sans-serif;
+	text-transform: none;
+}
+
+.b2b-pdp__hint {
+	margin: 0 0 12px;
+	font-size: 12px;
+	color: var(--b2b-muted);
+	line-height: 1.4;
+}
+
+.b2b-pdp__label {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--b2b-ink);
+}
+
+.b2b-pdp__grid.row {
+	display: grid !important;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px !important;
+	margin: 0 0 14px;
+}
+
+.b2b-pdp__grid .column-top {
+	width: 100% !important;
+	max-width: 100% !important;
+	margin: 0;
+}
+
+.b2b-pdp .b2b-size-list {
+	width: 100% !important;
+}
+
+.b2b-pdp .b2b-size-list ul {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.b2b-pdp .b2b-size-list li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 10px;
+	background: var(--b2b-soft);
+	border-radius: 8px;
+	border: 1px solid transparent;
+}
+
+.b2b-pdp .b2b-size-list li:focus-within {
+	border-color: var(--b2b-primary);
+	background: #fff;
+}
+
+.b2b-pdp .size-name {
+	font-size: 12px;
+	color: var(--b2b-ink);
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.b2b-pdp .b2b-size-input {
+	width: 64px;
+	min-height: 36px;
+	border: 1px solid var(--b2b-line);
+	border-radius: 6px;
+	text-align: center;
+	font-size: 16px !important;
+	background: #fff;
+}
+
+.b2b-pdp .b2b-ul-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.b2b-pdp .b2b-ul-list li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 12px 10px;
+	border-bottom: 1px solid var(--b2b-line);
+}
+
+.b2b-pdp .b2b-ul-list li:last-child {
+	border-bottom: 0;
+}
+
+.b2b-pdp .b2b-left-text-inner {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--b2b-ink);
+}
+
+.b2b-pdp .b2b-checked-form {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--b2b-primary);
+}
+
+.b2b-pdp__total.price-block-b2b {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	margin-bottom: 14px;
+	border: 1px dashed var(--b2b-primary);
+	border-radius: 10px;
+	background: var(--b2b-soft);
+}
+
+.b2b-pdp .price-b2b {
+	flex: 1;
+	border: 0;
+	background: transparent;
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--b2b-ink);
+	min-height: 36px;
+}
+
+.b2b-pdp .comment-box-b2b textarea,
+.b2b-pdp #s_comment {
+	width: 100%;
+	min-height: 88px;
+	border: 1px solid var(--b2b-line);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 15px;
+	box-sizing: border-box;
+	resize: vertical;
+}
+
+.b2b-pdp .collardiv {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+	gap: 10px;
+}
+
+.b2b-pdp__actions.b2b-add-to-cart-button {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 8px;
+	position: sticky;
+	bottom: 12px;
+	z-index: 5;
+	padding-top: 4px;
+}
+
+.b2b-pdp__actions .send-it-to-cart,
+.b2b-pdp__actions .submit-it-directly {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 48px;
+	padding: 12px 16px !important;
+	border-radius: 8px;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	text-align: center;
+	text-decoration: none !important;
+	box-sizing: border-box;
+}
+
+.b2b-pdp__actions .send-it-to-cart {
+	background: var(--b2b-primary) !important;
+	color: #fff !important;
+	border: 0 !important;
+	cursor: pointer;
+}
+
+.b2b-pdp__actions .submit-it-directly {
+	background: #fff !important;
+	color: var(--b2b-ink) !important;
+	border: 1px solid var(--b2b-line) !important;
+}
+
+/* Listing polish */
+.b2b-listing-page .tabb2b,
+.b2b-listing-page #myTabContent {
+	width: min(1180px, 95%);
+	margin: 16px auto 40px;
+}
+
+.b2b-listing-page .product-img-b2b img {
+	border-radius: 8px;
+	aspect-ratio: 3 / 4;
+	object-fit: cover;
+	height: auto !important;
+}
+
+.b2b-listing-page .product-name-b2b p {
+	margin: 8px 0 0;
+	font-size: 13px;
+	color: #4a4b4e;
+}
+
+.b2b-listing-page .mont-cat-tabs {
+	width: min(1180px, 95%);
+	margin-left: auto;
+	margin-right: auto;
+}
+
+@media (max-width: 991px) {
+	.b2b-pdp__grid.row {
+		grid-template-columns: 1fr !important;
+	}
+
+	.b2b-pdp__panel.mont_layout_fourty,
+	.b2b-pdp #details-column {
+		position: relative !important;
+		top: auto !important;
+	}
+
+	.b2b-pdp .b2b-size-list ul {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 575px) {
+	.b2b-pdp {
+		padding: 8px 12px 36px;
+	}
+
+	.b2b-pdp .b2b-size-list ul {
+		grid-template-columns: 1fr;
+	}
+
+	.b2b-pdp__actions {
+		position: sticky;
+		bottom: 0;
+		background: linear-gradient(180deg, transparent, #fff 24%);
+		padding-bottom: 8px;
+	}
+}

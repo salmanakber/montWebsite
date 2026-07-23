@@ -73,10 +73,10 @@ class b2b extends getApi {
         if (!empty($categories)) {
 
 // Your existing PHP code with some modifications for the slider
-            echo '<div class="category-slider-container">';
+            echo '<div class="category-slider-container mont-cat-tabs">';
             echo '<button class="slider-arrow prev-arrow" aria-label="Previous categories" style="display:none;">&lt;</button>';
-            echo '<div class="category-slider-wrapper">';
-            echo '<ul class="category-slider" id="b2bmenu" role="tablist">';
+            echo '<div class="category-slider-wrapper mont-cat-tabs__scroller">';
+            echo '<ul class="category-slider mont-cat-tabs__list" id="b2bmenu" role="tablist">';
 
 // Variable to track if it's the first category
             $first_category = true;
@@ -88,10 +88,10 @@ class b2b extends getApi {
 
     // Add the "active" class to the first category
                 $class = $first_category ? 'active' : '';
-                $class2 = $first_category ? 'active-li' : '';
+                $class2 = $first_category ? 'active-li is-active' : '';
 
-                echo '<li class="category-item ' . $class2 . ' mont-cat-item">';
-                echo '<button class="nav-link-monte-b2b ' . $class . '" id="' . $tab_id . '" data-bs-toggle="tab" data-bs-target="#' . $content_id . '" type="button" role="tab" aria-controls="' . $content_id . '" aria-selected="' . ($first_category ? 'true' : 'false') . '">' . $category_name . '</button>';
+                echo '<li class="category-item mont-cat-tabs__item mont-cat-item ' . $class2 . '">';
+                echo '<button class="nav-link-monte-b2b mont-cat-tabs__link ' . $class . '" id="' . $tab_id . '" data-bs-toggle="tab" data-bs-target="#' . $content_id . '" type="button" role="tab" aria-controls="' . $content_id . '" aria-selected="' . ($first_category ? 'true' : 'false') . '">' . esc_html( $category_name ) . '</button>';
                 echo '</li>';
 
     // Set $first_category to false after the first category tab is created
@@ -306,13 +306,26 @@ public function bubble_b2b_cart_button(){
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.0', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.1', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
-    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.0');
+    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.2');
+    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.0');
     wp_enqueue_style('b2b-notify', $this->url . 'assets/css/notify.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-css-min', $this->url . 'assets/css/owl.carousel.min.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');
     wp_enqueue_style('b2b-fontaweseom', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css');
+
+    // Shared category tab design (theme file when available).
+    $theme_tabs = get_template_directory() . '/assets/category-tabs.css';
+    if ( file_exists( $theme_tabs ) ) {
+        wp_enqueue_style(
+            'mont-category-tabs',
+            get_template_directory_uri() . '/assets/category-tabs.css',
+            array( 'b2b-style' ),
+            (string) filemtime( $theme_tabs )
+        );
+    }
+
     wp_localize_script('b2b-custom-script', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
 
 }

@@ -1,0 +1,181 @@
+/**
+ * Shared category tab bar (shop archive + B2B listing).
+ * Active state uses site primary (#949498), not blue.
+ */
+
+:root {
+	--mont-tab-primary: #949498;
+	--mont-tab-primary-soft: rgba(148, 148, 152, 0.12);
+	--mont-tab-border: #e5e5e5;
+	--mont-tab-text: #6b6b6b;
+	--mont-tab-text-active: #3a3a3a;
+}
+
+.mont-cat-tabs {
+	width: 100%;
+	margin: 18px 0 28px;
+}
+
+.mont-cat-tabs__scroller {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+.mont-cat-tabs__scroller::-webkit-scrollbar {
+	height: 4px;
+}
+
+.mont-cat-tabs__scroller::-webkit-scrollbar-thumb {
+	background: #ccc;
+	border-radius: 4px;
+}
+
+.mont-cat-tabs__list,
+ul.mont-cat-tabs__list,
+ul#b2bmenu.mont-cat-tabs__list,
+.category-slider.mont-cat-tabs__list {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	min-width: min-content;
+	border: 1px solid var(--mont-tab-border);
+	border-radius: 10px;
+	background: #fff;
+	overflow: hidden;
+}
+
+.mont-cat-tabs__item,
+li.mont-cat-tabs__item,
+li.category-item.mont-cat-item {
+	flex: 1 1 auto;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	border-right: 1px solid var(--mont-tab-border) !important;
+	overflow: visible !important;
+	min-width: 0;
+}
+
+.mont-cat-tabs__item:last-child,
+li.mont-cat-tabs__item:last-child,
+li.category-item.mont-cat-item:last-child {
+	border-right: 0 !important;
+}
+
+.mont-cat-tabs__link,
+a.mont-cat-tabs__link,
+button.nav-link-monte-b2b,
+.mont-cat-tabs__item button.nav-link-monte-b2b {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 48px;
+	padding: 12px 18px !important;
+	margin: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: #fff !important;
+	color: var(--mont-tab-text) !important;
+	font-family: "Rubik", "Figtree", sans-serif;
+	font-size: 13px !important;
+	font-weight: 400 !important;
+	line-height: 1.25;
+	text-align: center;
+	text-decoration: none !important;
+	white-space: nowrap;
+	cursor: pointer;
+	position: relative;
+	transition: background 0.2s ease, color 0.2s ease;
+}
+
+.mont-cat-tabs__link:hover,
+button.nav-link-monte-b2b:hover {
+	background: #fafafa !important;
+	color: var(--mont-tab-text-active) !important;
+}
+
+.mont-cat-tabs__link.is-active,
+.mont-cat-tabs__item.is-active .mont-cat-tabs__link,
+button.nav-link-monte-b2b.active,
+li.active-li button.nav-link-monte-b2b,
+li.mont-cat-tabs__item.is-active button {
+	background: var(--mont-tab-primary-soft) !important;
+	color: var(--mont-tab-text-active) !important;
+	font-weight: 600 !important;
+}
+
+.mont-cat-tabs__link.is-active::after,
+.mont-cat-tabs__item.is-active .mont-cat-tabs__link::after,
+button.nav-link-monte-b2b.active::after,
+li.active-li button.nav-link-monte-b2b::after {
+	content: "";
+	position: absolute;
+	left: 18%;
+	right: 18%;
+	bottom: 0;
+	height: 3px;
+	border-radius: 3px 3px 0 0;
+	background: var(--mont-tab-primary);
+}
+
+/* Kill old pill / filled-active styles on B2B */
+.nav-link-monte-b2b.active::after {
+	background-color: var(--mont-tab-primary) !important;
+}
+
+li.nav-item-b2b,
+.nav-item-b2b .active {
+	background: transparent !important;
+}
+
+@media (max-width: 991px) {
+	.mont-cat-tabs__list,
+	ul#b2bmenu.mont-cat-tabs__list,
+	.category-slider.mont-cat-tabs__list {
+		border-radius: 8px;
+	}
+
+	.mont-cat-tabs__item,
+	li.category-item.mont-cat-item {
+		flex: 0 0 auto;
+	}
+
+	.mont-cat-tabs__link,
+	button.nav-link-monte-b2b {
+		min-width: 132px;
+		padding: 12px 16px !important;
+		font-size: 12px !important;
+	}
+}
+
+@media (max-width: 575px) {
+	.mont-cat-tabs {
+		margin: 12px 0 20px;
+	}
+
+	.mont-cat-tabs__link,
+	button.nav-link-monte-b2b {
+		min-height: 44px;
+		min-width: 118px;
+		padding: 10px 14px !important;
+	}
+}
+
+/* Shop archive header spacing */
+.woocommerce-products-header .mont-cat-tabs {
+	position: static;
+	left: auto;
+	top: auto;
+}
+
+.woocommerce-products-header .sub-cats {
+	display: none !important;
+}

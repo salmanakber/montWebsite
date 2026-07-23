@@ -61,7 +61,7 @@ $base    = home_url( '/crm/' );
 						<th><?php esc_html_e( 'Date', 'dc-product-manager' ); ?></th>
 						<th><?php esc_html_e( 'Status', 'dc-product-manager' ); ?></th>
 						<th><?php esc_html_e( 'Total', 'dc-product-manager' ); ?></th>
-						<th><?php esc_html_e( 'Production', 'dc-product-manager' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'dc-product-manager' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -69,9 +69,6 @@ $base    = home_url( '/crm/' );
 						<tr>
 							<td>
 								<strong>#<?php echo esc_html( $row['number'] ); ?></strong>
-								<?php if ( ! empty( $row['view_url'] ) ) : ?>
-									<br><a href="<?php echo esc_url( $row['view_url'] ); ?>"><?php esc_html_e( 'Open in WooCommerce', 'dc-product-manager' ); ?></a>
-								<?php endif; ?>
 							</td>
 							<td>
 								<span class="dc-channel-badge dc-channel-badge--<?php echo esc_attr( $row['channel'] ); ?>">
@@ -90,7 +87,12 @@ $base    = home_url( '/crm/' );
 							<td><?php echo esc_html( $row['date'] ); ?></td>
 							<td><?php echo esc_html( $row['status'] ); ?></td>
 							<td><?php echo wp_kses_post( $row['total'] ); ?></td>
-							<td>
+							<td class="dc-orders-actions">
+								<?php if ( ! empty( $row['view_url'] ) ) : ?>
+									<a class="dc-orders-details-btn" href="<?php echo esc_url( $row['view_url'] ); ?>" target="_blank" rel="noopener">
+										<?php esc_html_e( 'Order details', 'dc-product-manager' ); ?>
+									</a>
+								<?php endif; ?>
 								<a class="dc-orders-print-btn" href="<?php echo esc_url( $row['print_url'] ); ?>" target="_blank" rel="noopener">
 									<?php esc_html_e( 'Print sheet', 'dc-product-manager' ); ?>
 								</a>

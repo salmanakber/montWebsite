@@ -30,6 +30,7 @@ class ajaxHooks
     wp_enqueue_style('mont-style', $theme_uri . '/assets/style.css', array(), filemtime($theme_dir . '/assets/style.css'));
     wp_enqueue_style('mont-style-product-page', $theme_uri . '/assets/product-page.css', array(), filemtime($theme_dir . '/assets/product-page.css'));
     wp_enqueue_style('mont-style-gallery', $theme_uri . '/assets/productGallery.css', array(), filemtime($theme_dir . '/assets/productGallery.css'));
+    wp_enqueue_style('mont-category-tabs', $theme_uri . '/assets/category-tabs.css', array('mont-style'), filemtime($theme_dir . '/assets/category-tabs.css'));
 
     wp_enqueue_style('googleFonts', 'https://fonts.googleapis.com');
     wp_enqueue_style('googleFontspre', 'https://fonts.gstatic.com');

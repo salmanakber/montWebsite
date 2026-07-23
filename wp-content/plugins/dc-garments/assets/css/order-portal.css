@@ -113,6 +113,30 @@
 	background: #163a5a;
 }
 
+.dc-orders-details-btn {
+	display: inline-block;
+	padding: 7px 12px;
+	background: #fff;
+	color: #1f4e79 !important;
+	border: 1px solid #1f4e79;
+	border-radius: 6px;
+	text-decoration: none !important;
+	font-weight: 600;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.dc-orders-details-btn:hover {
+	background: #f3f7fb;
+}
+
+.dc-orders-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
 .dc-orders-empty {
 	padding: 28px;
 	border: 1px dashed #cbd5e1;
