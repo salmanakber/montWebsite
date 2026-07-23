@@ -60,7 +60,7 @@ class Groq_Provider implements Provider_Interface {
 
 				// Rate limit / transient — longer backoff (helps free-tier 429s).
 				if ( false !== strpos( $msg, 'HTTP 429' ) || false !== strpos( $msg, 'HTTP 503' ) ) {
-					sleep( min( 6, $attempts * 2 ) ); // 2s, 4s, 6s
+					usleep( (int) ( 1200000 * $attempts ) ); // ~1.2s, 2.4s — avoid long sleep() timeouts
 					continue;
 				}
 

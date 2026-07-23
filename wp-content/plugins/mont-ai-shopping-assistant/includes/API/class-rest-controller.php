@@ -142,7 +142,7 @@ class Rest_Controller {
 			}
 
 			return rest_ensure_response( $result );
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			\Mont_AI_Assistant\Plugin::log( 'Chat failed', array( 'error' => $e->getMessage() ) );
 			return rest_ensure_response(
 				array(

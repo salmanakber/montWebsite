@@ -161,7 +161,15 @@ class Product_Index {
 		$q     = trim( (string) $query );
 		$limit = max( 1, min( 20, (int) $limit ) );
 
+		// Table may not exist yet (plugin activated but dbDelta not run / failed).
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			return array();
+		}
+
 		if ( '' === $q ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT payload FROM {$table} ORDER BY updated_at DESC LIMIT %d",
@@ -171,7 +179,7 @@ class Product_Index {
 			);
 		} else {
 			$like = '%' . $wpdb->esc_like( $q ) . '%';
-			// Portable LIKE search (FULLTEXT can fail on some hosts / engine configs).
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT payload FROM {$table}
@@ -186,8 +194,15 @@ class Product_Index {
 			);
 		}
 
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
 		$out = array();
-		foreach ( (array) $rows as $row ) {
+		foreach ( $rows as $row ) {
+			if ( empty( $row['payload'] ) ) {
+				continue;
+			}
 			$decoded = json_decode( $row['payload'], true );
 			if ( is_array( $decoded ) ) {
 				$out[] = $decoded;
@@ -204,6 +219,15 @@ class Product_Index {
 	 */
 	public function get( $product_id ) {
 		global $wpdb;
+		$table = self::table();
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			// Build live payload without index table.
+			$knowledge = new Product_Knowledge();
+			return $knowledge->build( (int) $product_id );
+		}
+
 		$row = $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT payload FROM ' . self::table() . ' WHERE product_id = %d',
@@ -211,7 +235,12 @@ class Product_Index {
 			)
 		);
 		if ( ! $row ) {
-			$this->index_product( $product_id );
+			try {
+				$this->index_product( $product_id );
+			} catch ( \Throwable $e ) {
+				$knowledge = new Product_Knowledge();
+				return $knowledge->build( (int) $product_id );
+			}
 			$row = $wpdb->get_var(
 				$wpdb->prepare(
 					'SELECT payload FROM ' . self::table() . ' WHERE product_id = %d',
@@ -220,6 +249,10 @@ class Product_Index {
 			);
 		}
 		$decoded = json_decode( (string) $row, true );
-		return is_array( $decoded ) ? $decoded : null;
+		if ( is_array( $decoded ) ) {
+			return $decoded;
+		}
+		$knowledge = new Product_Knowledge();
+		return $knowledge->build( (int) $product_id );
 	}
 }

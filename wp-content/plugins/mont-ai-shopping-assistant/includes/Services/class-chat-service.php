@@ -30,6 +30,33 @@ class Chat_Service {
 	 * @return array
 	 */
 	public function handle( $message, array $history, $language = 'en', array $context = array() ) {
+		try {
+			return $this->handle_safe( $message, $history, $language, $context );
+		} catch ( \Throwable $e ) {
+			Plugin::log( 'Chat fatal', array( 'error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine() ) );
+			return array(
+				'success'      => false,
+				'message'      => __( 'Something went wrong while searching. Please try again in a moment.', 'mont-ai-assistant' ),
+				'cards'        => array(),
+				'choices'      => null,
+				'cart_updated' => false,
+				'retryable'    => true,
+				'language'     => Language_Manager::normalize( $language ),
+				'timestamp'    => gmdate( 'c' ),
+			);
+		}
+	}
+
+	/**
+	 * Internal handler (may throw).
+	 *
+	 * @param string $message  User text.
+	 * @param array  $history  Prior messages.
+	 * @param string $language Language code.
+	 * @param array  $context  Extra context.
+	 * @return array
+	 */
+	private function handle_safe( $message, array $history, $language = 'en', array $context = array() ) {
 		$language = Language_Manager::normalize( $language );
 		$message  = sanitize_textarea_field( $message );
 
@@ -53,19 +80,23 @@ class Chat_Service {
 		// show real products (and avoid burning Groq tool-loop quota).
 		$catalog = new Catalog_Search();
 		if ( ! $picked_id && $catalog->should_browse( $message, $history ) ) {
-			$found = $catalog->search( $message, $history, 6 );
-			if ( $found['count'] > 0 ) {
-				return $this->response(
-					$catalog->browse_message( $language, $found['count'], $message ),
-					$found['cards'],
-					$found['choices'],
-					false,
-					'catalog',
-					false,
-					$language
-				);
+			try {
+				$found = $catalog->search( $message, $history, 6 );
+				if ( ! empty( $found['count'] ) ) {
+					return $this->response(
+						$catalog->browse_message( $language, (int) $found['count'], $message ),
+						isset( $found['cards'] ) ? $found['cards'] : array(),
+						isset( $found['choices'] ) ? $found['choices'] : null,
+						false,
+						'catalog',
+						false,
+						$language
+					);
+				}
+			} catch ( \Throwable $e ) {
+				Plugin::log( 'Catalog search failed', array( 'error' => $e->getMessage() ) );
+				// Fall through to AI path.
 			}
-			// Empty catalog — fall through to AI with a soft message preference.
 		}
 
 		$tools   = new Tool_Executor();
@@ -119,23 +150,27 @@ class Chat_Service {
 				$provider_used = $result['provider'];
 				$used_fallback = ! empty( $result['used_fallback'] ) || $used_fallback;
 
-				$tool_calls = $result['tool_calls'];
+				$tool_calls = isset( $result['tool_calls'] ) ? $result['tool_calls'] : array();
 				$content    = trim( (string) $result['content'] );
 
 				if ( empty( $tool_calls ) ) {
 					// If the model talked about products but returned no cards, show catalog instead of invented names.
 					if ( empty( $cards ) && $this->mentions_products( $content ) ) {
-						$found = $catalog->search( $message, $history, 6 );
-						if ( $found['count'] > 0 ) {
-							return $this->response(
-								$catalog->browse_message( $language, $found['count'], $message ),
-								$found['cards'],
-								$found['choices'],
-								false,
-								'catalog',
-								$used_fallback,
-								$language
-							);
+						try {
+							$found = $catalog->search( $message, $history, 6 );
+							if ( ! empty( $found['count'] ) ) {
+								return $this->response(
+									$catalog->browse_message( $language, (int) $found['count'], $message ),
+									isset( $found['cards'] ) ? $found['cards'] : array(),
+									isset( $found['choices'] ) ? $found['choices'] : null,
+									false,
+									'catalog',
+									$used_fallback,
+									$language
+								);
+							}
+						} catch ( \Throwable $e ) {
+							Plugin::log( 'Catalog fallback failed', array( 'error' => $e->getMessage() ) );
 						}
 					}
 					return $this->response( $content, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
@@ -215,8 +250,25 @@ class Chat_Service {
 				$used_fallback || ! empty( $final['used_fallback'] ),
 				$language
 			);
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			Plugin::log( 'Chat failed', array( 'error' => $e->getMessage() ) );
+
+			// Last resort: still try to show products from the catalog.
+			try {
+				$found = $catalog->search( $message, $history, 6 );
+				if ( ! empty( $found['count'] ) ) {
+					return $this->response(
+						$catalog->browse_message( $language, (int) $found['count'], $message ),
+						isset( $found['cards'] ) ? $found['cards'] : array(),
+						isset( $found['choices'] ) ? $found['choices'] : null,
+						false,
+						'catalog',
+						true,
+						$language
+					);
+				}
+			} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+			}
 
 			$friendly = __( 'I am still looking that up — please tap send once more in a couple of seconds.', 'mont-ai-assistant' );
 			if ( false !== stripos( $e->getMessage(), '429' ) ) {

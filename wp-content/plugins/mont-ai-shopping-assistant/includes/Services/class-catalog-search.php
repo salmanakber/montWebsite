@@ -162,43 +162,54 @@ class Catalog_Search {
 		}
 
 		// WooCommerce fallback (index empty or thin).
-		if ( count( $hits ) < 2 ) {
-			$wc_ids = wc_get_products(
-				array(
-					'status' => 'publish',
-					'limit'  => $limit,
-					'return' => 'ids',
-					's'      => $query,
-				)
-			);
-			if ( empty( $wc_ids ) ) {
+		if ( count( $hits ) < 2 && function_exists( 'wc_get_products' ) ) {
+			$wc_ids = array();
+			try {
 				$wc_ids = wc_get_products(
 					array(
 						'status' => 'publish',
 						'limit'  => $limit,
 						'return' => 'ids',
-						's'      => 'shirt',
+						's'      => $query,
 					)
 				);
+				if ( empty( $wc_ids ) ) {
+					$wc_ids = wc_get_products(
+						array(
+							'status' => 'publish',
+							'limit'  => $limit,
+							'return' => 'ids',
+							's'      => 'shirt',
+						)
+					);
+				}
+				if ( empty( $wc_ids ) ) {
+					$wc_ids = wc_get_products(
+						array(
+							'status'  => 'publish',
+							'limit'   => $limit,
+							'return'  => 'ids',
+							'orderby' => 'date',
+							'order'   => 'DESC',
+						)
+					);
+				}
+			} catch ( \Throwable $e ) {
+				$wc_ids = array();
 			}
-			if ( empty( $wc_ids ) ) {
-				$wc_ids = wc_get_products(
-					array(
-						'status'  => 'publish',
-						'limit'   => $limit,
-						'return'  => 'ids',
-						'orderby' => 'date',
-						'order'   => 'DESC',
-					)
-				);
-			}
+
 			foreach ( (array) $wc_ids as $id ) {
 				$id = (int) $id;
 				if ( isset( $seen[ $id ] ) ) {
 					continue;
 				}
-				$payload = $index->get( $id );
-				if ( ! $payload ) {
+				$payload = null;
+				try {
+					$payload = $index->get( $id );
+				} catch ( \Throwable $e ) {
+					$payload = null;
+				}
+				if ( ! $payload && function_exists( 'wc_get_product' ) ) {
 					$product = wc_get_product( $id );
 					if ( ! $product ) {
 						continue;
@@ -207,6 +218,9 @@ class Catalog_Search {
 						'id'   => $id,
 						'name' => $product->get_name(),
 					);
+				}
+				if ( ! $payload ) {
+					continue;
 				}
 				$seen[ $id ] = true;
 				$hits[] = $payload;
