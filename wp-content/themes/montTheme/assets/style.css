@@ -800,6 +800,9 @@ color: inherit;
             border-radius: 4px;
         }
 
+
+
+
  .category-slider-container {
                     width: 100%;
                     overflow: hidden;
@@ -807,7 +810,7 @@ color: inherit;
                     border-top: 1px solid #eee;
                     border-bottom: 1px solid #eee;
                     margin-bottom: 20px;
-                    margin-top: 70px;
+                    margin-top: 70px !important;
                 }
                 
                 .category-slider {
