@@ -228,8 +228,143 @@ div#mont_backButton { z-index: 999; }
     .mont_top_layout { flex-direction: column; }
 }
 @media (max-width: 768px) {
-    .mont_gallery_grid_wrapper { grid-template-columns: 1fr 1fr; gap: 5px; }
+    .mont_single_product_container {
+        padding: 0 0 40px;
+    }
+    .mont_top_layout {
+        flex-direction: column;
+        gap: 0;
+    }
+    .mont_layout_sixty,
+    .mont_layout_fourty {
+        width: 100%;
+        padding: 0;
+        position: static;
+    }
+    .mont_layout_fourty {
+        padding: 16px 16px 0;
+    }
+    .mont_back_button {
+        margin: 8px 12px;
+    }
+
+    /* Mobile: single-column slider instead of 2-col grid */
+    .mont_gallery_wrapper-unified {
+        position: relative;
+    }
+    .mont_gallery_grid_wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 0;
+        scrollbar-width: none;
+    }
+    .mont_gallery_grid_wrapper::-webkit-scrollbar {
+        display: none;
+    }
+    .mont_gallery_item {
+        flex: 0 0 100%;
+        width: 100%;
+        min-width: 100%;
+        scroll-snap-align: start;
+        aspect-ratio: 3 / 4;
+    }
+    .mont_gallery_item.initially-hidden {
+        display: block; /* all slides available in mobile slider */
+    }
+    .mont_see_more_container {
+        display: none !important;
+    }
+
+    .mont_gallery_nav {
+        display: flex;
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        transform: translateY(-50%);
+        justify-content: space-between;
+        pointer-events: none;
+        z-index: 6;
+        padding: 0 8px;
+    }
+    .mont_gallery_nav_btn {
+        pointer-events: auto;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.85);
+        color: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        padding: 0;
+    }
+    .mont_gallery_nav_btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.5;
+    }
+    .mont_gallery_nav_btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+    }
+    .mont_gallery_dots {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 0 4px;
+    }
+    .mont_gallery_dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ccc;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+    }
+    .mont_gallery_dot.is-active {
+        background: #111;
+    }
+
+    .mont_product-title {
+        font-size: 20px;
+        line-height: 1.3;
+    }
+    .mont_product-info {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .collar-options {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px;
+    }
+    .mont_cart_button a {
+        width: 100%;
+        text-align: center;
+        display: block;
+        box-sizing: border-box;
+    }
+    .mont_bottom_layout {
+        padding: 24px 16px;
+    }
 }
+
+@media (min-width: 769px) {
+    .mont_gallery_nav,
+    .mont_gallery_dots {
+        display: none !important;
+    }
+}
+
 </style>
 
 <div class="mont_single_product_container">
@@ -265,12 +400,12 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
             </div>
 		
             <div class="mont_gallery_wrapper-unified">
-                <div class="mont_gallery_grid_wrapper">
+                <div class="mont_gallery_grid_wrapper" id="mont_gallery_track">
                     <?php 
                     $counter = 0;
                     foreach ($media_items as $index => $item) : 
                         $counter++;
-                        // Hide items beyond first 4
+                        // Hide items beyond first 4 (desktop only; mobile CSS shows all)
                         $hidden_class = ($counter > 4) ? 'initially-hidden' : '';
                         
                         if ($item['type'] === 'video') : ?>
@@ -307,6 +442,18 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
+
+                <?php if ($total_items > 1) : ?>
+                <div class="mont_gallery_nav" aria-label="Gallery navigation">
+                    <button type="button" class="mont_gallery_nav_btn mont_gallery_prev" aria-label="Previous">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <button type="button" class="mont_gallery_nav_btn mont_gallery_next" aria-label="Next">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                </div>
+                <div class="mont_gallery_dots" id="mont_gallery_dots"></div>
+                <?php endif; ?>
 
                 <?php if ($total_items > 4) : ?>
                 <div class="mont_see_more_container">
@@ -423,13 +570,13 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 												<input 
 												type="radio" 
 												name="collar-style" 
-												value="<?php  echo ucfirst($value['name']); ?>" 
-												data-check ="<?php echo $value['selected'];  ?>"
+												value="<?php  echo esc_attr(ucfirst($value['name'])); ?>" 
+												data-check ="<?php echo esc_attr($value['selected']);  ?>"
 												<?php echo (($value['selected']) == 'Yes'  ?  'checked' :  ''); ?>
 												>
-												<img src="<?php  echo ucfirst($value['image']); ?>" alt="<?php  echo ucfirst($value['name']); ?>" class="<?php echo  ucfirst($value['name']); ?>">
-												<div class="collar-name"><?php  echo ucfirst($value['sub_name']); ?></div>
-												<div class="smallSubname"><?php  echo ucfirst($value['sub_name']); ?>	</div>
+												<img src="<?php  echo esc_url($value['image']); ?>" alt="<?php  echo esc_attr(ucfirst($value['name'])); ?>" class="<?php echo  esc_attr(ucfirst($value['name'])); ?>">
+												<div class="collar-name"><?php  echo esc_html(ucfirst($value['name'])); ?></div>
+												<div class="smallSubname"><?php  echo esc_html(ucfirst($value['sub_name'])); ?>	</div>
 											</label>
 										<?php endforeach ?>
 									</div>
@@ -448,13 +595,13 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 											<label class="collar-option radioTocheck cup-option-click <?php echo (($value['selected']) == 'Yes'  ?  'selected' :  ''); ?>">
 												<input 
 												type="radio" 
-												name="collar-style" 
-												value="<?php  echo ucfirst($value['name']); ?>" 
+												name="cuff-style" 
+												value="<?php  echo esc_attr(ucfirst($value['name'])); ?>" 
 												<?php echo (($value['selected']) === 'Yes' ? 'checked' : ''); ?>
 												>
-											<img src="<?php  echo ucfirst($value['image']); ?>" alt="<?php  echo ucfirst($value['name']); ?>" class="<?php echo  ucfirst($value['name']); ?>">
-												<div class="collar-name"><?php  echo ucfirst($value['name']); ?></div>
-												<div class="smallSubname"><?php  echo ucfirst($value['sub_name']); ?>	</div>
+											<img src="<?php  echo esc_url($value['image']); ?>" alt="<?php  echo esc_attr(ucfirst($value['name'])); ?>" class="<?php echo  esc_attr(ucfirst($value['name'])); ?>">
+												<div class="collar-name"><?php  echo esc_html(ucfirst($value['name'])); ?></div>
+												<div class="smallSubname"><?php  echo esc_html(ucfirst($value['sub_name'])); ?>	</div>
 											</label>
 										<?php endforeach ?>
 									</div>
@@ -581,7 +728,7 @@ function toggleVideo(e, videoId) {
 
 document.addEventListener("DOMContentLoaded", function () {
     
-    // 1. "See More" Button Logic
+    // 1. "See More" Button Logic (desktop)
     const seeMoreBtn = document.getElementById('mont_see_more_btn');
     if (seeMoreBtn) {
         seeMoreBtn.addEventListener('click', function() {
@@ -592,11 +739,78 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 2. Select Radio Logic
-    let selectedRadio = document.querySelector('input[name="collar-style"][checked]');
-    if (selectedRadio) {
-        selectedRadio.checked = true; 
-    }
+    // 2. Mobile gallery slider
+    (function initMobileGallerySlider() {
+        const track = document.getElementById('mont_gallery_track');
+        if (!track) return;
+
+        const items = Array.from(track.querySelectorAll('.mont_gallery_item'));
+        if (items.length < 2) return;
+
+        const prevBtn = document.querySelector('.mont_gallery_prev');
+        const nextBtn = document.querySelector('.mont_gallery_next');
+        const dotsWrap = document.getElementById('mont_gallery_dots');
+        let index = 0;
+
+        if (dotsWrap) {
+            items.forEach((_, i) => {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'mont_gallery_dot' + (i === 0 ? ' is-active' : '');
+                dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+                dot.addEventListener('click', () => goTo(i));
+                dotsWrap.appendChild(dot);
+            });
+        }
+
+        function isMobile() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+
+        function goTo(i) {
+            if (!isMobile()) return;
+            index = Math.max(0, Math.min(i, items.length - 1));
+            const left = items[index].offsetLeft;
+            track.scrollTo({ left: left, behavior: 'smooth' });
+            updateUI();
+        }
+
+        function updateUI() {
+            if (dotsWrap) {
+                dotsWrap.querySelectorAll('.mont_gallery_dot').forEach((d, i) => {
+                    d.classList.toggle('is-active', i === index);
+                });
+            }
+            if (prevBtn) prevBtn.disabled = index <= 0;
+            if (nextBtn) nextBtn.disabled = index >= items.length - 1;
+        }
+
+        function syncIndexFromScroll() {
+            if (!isMobile()) return;
+            const scrollLeft = track.scrollLeft;
+            let closest = 0;
+            let minDist = Infinity;
+            items.forEach((item, i) => {
+                const dist = Math.abs(item.offsetLeft - scrollLeft);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = i;
+                }
+            });
+            index = closest;
+            updateUI();
+        }
+
+        if (prevBtn) prevBtn.addEventListener('click', () => goTo(index - 1));
+        if (nextBtn) nextBtn.addEventListener('click', () => goTo(index + 1));
+        track.addEventListener('scroll', () => {
+            window.clearTimeout(track._scrollTimer);
+            track._scrollTimer = window.setTimeout(syncIndexFromScroll, 80);
+        }, { passive: true });
+
+        updateUI();
+        window.addEventListener('resize', updateUI);
+    })();
 
     // ============================================
     // LIGHTBOX LOGIC
@@ -628,6 +842,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     triggers.forEach(trigger => {
         trigger.addEventListener('click', function() {
+            // On mobile, don't open lightbox for simple swipe browsing — still allow tap to zoom/view
             const type = this.getAttribute('data-media-type');
             const src = this.getAttribute('data-src');
 

@@ -90,16 +90,15 @@ if (response.success) {
         }
     });
 
-            // Handle radio button changes
+            // Handle radio button changes — scope to the same group (collar OR cuff)
     $('.collar-option input[type="radio"]').change(function() {
-                // Remove selected class from all options
-        $('.collar-option').removeClass('selected');
-                // Add selected class to chosen option
+        var $group = $(this).closest('.collar-options');
+        $group.find('.collar-option').removeClass('selected');
         $(this).closest('.collar-option').addClass('selected');
     });
 
             // Make the entire option clickable
-    $('.collar-option').click(function(e) {
+    $('.velg-snipp .collar-option').click(function(e) {
         if (!$(e.target).is('input')) {
             $(this).find('input[type="radio"]').prop('checked', true).trigger('change');
         }
@@ -116,7 +115,7 @@ if (response.success) {
 				$('.velg-mansjetter').find(".mont_option-list").removeClass('mont_open');
 	  			$('.velg-mansjetter').find(".mont_variation-group").removeClass('mont_open');
                  $('.skreddersydd').find(".mont_option-list").addClass('mont_open');
-	  			$('.skreddersyddr').find(".mont_variation-group").addClass('mont_open');
+	  			$('.skreddersydd').find(".mont_variation-group").addClass('mont_open');
     });
 
 
@@ -182,7 +181,9 @@ if (response.success) {
                 if (data.sleeve_length !== undefined) {
                    var number =  'Left: ' +data.sleeve_length+ ' cm, Right: ' + data.sleeve_length +  ' cm';
                      $('.mont_sizes-measurement-item[data-mont-size="sleeve_length"]').find(".mont_sizes-measurement-value").text(number);
-					
+                     $('input[name="mont_sizes[sleeve_length_left]"]').val(data.sleeve_length).attr('data-value', data.sleeve_length);
+                     $('input[name="mont_sizes[sleeve_length_right]"]').val(data.sleeve_length).attr('data-value', data.sleeve_length);
+                     $('.mont_sizes-measurement-item[data-mont-size="sleeve_length"]').find('.mont_sizes-control-value').text(data.sleeve_length + ' cm');
                 }
             }
         },

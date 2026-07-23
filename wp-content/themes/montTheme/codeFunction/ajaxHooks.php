@@ -39,12 +39,12 @@ class ajaxHooks
     wp_enqueue_script('mont-gallery-size-js', get_template_directory_uri(). '/assets/custom-sizes.js');
     wp_enqueue_script('mont-gallery-size-javascript', get_template_directory_uri(). '/assets/custom-sizes-javascript.js');
     wp_enqueue_script('mont-custom-jquery', get_template_directory_uri(). '/assets/custom.js');
-    wp_enqueue_script('mont-cart-js', get_template_directory_uri(). '/assets/cart.js');
+    wp_enqueue_script('mont-cart-js', get_template_directory_uri(). '/assets/cart.js', array('jquery'), filemtime(get_template_directory() . '/assets/cart.js'), true);
     wp_enqueue_script('lucide-icon', 'https://unpkg.com/lucide@latest');
 
 
 
-    wp_enqueue_script('mont-variation-ajax', get_template_directory_uri() . '/assets/variation-ajax.js', array('jquery'), null, true);
+    wp_enqueue_script('mont-variation-ajax', get_template_directory_uri() . '/assets/variation-ajax.js', array('jquery'), filemtime(get_template_directory() . '/assets/variation-ajax.js'), true);
     wp_localize_script('mont-variation-ajax', 'ajaxurl', array('url' => admin_url('admin-ajax.php')));
 
 }
