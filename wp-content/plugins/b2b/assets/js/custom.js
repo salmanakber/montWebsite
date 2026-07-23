@@ -36,14 +36,22 @@ jQuery(document).ready(function($) {
 
 
   $(document).on('click', '.b2b-check-to-go-collar', function(e) {
-    e.preventDefault(); // Corrected to preventDefault()
+        e.preventDefault();
+        var $label = $(this);
+        $('.b2b-check-to-go-collar').removeClass('is-selected');
         $('.b2b-check-to-go-collar .blank-check').removeClass('checkbtn');
-        $(this).find('.blank-check').addClass('checkbtn');
+        $label.addClass('is-selected');
+        $label.find('.blank-check').addClass('checkbtn');
+        $label.find('input[type=radio]').prop('checked', true);
 });
     $(document).on('click', '.b2b-check-to-go-cuff', function(e) {
-    e.preventDefault(); // Corrected to preventDefault()
+        e.preventDefault();
+        var $label = $(this);
+        $('.b2b-check-to-go-cuff').removeClass('is-selected');
         $('.b2b-check-to-go-cuff .blank-check').removeClass('checkbtn');
-        $(this).find('.blank-check').addClass('checkbtn');
+        $label.addClass('is-selected');
+        $label.find('.blank-check').addClass('checkbtn');
+        $label.find('input[type=radio]').prop('checked', true);
 });
 
         function updateSum() {

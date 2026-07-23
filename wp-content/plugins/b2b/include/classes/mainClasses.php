@@ -245,29 +245,27 @@ public function monte_b2b_shortcode($atts) {
    $output = '<div class="b2b-contents">';
     // Include your template HTML here
    foreach (get_field('choose_collar_update', 'option') as $key => $value){
-
-    $collar_type .= ' <label class="b2b-check-to-go-collar">
-                      <input type="radio" name="collar_type" value="'.ucfirst($value['name']).'" '.(($value['selected']) === 'Yes' ? 'checked' : '').'>
-                     <input type="hidden" name="data_collar_type_transmit_129" value="'.$value['image'].'">                                 
-                      <img src="'.$value['image'].'" height="69">
-                      <div class="text-and-check">
-                      <div class="blank-check '.(($value['selected']) === 'Yes' ? 'checkbtn' : '').'"></div>
-                      <span>'.ucfirst($value['name']).'</span>
-                     </div>
-                 </label>';
+    $is_sel = ( ( $value['selected'] ?? '' ) === 'Yes' );
+    $collar_type .= '<label class="b2b-check-to-go-collar b2b-option-tile' . ( $is_sel ? ' is-selected' : '' ) . '">'
+      . '<input type="radio" name="collar_type" value="' . esc_attr( ucfirst( $value['name'] ) ) . '" ' . ( $is_sel ? 'checked' : '' ) . '>'
+      . '<input type="hidden" name="data_collar_type_transmit_129" value="' . esc_url( $value['image'] ) . '">'
+      . '<span class="b2b-option-tile__media"><img src="' . esc_url( $value['image'] ) . '" alt="' . esc_attr( ucfirst( $value['name'] ) ) . '"></span>'
+      . '<span class="text-and-check b2b-option-tile__meta">'
+      . '<span class="blank-check ' . ( $is_sel ? 'checkbtn' : '' ) . '"></span>'
+      . '<span class="b2b-option-tile__name">' . esc_html( ucfirst( $value['name'] ) ) . '</span>'
+      . '</span></label>';
 }
 
    foreach (get_field('choose_cuff_update', 'option') as $key => $value){
-
-    $cuff_type .= ' <label class="b2b-check-to-go-cuff">
-                     <input type="radio" name="cuff_type" value="'.ucfirst($value['name']).'" '.(($value['selected']) === 'Yes' ? 'checked' : '').'>
-                     <input type="hidden" name="data_cuff_type_transmit_111" value="'.$value['image'].'">                                 
-                     <img src="'.$value['image'].'" height="69">
-    <div class="text-and-check">
-    <div class="blank-check '.(($value['selected']) === 'Yes' ? 'checkbtn' : '').'"></div>
-    <span>'.ucfirst($value['name']).'</span>
-    </div>
-    </label>';
+    $is_sel = ( ( $value['selected'] ?? '' ) === 'Yes' );
+    $cuff_type .= '<label class="b2b-check-to-go-cuff b2b-option-tile' . ( $is_sel ? ' is-selected' : '' ) . '">'
+      . '<input type="radio" name="cuff_type" value="' . esc_attr( ucfirst( $value['name'] ) ) . '" ' . ( $is_sel ? 'checked' : '' ) . '>'
+      . '<input type="hidden" name="data_cuff_type_transmit_111" value="' . esc_url( $value['image'] ) . '">'
+      . '<span class="b2b-option-tile__media"><img src="' . esc_url( $value['image'] ) . '" alt="' . esc_attr( ucfirst( $value['name'] ) ) . '"></span>'
+      . '<span class="text-and-check b2b-option-tile__meta">'
+      . '<span class="blank-check ' . ( $is_sel ? 'checkbtn' : '' ) . '"></span>'
+      . '<span class="b2b-option-tile__name">' . esc_html( ucfirst( $value['name'] ) ) . '</span>'
+      . '</span></label>';
 }
 
         
@@ -306,10 +304,10 @@ public function bubble_b2b_cart_button(){
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.1', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.2', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
     wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.4');
-    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.2');
+    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.3');
     wp_enqueue_style('b2b-notify', $this->url . 'assets/css/notify.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-css-min', $this->url . 'assets/css/owl.carousel.min.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');

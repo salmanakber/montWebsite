@@ -86,14 +86,14 @@
 				<textarea placeholder="Comments" id="s_comment" name="comment"></textarea>
 			</div>
 
-			<div class="b2b-measure-boxes collar-type-b2b">
+			<div class="b2b-measure-boxes collar-type-b2b b2b-option-section">
 				<h4 class="b2b-h4">Collar Type</h4>
-				<div class="collardiv">{{collar}}</div>
+				<div class="collardiv b2b-option-row">{{collar}}</div>
 			</div>
 
-			<div class="measure-boxes-b2b cuff-type-b2b">
+			<div class="measure-boxes-b2b cuff-type-b2b b2b-option-section">
 				<h4 class="b2b-h4">Cuff Type</h4>
-				<div class="collardiv">{{cuff}}</div>
+				<div class="collardiv b2b-option-row">{{cuff}}</div>
 			</div>
 
 			<div class="b2b-add-to-cart-button">
