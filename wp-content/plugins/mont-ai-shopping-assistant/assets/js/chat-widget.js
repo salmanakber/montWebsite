@@ -26,6 +26,7 @@
 
 		var history = loadHistory();
 		var busy = false;
+		var lastSendAt = 0;
 		var language = localStorage.getItem(STORAGE_LANG) || cfg.defaultLang || 'en';
 
 		function loadHistory() {
@@ -55,36 +56,105 @@
 			messagesEl.scrollTop = messagesEl.scrollHeight;
 		}
 
+		function disableActiveChoices() {
+			messagesEl.querySelectorAll('.mont-ai-choice-btn:not([disabled]), .mont-ai-card--pick').forEach(function (el) {
+				el.setAttribute('disabled', 'disabled');
+				el.classList.add('is-disabled');
+				el.style.pointerEvents = 'none';
+			});
+		}
+
+		function renderChoices(wrap, choices) {
+			if (!choices || !choices.choices || !choices.choices.length) return;
+
+			var box = document.createElement('div');
+			box.className = 'mont-ai-choices';
+			box.setAttribute('data-field', choices.field || '');
+
+			if (choices.title) {
+				var title = document.createElement('div');
+				title.className = 'mont-ai-choices__title';
+				title.textContent = choices.title;
+				box.appendChild(title);
+			}
+
+			var type = choices.type || 'buttons';
+			var grid = document.createElement('div');
+			grid.className = 'mont-ai-choices__grid mont-ai-choices__grid--' + type;
+
+			choices.choices.forEach(function (item) {
+				var btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'mont-ai-choice-btn' + (item.image ? ' mont-ai-choice-btn--image' : '');
+				btn.setAttribute('data-value', item.value || item.label || '');
+
+				if (item.image) {
+					var img = document.createElement('img');
+					img.src = item.image;
+					img.alt = item.label || '';
+					img.className = 'mont-ai-choice-btn__img';
+					btn.appendChild(img);
+				}
+
+				var label = document.createElement('span');
+				label.className = 'mont-ai-choice-btn__label';
+				label.textContent = item.label || item.value || '';
+				btn.appendChild(label);
+
+				if (item.sub) {
+					var sub = document.createElement('span');
+					sub.className = 'mont-ai-choice-btn__sub';
+					sub.textContent = item.sub;
+					btn.appendChild(sub);
+				}
+
+				btn.addEventListener('click', function () {
+					if (busy || btn.disabled) return;
+					var val = btn.getAttribute('data-value') || '';
+					disableActiveChoices();
+					btn.classList.add('is-selected');
+					sendText(val);
+				});
+
+				grid.appendChild(btn);
+			});
+
+			box.appendChild(grid);
+			wrap.appendChild(box);
+		}
+
 		function appendMessage(role, text, meta) {
 			meta = meta || {};
 			var wrap = document.createElement('div');
 			wrap.className = 'mont-ai-msg mont-ai-msg--' + role;
 
-			var bubbleEl = document.createElement('div');
-			bubbleEl.className = 'mont-ai-msg__bubble';
-			bubbleEl.textContent = text;
-			wrap.appendChild(bubbleEl);
+			if (text) {
+				var bubbleEl = document.createElement('div');
+				bubbleEl.className = 'mont-ai-msg__bubble';
+				bubbleEl.textContent = text;
+				wrap.appendChild(bubbleEl);
+			}
 
+			// Selectable product cards (tap to choose)
 			if (meta.cards && meta.cards.length) {
 				var cards = document.createElement('div');
 				cards.className = 'mont-ai-cards';
 				meta.cards.forEach(function (card) {
-					var a = document.createElement('a');
-					a.className = 'mont-ai-card';
-					a.href = card.permalink || '#';
-					a.target = '_blank';
-					a.rel = 'noopener';
+					var row = document.createElement('div');
+					row.className = 'mont-ai-card mont-ai-card--pick';
+					row.setAttribute('role', 'button');
+					row.tabIndex = 0;
 
 					if (card.image) {
 						var img = document.createElement('img');
 						img.className = 'mont-ai-card__img';
 						img.src = card.image;
 						img.alt = card.name || '';
-						a.appendChild(img);
+						row.appendChild(img);
 					} else {
 						var ph = document.createElement('div');
 						ph.className = 'mont-ai-card__img';
-						a.appendChild(ph);
+						row.appendChild(ph);
 					}
 
 					var info = document.createElement('div');
@@ -96,16 +166,49 @@
 					price.textContent = card.price || '';
 					info.appendChild(name);
 					info.appendChild(price);
-					a.appendChild(info);
+					row.appendChild(info);
 
-					var cta = document.createElement('span');
-					cta.className = 'mont-ai-card__cta';
-					cta.textContent = (cfg.i18n && cfg.i18n.viewProduct) || 'View';
-					a.appendChild(cta);
+					var actions = document.createElement('div');
+					actions.className = 'mont-ai-card__actions';
 
-					cards.appendChild(a);
+					var pick = document.createElement('button');
+					pick.type = 'button';
+					pick.className = 'mont-ai-card__cta';
+					pick.textContent = 'Select';
+					pick.addEventListener('click', function (e) {
+						e.preventDefault();
+						e.stopPropagation();
+						if (busy) return;
+						disableActiveChoices();
+						sendText('I want product #' + card.id + ': ' + (card.name || ''));
+					});
+					actions.appendChild(pick);
+
+					if (card.permalink) {
+						var view = document.createElement('a');
+						view.className = 'mont-ai-card__link';
+						view.href = card.permalink;
+						view.target = '_blank';
+						view.rel = 'noopener';
+						view.textContent = (cfg.i18n && cfg.i18n.viewProduct) || 'View';
+						actions.appendChild(view);
+					}
+
+					row.appendChild(actions);
+
+					row.addEventListener('click', function () {
+						if (busy) return;
+						disableActiveChoices();
+						sendText('I want product #' + card.id + ': ' + (card.name || ''));
+					});
+
+					cards.appendChild(row);
 				});
 				wrap.appendChild(cards);
+			}
+
+			if (meta.choices) {
+				renderChoices(wrap, meta.choices);
 			}
 
 			if (meta.cartUpdated) {
@@ -185,12 +288,20 @@
 			});
 		}
 
-		function send() {
-			var text = (input && input.value ? input.value : '').trim();
+		function sendText(text) {
+			text = (text || '').trim();
 			if (!text || busy) return;
 
-			input.value = '';
-			autoGrow();
+			// Soft client debounce against rapid double-taps / rate limits.
+			var now = Date.now();
+			if (now - lastSendAt < 800) return;
+			lastSendAt = now;
+
+			if (input) {
+				input.value = '';
+				autoGrow();
+			}
+
 			appendMessage('user', text);
 			history.push({ role: 'user', content: text });
 			saveHistory();
@@ -216,17 +327,16 @@
 			})
 				.then(function (res) {
 					return res.json().then(function (data) {
-						if (!res.ok) {
-							throw new Error((data && data.message) || (cfg.i18n && cfg.i18n.error) || 'Error');
-						}
-						return data;
+						return { ok: res.ok, data: data };
 					});
 				})
-				.then(function (data) {
+				.then(function (payload) {
 					hideTyping();
-					var msg = (data && data.message) ? data.message : '';
+					var data = payload.data || {};
+					var msg = data.message || ((cfg.i18n && cfg.i18n.error) || 'Error');
 					appendMessage('assistant', msg, {
 						cards: data.cards || [],
+						choices: data.choices || null,
 						cartUpdated: !!data.cart_updated
 					});
 					history.push({ role: 'assistant', content: msg });
@@ -240,6 +350,11 @@
 					setBusy(false);
 					if (input) input.focus();
 				});
+		}
+
+		function send() {
+			var text = (input && input.value ? input.value : '').trim();
+			sendText(text);
 		}
 
 		function autoGrow() {
@@ -323,7 +438,6 @@
 		boot();
 	}
 
-	// If markup is injected after scripts (wp_footer order), retry shortly.
 	window.setTimeout(boot, 0);
 	window.setTimeout(boot, 250);
 })();

@@ -46,25 +46,74 @@ class Groq_Provider implements Provider_Interface {
 	 * @inheritdoc
 	 */
 	public function chat( array $messages, array $tools = array(), array $args = array() ) {
+		$attempts = 0;
+		$max      = 3;
+		$last_error = null;
+
+		while ( $attempts < $max ) {
+			++$attempts;
+			try {
+				return $this->request( $messages, $tools, $args );
+			} catch ( \Exception $e ) {
+				$last_error = $e;
+				$msg = $e->getMessage();
+
+				// Rate limit / transient — backoff and retry.
+				if ( false !== strpos( $msg, 'HTTP 429' ) || false !== strpos( $msg, 'HTTP 503' ) ) {
+					usleep( (int) ( 700000 * $attempts ) ); // 0.7s, 1.4s, …
+					continue;
+				}
+
+				// Malformed tool call — retry once without tools so the user still gets a reply.
+				if ( false !== stripos( $msg, 'Failed to call a function' ) ) {
+					if ( ! empty( $tools ) && empty( $args['no_tool_retry'] ) ) {
+						Plugin::log( 'Groq tool-call malformed — retrying text-only' );
+						$repair = $messages;
+						$repair[] = array(
+							'role'    => 'user',
+							'content' => 'Continue helping the customer in plain text. Do not call tools in this reply. If they need to pick an option, list the choices clearly.',
+						);
+						return $this->request( $repair, array(), array_merge( $args, array( 'no_tool_retry' => true ) ) );
+					}
+				}
+
+				throw $e;
+			}
+		}
+
+		throw $last_error ? $last_error : new \Exception( 'Groq unavailable' );
+	}
+
+	/**
+	 * Perform one Groq API request.
+	 *
+	 * @param array $messages Messages.
+	 * @param array $tools    Tools.
+	 * @param array $args     Args.
+	 * @return array
+	 * @throws \Exception On failure.
+	 */
+	private function request( array $messages, array $tools, array $args ) {
 		$s     = Plugin::settings();
 		$model = ! empty( $args['model'] ) ? $args['model'] : $s['groq_model'];
 
 		$body = array(
 			'model'       => $model,
-			'messages'    => $messages,
+			'messages'    => $this->sanitize_messages( $messages ),
 			'temperature' => isset( $args['temperature'] ) ? (float) $args['temperature'] : (float) $s['temperature'],
 			'max_tokens'  => isset( $args['max_tokens'] ) ? (int) $args['max_tokens'] : (int) $s['max_tokens'],
 		);
 
 		if ( ! empty( $tools ) ) {
-			$body['tools']       = $tools;
-			$body['tool_choice'] = 'auto';
+			$body['tools']               = $tools;
+			$body['tool_choice']         = 'auto';
+			$body['parallel_tool_calls'] = false;
 		}
 
 		$response = wp_remote_post(
 			self::ENDPOINT,
 			array(
-				'timeout' => 45,
+				'timeout' => 60,
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $s['groq_api_key'],
 					'Content-Type'  => 'application/json',
@@ -78,7 +127,8 @@ class Groq_Provider implements Provider_Interface {
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
-		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		$raw  = wp_remote_retrieve_body( $response );
+		$data = json_decode( $raw, true );
 
 		if ( $code === 429 || $code >= 500 ) {
 			throw new \Exception( 'Groq unavailable (HTTP ' . $code . ')' );
@@ -90,12 +140,60 @@ class Groq_Provider implements Provider_Interface {
 		}
 
 		$msg = $data['choices'][0]['message'];
+		$tool_calls = array();
+		if ( ! empty( $msg['tool_calls'] ) && is_array( $msg['tool_calls'] ) ) {
+			foreach ( $msg['tool_calls'] as $tc ) {
+				// Drop malformed tool calls instead of failing the whole turn.
+				if ( empty( $tc['function']['name'] ) ) {
+					continue;
+				}
+				$args_raw = isset( $tc['function']['arguments'] ) ? $tc['function']['arguments'] : '{}';
+				if ( is_array( $args_raw ) ) {
+					$args_raw = wp_json_encode( $args_raw );
+				}
+				$decoded = json_decode( (string) $args_raw, true );
+				if ( ! is_array( $decoded ) ) {
+					// Try to salvage truncated JSON.
+					$decoded = array();
+				}
+				$tc['function']['arguments'] = wp_json_encode( $decoded );
+				$tool_calls[] = $tc;
+			}
+		}
 
 		return array(
 			'content'    => isset( $msg['content'] ) ? (string) $msg['content'] : '',
-			'tool_calls' => isset( $msg['tool_calls'] ) && is_array( $msg['tool_calls'] ) ? $msg['tool_calls'] : array(),
+			'tool_calls' => $tool_calls,
 			'raw'        => $data,
 			'provider'   => $this->get_id(),
 		);
+	}
+
+	/**
+	 * Normalize message payloads for Groq (null content, tool ids).
+	 *
+	 * @param array $messages Messages.
+	 * @return array
+	 */
+	private function sanitize_messages( array $messages ) {
+		$out = array();
+		foreach ( $messages as $msg ) {
+			$role = isset( $msg['role'] ) ? $msg['role'] : 'user';
+			$row  = array( 'role' => $role );
+
+			if ( 'assistant' === $role && ! empty( $msg['tool_calls'] ) ) {
+				$row['content']    = isset( $msg['content'] ) && $msg['content'] !== '' ? (string) $msg['content'] : null;
+				$row['tool_calls'] = $msg['tool_calls'];
+			} elseif ( 'tool' === $role ) {
+				$row['tool_call_id'] = isset( $msg['tool_call_id'] ) ? (string) $msg['tool_call_id'] : '';
+				$row['name']         = isset( $msg['name'] ) ? (string) $msg['name'] : '';
+				$row['content']      = isset( $msg['content'] ) ? (string) $msg['content'] : '';
+			} else {
+				$row['content'] = isset( $msg['content'] ) ? (string) $msg['content'] : '';
+			}
+
+			$out[] = $row;
+		}
+		return $out;
 	}
 }

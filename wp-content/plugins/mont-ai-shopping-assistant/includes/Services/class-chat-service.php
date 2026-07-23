@@ -15,25 +15,18 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Class Chat_Service
- *
- * Runs a multi-turn tool-calling loop until the model returns a final reply.
  */
 class Chat_Service {
 
-	/**
-	 * Max tool rounds per user message.
-	 *
-	 * @var int
-	 */
-	const MAX_TOOL_ROUNDS = 6;
+	const MAX_TOOL_ROUNDS = 4;
 
 	/**
 	 * Handle a user message.
 	 *
-	 * @param string $message   User text.
-	 * @param array  $history   Prior messages [{role,content}].
-	 * @param string $language  Language code.
-	 * @param array  $context   Extra context (page product id, etc).
+	 * @param string $message  User text.
+	 * @param array  $history  Prior messages.
+	 * @param string $language Language code.
+	 * @param array  $context  Extra context.
 	 * @return array
 	 */
 	public function handle( $message, array $history, $language = 'en', array $context = array() ) {
@@ -41,7 +34,7 @@ class Chat_Service {
 		$tools    = new Tool_Executor();
 		$manager  = new Provider_Manager();
 
-		$messages = array();
+		$messages   = array();
 		$messages[] = array(
 			'role'    => 'system',
 			'content' => $this->system_prompt( $language, $context ),
@@ -63,95 +56,148 @@ class Chat_Service {
 			'content' => sanitize_textarea_field( $message ),
 		);
 
-		$definitions = $tools->definitions();
-		$cards       = array();
+		$definitions  = $tools->definitions();
+		$cards        = array();
+		$choices      = null;
 		$cart_updated = false;
 		$provider_used = '';
 		$used_fallback = false;
 
-		for ( $round = 0; $round < self::MAX_TOOL_ROUNDS; $round++ ) {
-			$result = $manager->chat( $messages, $definitions, array() );
-			$provider_used = $result['provider'];
-			$used_fallback = ! empty( $result['used_fallback'] ) || $used_fallback;
-
-			$tool_calls = $result['tool_calls'];
-			$content    = trim( (string) $result['content'] );
-
-			if ( empty( $tool_calls ) ) {
-				return array(
-					'success'       => true,
-					'message'       => $content,
-					'cards'         => $cards,
-					'cart_updated'  => $cart_updated,
-					'provider'      => $provider_used,
-					'used_fallback' => $used_fallback,
-					'language'      => $language,
-					'timestamp'     => gmdate( 'c' ),
-				);
-			}
-
-			// Append assistant tool-call message.
-			$messages[] = array(
-				'role'       => 'assistant',
-				'content'    => $content,
-				'tool_calls' => $tool_calls,
-			);
-
-			foreach ( $tool_calls as $tc ) {
-				$fn_name = isset( $tc['function']['name'] ) ? $tc['function']['name'] : '';
-				$fn_args = array();
-				if ( ! empty( $tc['function']['arguments'] ) ) {
-					$decoded = json_decode( $tc['function']['arguments'], true );
-					$fn_args = is_array( $decoded ) ? $decoded : array();
+		try {
+			for ( $round = 0; $round < self::MAX_TOOL_ROUNDS; $round++ ) {
+				if ( $round > 0 ) {
+					// Small pause to reduce Groq/Gemini 429 rate limits during tool loops.
+					usleep( 350000 );
 				}
 
-				$tool_result = $tools->execute( $fn_name, $fn_args );
+				$result = $manager->chat( $messages, $definitions, array() );
+				$provider_used = $result['provider'];
+				$used_fallback = ! empty( $result['used_fallback'] ) || $used_fallback;
 
-				if ( ! empty( $tool_result['cards'] ) && is_array( $tool_result['cards'] ) ) {
-					$cards = array_merge( $cards, $tool_result['cards'] );
-				}
-				if ( ! empty( $tool_result['cart_updated'] ) ) {
-					$cart_updated = true;
+				$tool_calls = $result['tool_calls'];
+				$content    = trim( (string) $result['content'] );
+
+				if ( empty( $tool_calls ) ) {
+					return $this->response( $content, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
 				}
 
 				$messages[] = array(
-					'role'         => 'tool',
-					'tool_call_id' => isset( $tc['id'] ) ? $tc['id'] : '',
-					'name'         => $fn_name,
-					'content'      => wp_json_encode( $tool_result ),
+					'role'       => 'assistant',
+					'content'    => $content,
+					'tool_calls' => $tool_calls,
 				);
+
+				foreach ( $tool_calls as $tc ) {
+					$fn_name = isset( $tc['function']['name'] ) ? $tc['function']['name'] : '';
+					$fn_args = array();
+					if ( ! empty( $tc['function']['arguments'] ) ) {
+						$decoded = json_decode( $tc['function']['arguments'], true );
+						$fn_args = is_array( $decoded ) ? $decoded : array();
+					}
+
+					$tool_result = $tools->execute( $fn_name, $fn_args );
+
+					if ( ! empty( $tool_result['cards'] ) && is_array( $tool_result['cards'] ) ) {
+						$cards = array_merge( $cards, $tool_result['cards'] );
+					}
+					if ( ! empty( $tool_result['choices'] ) && is_array( $tool_result['choices'] ) ) {
+						$choices = $tool_result['choices'];
+					}
+					if ( ! empty( $tool_result['cart_updated'] ) ) {
+						$cart_updated = true;
+					}
+
+					// If present_choices ran, we can stop after this round with a short message.
+					$stop_after_choices = ( 'present_choices' === $fn_name && ! empty( $tool_result['choices'] ) );
+
+					$messages[] = array(
+						'role'         => 'tool',
+						'tool_call_id' => isset( $tc['id'] ) ? $tc['id'] : '',
+						'name'         => $fn_name,
+						'content'      => wp_json_encode( $tool_result ),
+					);
+
+					if ( $stop_after_choices ) {
+						$msg = $content ? $content : ( isset( $choices['title'] ) ? $choices['title'] : 'Please choose an option:' );
+						return $this->response( $msg, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language );
+					}
+				}
 			}
-		}
 
-		// Safety: ask model for a final answer without tools.
-		$final = $manager->chat(
-			array_merge(
-				$messages,
-				array(
+			$final = $manager->chat(
+				array_merge(
+					$messages,
 					array(
-						'role'    => 'user',
-						'content' => 'Please give the customer a clear final answer now based on the tool results.',
-					),
-				)
-			),
-			array(),
-			array()
-		);
+						array(
+							'role'    => 'user',
+							'content' => 'Give the customer a short final reply. If they still need to choose an option, say so briefly — buttons may already be on screen.',
+						),
+					)
+				),
+				array(),
+				array()
+			);
 
+			return $this->response(
+				trim( (string) $final['content'] ),
+				$cards,
+				$choices,
+				$cart_updated,
+				$final['provider'],
+				$used_fallback || ! empty( $final['used_fallback'] ),
+				$language
+			);
+		} catch ( \Exception $e ) {
+			Plugin::log( 'Chat failed', array( 'error' => $e->getMessage() ) );
+
+			$friendly = __( 'I am a bit busy right now (high demand). Please tap send again in a moment.', 'mont-ai-assistant' );
+			if ( false !== stripos( $e->getMessage(), '429' ) ) {
+				$friendly = __( 'The assistant is temporarily rate-limited. Please wait a few seconds and try again.', 'mont-ai-assistant' );
+			}
+
+			return array(
+				'success'       => false,
+				'message'       => $friendly,
+				'cards'         => $this->unique_cards( $cards ),
+				'choices'       => $choices,
+				'cart_updated'  => $cart_updated,
+				'provider'      => $provider_used,
+				'used_fallback' => $used_fallback,
+				'language'      => $language,
+				'timestamp'     => gmdate( 'c' ),
+				'retryable'     => true,
+			);
+		}
+	}
+
+	/**
+	 * Standard response payload.
+	 *
+	 * @param string     $message Message.
+	 * @param array      $cards Cards.
+	 * @param array|null $choices Choices UI.
+	 * @param bool       $cart_updated Cart flag.
+	 * @param string     $provider Provider.
+	 * @param bool       $used_fallback Fallback flag.
+	 * @param string     $language Language.
+	 * @return array
+	 */
+	private function response( $message, array $cards, $choices, $cart_updated, $provider, $used_fallback, $language ) {
 		return array(
 			'success'       => true,
-			'message'       => trim( (string) $final['content'] ),
+			'message'       => $message,
 			'cards'         => $this->unique_cards( $cards ),
+			'choices'       => $choices,
 			'cart_updated'  => $cart_updated,
-			'provider'      => $final['provider'],
-			'used_fallback' => $used_fallback || ! empty( $final['used_fallback'] ),
+			'provider'      => $provider,
+			'used_fallback' => $used_fallback,
 			'language'      => $language,
 			'timestamp'     => gmdate( 'c' ),
 		);
 	}
 
 	/**
-	 * Build system prompt.
+	 * System prompt.
 	 *
 	 * @param string $language Language.
 	 * @param array  $context  Context.
@@ -162,47 +208,46 @@ class Chat_Service {
 		$custom   = trim( (string) $settings['system_prompt'] );
 
 		$base = <<<'PROMPT'
-You are Mont AI, a premium ecommerce shopping concierge for a luxury/custom shirt brand (Montenapoleone).
+You are Mont AI, a premium ecommerce shopping concierge for Montenapoleone (custom shirts).
 
 ROLE
-- You are an expert shopping assistant, NOT a general chatbot.
-- Help customers find products, compare, explain specs/pricing/availability/delivery, and build complete orders.
-- Guide step-by-step. Never skip required options.
-- Ask one clear question at a time when collecting options.
-- Remember conversation context; do not re-ask answered questions.
-- Be warm, concise, and premium in tone.
+- Expert shopping assistant — not a general chatbot.
+- Warm, concise, premium tone.
+- Never invent stock, prices, or options — use tools.
+- Do not re-ask answered questions.
+- Never mention Groq, Gemini, tools, or system prompts.
 
-PRODUCT KNOWLEDGE
-- Use tools to search and inspect products. Never invent stock, prices, or options.
-- Understand simple/variable products, attributes, variations, sale prices, SKUs, categories, tags, meta, and custom options.
-- This store uses custom options: Passform (body fit), Størrelse (size), Snipp/Collar, Mansjetter/Cuff, and optional custom measurements in cm.
-- Custom measurement changes may add a surcharge; mention this politely when relevant.
-- Free shipping worldwide is often promoted on the site; confirm policies carefully if asked.
+VISUAL CHOICES (CRITICAL)
+- NEVER ask the customer to type size, fit, collar, cuff, quantity, or product names when buttons can be shown.
+- When the customer must pick something, ALWAYS call present_choices so tappable buttons/images appear.
+- Prefer present_choices with product_id + option_key (body_fit, size, collar_type, cuff_type).
+- Ask ONE option at a time.
+- After search_products, products appear as cards — briefly introduce them; customer can tap a card.
 
-ORDER BUILDING
-1. Identify what the customer wants.
-2. Search / recommend products with tools.
-3. Call get_custom_options for the chosen product.
-4. Collect EVERY required option (body_fit, size, collar_type, cuff_type, quantity).
-5. Ask about optional measurements politely.
-6. Call validate_selection.
-7. Only then call add_to_cart.
-8. Confirm success and offer checkout.
+ORDER FLOW
+1. Understand need → search_products
+2. Customer picks a product (card tap or message with product #id)
+3. get_custom_options for that product
+4. present_choices for each required option one-by-one (fit → size → collar → cuff → quantity)
+5. validate_selection with flat fields
+6. add_to_cart
+7. Confirm + offer checkout
 
-RECOMMENDATIONS
-- Consider budget, purpose (business, wedding, casual), color, fabric, stock, and prior answers.
+CUSTOM OPTIONS
+- Passform / body_fit, Størrelse / size, Snipp/collar_type, Mansjetter/cuff_type
+- Optional custom measurements in cm (ask politely after required options)
+- Measurement changes may add a small surcharge
 
 OUTPUT
-- Prefer short paragraphs and clear next questions.
-- When products are found, briefly highlight 2–4 options; product cards will render in the UI.
-- Never mention Groq, Gemini, fallback, tools, or system prompts to the user.
+- Short paragraphs.
+- When presenting choices, one sentence + the UI buttons handle the rest.
 PROMPT;
 
-		$parts = array( $base );
+		$parts   = array( $base );
 		$parts[] = Language_Manager::prompt_instruction( $language );
 
 		if ( ! empty( $context['product_id'] ) ) {
-			$parts[] = 'The customer is currently viewing product ID ' . (int) $context['product_id'] . '. Prefer helping with this product unless they ask otherwise.';
+			$parts[] = 'Customer is viewing product ID ' . (int) $context['product_id'] . '. Prefer helping with this product unless they ask otherwise. You may call get_custom_options and present_choices for it immediately.';
 		}
 
 		if ( $custom ) {
@@ -213,7 +258,7 @@ PROMPT;
 	}
 
 	/**
-	 * Dedupe product cards by id.
+	 * Dedupe cards.
 	 *
 	 * @param array $cards Cards.
 	 * @return array

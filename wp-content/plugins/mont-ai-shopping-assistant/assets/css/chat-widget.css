@@ -246,6 +246,7 @@
 	text-decoration: none;
 	color: inherit;
 	transition: border-color 0.15s ease;
+	cursor: pointer;
 }
 
 .mont-ai-card:hover {
@@ -273,12 +274,115 @@
 	margin: 0;
 }
 
+.mont-ai-card__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: flex-end;
+}
+
 .mont-ai-card__cta {
 	font-size: 11px;
 	font-weight: 600;
-	color: var(--mont-ai-accent);
+	color: #fff;
+	background: var(--mont-ai-accent);
+	border: none;
+	border-radius: 8px;
+	padding: 6px 10px;
+	cursor: pointer;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
+}
+
+.mont-ai-card__link {
+	font-size: 11px;
+	color: var(--mont-ai-muted);
+	text-decoration: underline;
+}
+
+.mont-ai-choices {
+	margin-top: 6px;
+	padding: 10px;
+	background: #fff;
+	border: 1px solid var(--mont-ai-line);
+	border-radius: 12px;
+}
+
+.mont-ai-choices__title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--mont-ai-ink);
+	margin-bottom: 8px;
+}
+
+.mont-ai-choices__grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.mont-ai-choices__grid--image_buttons,
+.mont-ai-choices__grid--product_cards {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.mont-ai-choice-btn {
+	appearance: none;
+	border: 1px solid var(--mont-ai-line);
+	background: #fafafa;
+	color: var(--mont-ai-ink);
+	border-radius: 10px;
+	padding: 8px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mont-ai-choice-btn:hover {
+	border-color: var(--mont-ai-accent);
+	background: #fff;
+}
+
+.mont-ai-choice-btn.is-selected {
+	border-color: var(--mont-ai-accent);
+	background: rgba(27, 51, 89, 0.08);
+}
+
+.mont-ai-choice-btn.is-disabled,
+.mont-ai-choice-btn:disabled {
+	opacity: 0.55;
+	cursor: default;
+}
+
+.mont-ai-choice-btn--image {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: 8px;
+	gap: 6px;
+}
+
+.mont-ai-choice-btn__img {
+	width: 100%;
+	aspect-ratio: 3 / 4;
+	object-fit: cover;
+	border-radius: 8px;
+	background: #eee;
+}
+
+.mont-ai-choice-btn__label {
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.mont-ai-choice-btn__sub {
+	font-size: 11px;
+	color: var(--mont-ai-muted);
 }
 
 .mont-ai-notice {

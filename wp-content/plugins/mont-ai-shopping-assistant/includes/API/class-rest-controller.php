@@ -144,10 +144,14 @@ class Rest_Controller {
 			return rest_ensure_response( $result );
 		} catch ( \Exception $e ) {
 			\Mont_AI_Assistant\Plugin::log( 'Chat failed', array( 'error' => $e->getMessage() ) );
-			return new \WP_Error(
-				'mont_ai_error',
-				__( 'Sorry, I could not process that right now. Please try again.', 'mont-ai-assistant' ),
-				array( 'status' => 502 )
+			return rest_ensure_response(
+				array(
+					'success'   => false,
+					'message'   => __( 'Sorry, I could not process that right now. Please try again in a few seconds.', 'mont-ai-assistant' ),
+					'retryable' => true,
+					'cards'     => array(),
+					'choices'   => null,
+				)
 			);
 		}
 	}

@@ -15,7 +15,6 @@ defined( 'ABSPATH' ) || exit;
  * Class Gemini_Provider
  *
  * Fallback provider via Gemini generateContent + function calling.
- * Normalizes responses to the same shape as Groq (OpenAI-style tool_calls).
  */
 class Gemini_Provider implements Provider_Interface {
 
@@ -120,7 +119,7 @@ class Gemini_Provider implements Provider_Interface {
 
 			$contents[] = array(
 				'role'  => ( 'assistant' === $role ) ? 'model' : 'user',
-				'parts' => array( array( 'text' => $text ) ),
+				'parts' => array( array( 'text' => $text ? $text : '…' ) ),
 			);
 		}
 
@@ -143,10 +142,15 @@ class Gemini_Provider implements Provider_Interface {
 				continue;
 			}
 			$fn = $tool['function'];
+			$params = isset( $fn['parameters'] ) ? $fn['parameters'] : array( 'type' => 'object', 'properties' => new \stdClass() );
+			// Gemini is happier with explicit object types.
+			if ( empty( $params['properties'] ) ) {
+				$params['properties'] = new \stdClass();
+			}
 			$decls[] = array(
 				'name'        => $fn['name'],
 				'description' => isset( $fn['description'] ) ? $fn['description'] : '',
-				'parameters'  => isset( $fn['parameters'] ) ? $fn['parameters'] : array( 'type' => 'object', 'properties' => new \stdClass() ),
+				'parameters'  => $params,
 			);
 		}
 		return $decls;
@@ -156,6 +160,34 @@ class Gemini_Provider implements Provider_Interface {
 	 * @inheritdoc
 	 */
 	public function chat( array $messages, array $tools = array(), array $args = array() ) {
+		$attempts = 0;
+		$last     = null;
+		while ( $attempts < 3 ) {
+			++$attempts;
+			try {
+				return $this->request( $messages, $tools, $args );
+			} catch ( \Exception $e ) {
+				$last = $e;
+				if ( false !== strpos( $e->getMessage(), 'HTTP 429' ) || false !== strpos( $e->getMessage(), 'HTTP 503' ) ) {
+					usleep( (int) ( 800000 * $attempts ) );
+					continue;
+				}
+				throw $e;
+			}
+		}
+		throw $last ? $last : new \Exception( 'Gemini unavailable' );
+	}
+
+	/**
+	 * One Gemini request.
+	 *
+	 * @param array $messages Messages.
+	 * @param array $tools    Tools.
+	 * @param array $args     Args.
+	 * @return array
+	 * @throws \Exception On failure.
+	 */
+	private function request( array $messages, array $tools, array $args ) {
 		$s     = Plugin::settings();
 		$model = ! empty( $args['model'] ) ? $args['model'] : $s['gemini_model'];
 		$conv  = $this->convert_messages( $messages );
@@ -185,7 +217,7 @@ class Gemini_Provider implements Provider_Interface {
 		$response = wp_remote_post(
 			$this->endpoint( $model ),
 			array(
-				'timeout' => 45,
+				'timeout' => 60,
 				'headers' => array( 'Content-Type' => 'application/json' ),
 				'body'    => wp_json_encode( $body ),
 			)
