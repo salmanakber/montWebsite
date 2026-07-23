@@ -367,7 +367,8 @@
 					language: language,
 					history: buildApiHistory().slice(0, -1),
 					context: {
-						product_id: cfg.productId || 0
+						product_id: cfg.productId || 0,
+						channel: cfg.channel || 'b2c'
 					}
 				})
 			})

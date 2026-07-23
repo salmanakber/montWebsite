@@ -12,6 +12,18 @@ if (!defined('ABSPATH')) {
 $current_user = wp_get_current_user();
 $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'dashboard';
 
+// Production print sheet — no theme chrome.
+if ( 'orders' === $current_tab && ! empty( $_GET['print'] ) && ! empty( $_GET['order_id'] ) ) {
+	if ( ! is_user_logged_in() || ! \DC_Product_Manager\Order_Portal::can_access() ) {
+		wp_die( esc_html__( 'You do not have permission to view this order sheet.', 'dc-product-manager' ) );
+	}
+	$portal      = new \DC_Product_Manager\Order_Portal();
+	$channel     = isset( $_GET['channel'] ) ? sanitize_text_field( wp_unslash( $_GET['channel'] ) ) : 'b2c';
+	$print_order = $portal->get_order_for_print( $channel, absint( $_GET['order_id'] ) );
+	include DC_PM_PLUGIN_DIR . 'admin/partials/order-print.php';
+	// order-print.php exits.
+}
+
 // Get the header
 get_header();
 ?>
@@ -39,6 +51,9 @@ div#sticky-popup-btn {
                     <li class="<?php echo $current_tab === 'products' ? 'active' : ''; ?>">
                         <a href="<?php echo esc_url(add_query_arg('tab', 'products', home_url('/crm/'))); ?>">Products</a>
                     </li>
+                    <li class="<?php echo $current_tab === 'orders' ? 'active' : ''; ?>">
+                        <a href="<?php echo esc_url(add_query_arg(array('tab' => 'orders', 'channel' => 'all'), home_url('/crm/'))); ?>">Orders</a>
+                    </li>
                     <li class="<?php echo $current_tab === 'suppliers' ? 'active' : ''; ?>">
                         <a href="<?php echo esc_url(add_query_arg('tab', 'suppliers', home_url('/crm/'))); ?>">Suppliers</a>
                     </li>
@@ -54,6 +69,10 @@ div#sticky-popup-btn {
             switch ($current_tab) {
                 case 'products':
                     require_once DC_PM_PLUGIN_DIR . 'admin/partials/product-management.php';
+                    break;
+
+                case 'orders':
+                    require_once DC_PM_PLUGIN_DIR . 'admin/partials/orders.php';
                     break;
 
                 case 'suppliers':

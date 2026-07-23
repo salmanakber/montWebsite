@@ -1,0 +1,135 @@
+/* Order portal (CRM) */
+.dc-orders-portal {
+	padding: 8px 4px 32px;
+}
+
+.dc-orders-portal__header h2 {
+	margin: 0 0 6px;
+	font-size: 1.5rem;
+	color: #1d2327;
+}
+
+.dc-orders-portal__intro {
+	margin: 0 0 18px;
+	color: #50575e;
+	max-width: 40rem;
+}
+
+.dc-orders-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 20px;
+}
+
+.dc-orders-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	background: #fff;
+	color: #1d2327;
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.dc-orders-tab.is-active {
+	border-color: #1f4e79;
+	box-shadow: 0 0 0 1px #1f4e79;
+	background: #f3f7fb;
+}
+
+.dc-channel-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 999px;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	line-height: 1.4;
+}
+
+.dc-channel-badge--b2b {
+	background: #1f4e79;
+	color: #fff;
+}
+
+.dc-channel-badge--b2c {
+	background: #166534;
+	color: #fff;
+}
+
+.dc-orders-table-wrap {
+	overflow-x: auto;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	background: #fff;
+}
+
+.dc-orders-table {
+	width: 100%;
+	border-collapse: collapse;
+	min-width: 720px;
+}
+
+.dc-orders-table th,
+.dc-orders-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid #eee;
+	text-align: left;
+	vertical-align: top;
+	font-size: 13px;
+}
+
+.dc-orders-table th {
+	background: #f8fafc;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #64748b;
+}
+
+.dc-orders-muted {
+	color: #64748b;
+	font-size: 12px;
+}
+
+.dc-orders-print-btn {
+	display: inline-block;
+	padding: 7px 12px;
+	background: #1f4e79;
+	color: #fff !important;
+	border-radius: 6px;
+	text-decoration: none !important;
+	font-weight: 600;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.dc-orders-print-btn:hover {
+	background: #163a5a;
+}
+
+.dc-orders-empty {
+	padding: 28px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 10px;
+	background: #f8fafc;
+	color: #475569;
+}
+
+.dc-orders-empty-hint {
+	margin-top: 8px;
+	font-size: 13px;
+	color: #64748b;
+}
+
+@media (max-width: 782px) {
+	.dc-orders-tab {
+		flex: 1 1 auto;
+		justify-content: center;
+	}
+}

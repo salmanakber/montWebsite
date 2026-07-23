@@ -131,6 +131,11 @@ class Rest_Controller {
 		if ( isset( $context['product_id'] ) ) {
 			$context['product_id'] = (int) $context['product_id'];
 		}
+		if ( isset( $context['channel'] ) && 'b2b' === $context['channel'] ) {
+			$context['channel'] = 'b2b';
+		} else {
+			$context['channel'] = 'b2c';
+		}
 
 		try {
 			$service = new \Mont_AI_Assistant\Services\Chat_Service();

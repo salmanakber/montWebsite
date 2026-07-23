@@ -1392,4 +1392,34 @@ $('#dc-bulk-delete-button').on('click', function (e) {
 //             $('#dc-bulk-edit-apply').prop('disabled', false).text('Apply to Selected Products');
 //         });
 //     });
-}); 
+
+    // Sync friendly B2B toggle with hidden select used by save payload.
+    (function bindB2bToggle() {
+        var $toggle = $('#dc-product-b2b-toggle');
+        var $select = $('#dc-product-b2b-status');
+        var $section = $('.dc-b2b-channel-section');
+        var $badge = $section.find('.dc-b2b-badge');
+        if (!$toggle.length || !$select.length) {
+            return;
+        }
+
+        function syncUi(isOn) {
+            $select.val(isOn ? 'yes' : 'no');
+            $section.toggleClass('is-b2b-active', isOn);
+            $badge
+                .toggleClass('dc-b2b-badge--on', isOn)
+                .toggleClass('dc-b2b-badge--off', !isOn)
+                .text(isOn ? 'B2B' : 'B2C only');
+        }
+
+        $toggle.on('change', function() {
+            syncUi($(this).is(':checked'));
+        });
+
+        $select.on('change', function() {
+            var isOn = $(this).val() === 'yes';
+            $toggle.prop('checked', isOn);
+            syncUi(isOn);
+        });
+    })();
+});

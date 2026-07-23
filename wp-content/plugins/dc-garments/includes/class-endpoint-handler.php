@@ -249,6 +249,13 @@ class Endpoint_Handler {
                 array(),
                 DC_PRODUCT_MANAGER_VERSION
             );
+
+            wp_enqueue_style(
+                'dc-order-portal',
+                DC_PM_PLUGIN_URL . 'assets/css/order-portal.css',
+                array(),
+                DC_PRODUCT_MANAGER_VERSION
+            );
             
                       wp_enqueue_style(
                 'dc-crm-styles-supplier-management',

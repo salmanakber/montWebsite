@@ -196,6 +196,12 @@ class DC_Product_Manager {
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-region-currency.php';
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-multi-currency.php';
 
+        /**
+         * Order portal (B2C + B2B) and B2B extension bridge.
+         */
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-order-portal.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-b2b-extension.php';
+
         $this->loader = new \DC_Product_Manager\DC_Product_Manager_Loader();
     }
 
@@ -240,6 +246,12 @@ class DC_Product_Manager {
         $region_currency->init();
         $multi_currency = new \DC_Product_Manager\DC_Multi_Currency();
         $multi_currency->init();
+
+        // Order portal + B2B extension (Monte B2B storefront bridge)
+        $order_portal = new \DC_Product_Manager\Order_Portal();
+        $order_portal->init();
+        $b2b_extension = new \DC_Product_Manager\B2B_Extension();
+        $b2b_extension->init();
         
         // Add menu items
         $this->loader->add_action('admin_menu', $this, 'add_admin_menu');

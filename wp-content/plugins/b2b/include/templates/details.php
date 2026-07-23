@@ -1,6 +1,14 @@
 <style>
-    .mont_top_layout {
-    flex-wrap: nowrap;
+@media (min-width: 992px) {
+    .mont_single_product_container .mont_top_layout {
+        flex-wrap: nowrap;
+    }
+}
+@media (max-width: 991px) {
+    .mont_single_product_container .mont_top_layout {
+        flex-wrap: wrap;
+        flex-direction: column;
+    }
 }
 </style>
 

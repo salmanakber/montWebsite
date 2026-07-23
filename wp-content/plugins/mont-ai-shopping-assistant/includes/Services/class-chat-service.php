@@ -75,12 +75,13 @@ class Chat_Service {
 
 		$picked_id = $this->extract_product_id( $message );
 		$catalog   = new Catalog_Search();
+		$channel   = ( isset( $context['channel'] ) && 'b2b' === $context['channel'] ) ? 'b2b' : 'b2c';
 
 		// 2) Browse / show shirts — WooCommerce only. Never call AI here.
 		if ( ! $picked_id && $catalog->should_browse( $message, $history ) && ! $this->is_followup_option_answer( $message, $history ) ) {
-			$found = $catalog->search( $message, $history, 6 );
+			$found = $catalog->search( $message, $history, 6, $channel );
 			return $this->response(
-				$catalog->browse_message( $language, isset( $found['count'] ) ? (int) $found['count'] : 0, $message ),
+				$catalog->browse_message( $language, isset( $found['count'] ) ? (int) $found['count'] : 0, $message, $channel ),
 				isset( $found['cards'] ) ? $found['cards'] : array(),
 				isset( $found['choices'] ) ? $found['choices'] : null,
 				false,
@@ -90,7 +91,26 @@ class Chat_Service {
 			);
 		}
 
-		// 3) Product picked / option taps — local order builder (no API).
+		// 3) Product picked / option taps — local order builder (B2C only).
+		if ( 'b2b' === $channel && $picked_id ) {
+			$moq = get_post_meta( $picked_id, '_moq', true );
+			$msg = __( 'Great choice for wholesale. Open the product on this B2B page, enter size breakdowns', 'mont-ai-assistant' );
+			if ( $moq ) {
+				$msg .= ' ' . sprintf( __( '(MOQ %s)', 'mont-ai-assistant' ), $moq );
+			}
+			$msg .= ' ' . __( 'then use Save & add colour / the B2B cart to place the order.', 'mont-ai-assistant' );
+			$card = ( new Catalog_Search() )->search( 'product ' . $picked_id, $history, 1, 'b2b' );
+			return $this->response(
+				$msg,
+				isset( $card['cards'] ) ? $card['cards'] : array(),
+				null,
+				false,
+				'b2b_local',
+				false,
+				$language
+			);
+		}
+
 		$builder = new Order_Builder();
 		$local   = $builder->maybe_handle( $message, $history, $language );
 		if ( is_array( $local ) ) {
@@ -181,10 +201,10 @@ class Chat_Service {
 			$content       = trim( (string) $result['content'] );
 
 			if ( empty( $cards ) && $this->mentions_products( $content ) ) {
-				$found = $catalog->search( $message, $history, 6 );
+				$found = $catalog->search( $message, $history, 6, $channel );
 				if ( ! empty( $found['count'] ) ) {
 					return $this->response(
-						$catalog->browse_message( $language, (int) $found['count'], $message ),
+						$catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
 						$found['cards'],
 						$found['choices'],
 						false,
@@ -201,10 +221,10 @@ class Chat_Service {
 
 			// Prefer showing products over a fake rate-limit message.
 			try {
-				$found = $catalog->search( $message, $history, 6 );
+				$found = $catalog->search( $message, $history, 6, $channel );
 				if ( ! empty( $found['count'] ) ) {
 					return $this->response(
-						$catalog->browse_message( $language, (int) $found['count'], $message ),
+						$catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
 						$found['cards'],
 						$found['choices'],
 						false,
@@ -410,6 +430,16 @@ PROMPT;
 	 */
 	private function greeting_reply( $language, array $context ) {
 		$on_product = ! empty( $context['product_id'] );
+		$is_b2b     = isset( $context['channel'] ) && 'b2b' === $context['channel'];
+		if ( $is_b2b ) {
+			$map = array(
+				'en' => 'Hi! You are on the Monte B2B wholesale portal. Tell me a fabric colour, quality, or say “show fabrics” and I will list B2B products. Remember MOQ applies when ordering.',
+				'it' => 'Ciao! Sei sul portale wholesale Monte B2B. Dimmi un colore o una qualità, oppure “show fabrics” e ti elenco i prodotti B2B. Ricorda il MOQ.',
+				'nb' => 'Hei! Du er på Monte B2B grossistportalen. Si en farge eller kvalitet, eller “show fabrics”, så lister jeg B2B-produkter. Husk MOQ.',
+				'vi' => 'Xin chào! Bạn đang ở cổng B2B Monte. Cho biết màu/chất liệu, hoặc nói “show fabrics” để tôi liệt kê sản phẩm B2B. Lưu ý MOQ.',
+			);
+			return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
+		}
 		$map = array(
 			'en' => $on_product
 				? "Hi! Welcome. I can help with this shirt, or find something else — what are you looking for today?"

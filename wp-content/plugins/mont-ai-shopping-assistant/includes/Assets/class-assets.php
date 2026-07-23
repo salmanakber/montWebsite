@@ -76,6 +76,11 @@ class Assets {
 			$product_id = get_the_ID();
 		}
 
+		$channel = 'b2c';
+		if ( $this->is_b2b_context() ) {
+			$channel = 'b2b';
+		}
+
 		wp_localize_script(
 			'mont-ai-chat',
 			'MontAIChat',
@@ -87,10 +92,15 @@ class Assets {
 				'defaultLang' => $settings['default_language'],
 				'languages'   => $settings['languages'],
 				'productId'   => $product_id,
+				'channel'     => $channel,
 				'cartUrl'     => function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : '',
 				'i18n'        => array(
-					'title'       => __( 'Shopping Assistant', 'mont-ai-assistant' ),
-					'placeholder' => __( 'Ask me anything…', 'mont-ai-assistant' ),
+					'title'       => ( 'b2b' === $channel )
+						? __( 'B2B Assistant', 'mont-ai-assistant' )
+						: __( 'Shopping Assistant', 'mont-ai-assistant' ),
+					'placeholder' => ( 'b2b' === $channel )
+						? __( 'Ask about wholesale fabrics, MOQ…', 'mont-ai-assistant' )
+						: __( 'Ask me anything…', 'mont-ai-assistant' ),
 					'send'        => __( 'Send', 'mont-ai-assistant' ),
 					'thinking'    => __( 'Thinking…', 'mont-ai-assistant' ),
 					'error'       => __( 'Something went wrong. Please try again.', 'mont-ai-assistant' ),
@@ -114,5 +124,31 @@ class Assets {
 			return;
 		}
 		include MONT_AI_PATH . 'templates/chat-widget.php';
+	}
+
+	/**
+	 * Detect Monte B2B storefront context.
+	 *
+	 * @return bool
+	 */
+	private function is_b2b_context() {
+		if ( isset( $_GET['productb2b'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return true;
+		}
+		if ( ! is_singular( 'page' ) ) {
+			return false;
+		}
+		$post = get_post();
+		if ( ! $post ) {
+			return false;
+		}
+		if ( has_shortcode( (string) $post->post_content, 'monte_b2b_shortcode' ) ) {
+			return true;
+		}
+		$slug = $post->post_name;
+		if ( false !== strpos( $slug, 'b2b' ) || false !== strpos( $slug, 'monte-connected' ) ) {
+			return true;
+		}
+		return (bool) apply_filters( 'mont_ai_is_b2b_context', false );
 	}
 }

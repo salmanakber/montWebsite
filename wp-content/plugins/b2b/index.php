@@ -2,20 +2,19 @@
 /**
 Plugin Name: Monte B2B
 Plugin URI: http://montenapoleone.com
-Description: Custom b2b plugin which connect two website database using REST APIs.
-Version: 1.0
+Description: Wholesale B2B storefront extension for DC Product Manager. Orders sync into the CRM Order Portal.
+Version: 1.1
 Author: Salman akber
 Author URI: http://salman.sixerweb.com
 Text Domain: b2b monte
 Domain Path: /staff
 License: GPL2
-
  * @package sixerWeb
  * @version 0.1
  * @author Sixerweb <suppoer@sixerweb.com>
  * @copyright Copyright (c) 2025, sixerweb
  * @link http://www.sixerweb.com
-*/
+ */
 session_start();
 if (!function_exists('add_action')) {
     echo 'WordPress not found!';

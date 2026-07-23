@@ -260,19 +260,48 @@ if ($featured_image_url) {
                         
                         
                     </div>
+
+                    <?php
+                    $is_b2b = in_array( (string) $product_data['b2b_product'], array( 'yes', '1' ), true );
+                    ?>
+                    <div class="dc-form-section dc-b2b-channel-section <?php echo $is_b2b ? 'is-b2b-active' : ''; ?>">
+                        <div class="dc-b2b-channel-header">
+                            <div>
+                                <h3><?php _e( 'B2B / Wholesale Channel', 'dc-product-manager' ); ?></h3>
+                                <p class="dc-b2b-channel-help">
+                                    <?php _e( 'Turn this on if this fabric/product should appear in the Monte B2B wholesale portal (not only the regular shop).', 'dc-product-manager' ); ?>
+                                </p>
+                            </div>
+                            <span class="dc-b2b-badge <?php echo $is_b2b ? 'dc-b2b-badge--on' : 'dc-b2b-badge--off'; ?>">
+                                <?php echo $is_b2b ? esc_html__( 'B2B', 'dc-product-manager' ) : esc_html__( 'B2C only', 'dc-product-manager' ); ?>
+                            </span>
+                        </div>
+
+                        <div class="dc-b2b-toggle-row">
+                            <label class="dc-b2b-toggle" for="dc-product-b2b-toggle">
+                                <input type="checkbox" id="dc-product-b2b-toggle" <?php checked( $is_b2b ); ?>>
+                                <span class="dc-b2b-toggle-slider"></span>
+                                <span class="dc-b2b-toggle-label">
+                                    <?php _e( 'Mark as B2B product', 'dc-product-manager' ); ?>
+                                </span>
+                            </label>
+                            <select id="dc-product-b2b-status" class="dc-b2b-status-select" aria-hidden="true" tabindex="-1">
+                                <option value="no" <?php selected( $is_b2b, false ); ?>><?php _e( 'No', 'dc-product-manager' ); ?></option>
+                                <option value="yes" <?php selected( $is_b2b, true ); ?>><?php _e( 'Yes', 'dc-product-manager' ); ?></option>
+                            </select>
+                        </div>
+
+                        <div class="dc-form-row dc-b2b-moq-row">
+                            <div class="dc-form-group">
+                                <label for="dc-product-moq"><?php _e( 'Minimum Order Quantity (MOQ)', 'dc-product-manager' ); ?></label>
+                                <input type="number" id="dc-product-moq" min="1" value="<?php echo esc_attr( $product_data['moq'] ); ?>" placeholder="e.g. 50">
+                                <small class="dc-field-hint"><?php _e( 'Wholesale customers must order at least this many shirts for this product.', 'dc-product-manager' ); ?></small>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="dc-supplier-section">
                         <h3>Supplier Information</h3>
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-b2b-status"><?php _e('B2B Product', 'dc-product-manager'); ?></label>
-                                <select id="dc-product-b2b-status">
-                                    <option value="no" <?php selected($product_data['b2b_product'], 'no'); ?>><?php _e('No', 'dc-product-manager');  ?> </option>
-                                    <option value="yes" <?php selected($product_data['b2b_product'], 'yes'); ?>><?php _e('Yes', 'dc-product-manager'); ?></option>
-                                </select>
-                            </div>
-                        </div>
-                        
                         <div class="dc-form-row">
                             <div class="dc-form-group">
                                 <label for="dc-product-supplier"><?php _e('Supplier', 'dc-product-manager'); ?></label>
@@ -292,13 +321,6 @@ if ($featured_image_url) {
                                     }
                                     ?>
                                 </select>
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-moq"><?php _e('MOQ', 'dc-product-manager'); ?></label>
-                                <input type="number" id="dc-product-moq" value="<?php echo esc_attr($product_data['moq']); ?>">
                             </div>
                         </div>
                         

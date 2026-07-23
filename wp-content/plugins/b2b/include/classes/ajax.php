@@ -225,19 +225,27 @@ public function send_order_to_api() {
  
     // Check if products are selected
     header('Content-Type: text/html; charset=utf-8');
+    if (!session_id()) {
+        session_start();
+    }
     if(isset($_SESSION['products']) && count($_SESSION['products']) > 0) {
+
+        $cart_items = $_SESSION['products'];
 
         // Prepare order data
         $orderData = array(
             'customerData' => json_encode($customerData, JSON_UNESCAPED_UNICODE),
-            'orderData' => json_encode($_SESSION['products'], JSON_UNESCAPED_UNICODE)
+            'orderData' => json_encode($cart_items, JSON_UNESCAPED_UNICODE)
         );
     
         // Send order data to API
         $response = $this->getApifromDC('storeOrder', $orderData, $this->api);
-        if(json_decode($response, true)['status'] === 'success')
+        $decoded  = json_decode($response, true);
+        if(is_array($decoded) && isset($decoded['status']) && $decoded['status'] === 'success')
         {
-          session_start();
+        // Mirror into DC Garments Order Portal (local CRM).
+        do_action('dc_b2b_order_placed', $customerData, $cart_items, $response);
+
         unset($_SESSION["products"]);
         wp_send_json(array(
             'message' => 'Order successfully sent placcd',
