@@ -248,38 +248,72 @@ div#mont_backButton { z-index: 999; }
         margin: 8px 12px;
     }
 
-    /* Mobile: single-column slider instead of 2-col grid */
+    /* Mobile: single-column slider for images AND video (same design) */
     .mont_gallery_wrapper-unified {
         position: relative;
+        width: 100%;
+        overflow: hidden;
     }
-    .mont_gallery_grid_wrapper {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
+    .mont_gallery_grid_wrapper,
+    .mont_gallery_grid_wrapper#mont_gallery_track {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        grid-template-columns: none !important;
+        grid-template-rows: none !important;
+        gap: 0 !important;
+        width: 100%;
+        overflow-x: auto !important;
+        overflow-y: hidden;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
-        gap: 0;
         scrollbar-width: none;
     }
     .mont_gallery_grid_wrapper::-webkit-scrollbar {
         display: none;
     }
-    .mont_gallery_item {
-        flex: 0 0 100%;
-        width: 100%;
-        min-width: 100%;
-        scroll-snap-align: start;
-        aspect-ratio: 3 / 4;
-    }
+    /* Critical: video intrinsic size must not break one-slide-per-view */
+    .mont_gallery_item,
+    .mont_gallery_item.video-trigger,
     .mont_gallery_item.initially-hidden {
-        display: block; /* all slides available in mobile slider */
+        display: block !important;
+        flex: 0 0 100% !important;
+        flex-shrink: 0 !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        aspect-ratio: 3 / 4;
+        position: relative;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+    .mont_gallery_item video,
+    .mont_gallery_item img,
+    .mont_gallery_main-video,
+    .mont_gallery_main-image {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        object-fit: cover !important;
+        display: block;
+    }
+    /* Keep play/pause usable while swiping the track */
+    .mont_gallery_item video {
+        pointer-events: none;
+    }
+    .mont_gallery_item .mont_video_overlay_btn {
+        pointer-events: auto;
+        z-index: 7;
     }
     .mont_see_more_container {
         display: none !important;
     }
 
     .mont_gallery_nav {
-        display: flex;
+        display: flex !important;
         position: absolute;
         top: 50%;
         left: 0;
@@ -287,7 +321,7 @@ div#mont_backButton { z-index: 999; }
         transform: translateY(-50%);
         justify-content: space-between;
         pointer-events: none;
-        z-index: 6;
+        z-index: 8;
         padding: 0 8px;
     }
     .mont_gallery_nav_btn {
@@ -317,7 +351,7 @@ div#mont_backButton { z-index: 999; }
         cursor: default;
     }
     .mont_gallery_dots {
-        display: flex;
+        display: flex !important;
         justify-content: center;
         gap: 6px;
         padding: 10px 0 4px;
@@ -770,9 +804,16 @@ document.addEventListener("DOMContentLoaded", function () {
         function goTo(i) {
             if (!isMobile()) return;
             index = Math.max(0, Math.min(i, items.length - 1));
-            const left = items[index].offsetLeft;
-            track.scrollTo({ left: left, behavior: 'smooth' });
+            const slideWidth = track.clientWidth || items[index].getBoundingClientRect().width;
+            track.scrollTo({ left: slideWidth * index, behavior: 'smooth' });
             updateUI();
+            // Pause videos that are not the active slide (keep play button working on active)
+            items.forEach((item, idx) => {
+                const vid = item.querySelector('video');
+                if (!vid) return;
+                if (idx === index) return;
+                try { vid.pause(); } catch (e) {}
+            });
         }
 
         function updateUI() {
@@ -787,17 +828,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         function syncIndexFromScroll() {
             if (!isMobile()) return;
-            const scrollLeft = track.scrollLeft;
-            let closest = 0;
-            let minDist = Infinity;
-            items.forEach((item, i) => {
-                const dist = Math.abs(item.offsetLeft - scrollLeft);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closest = i;
-                }
-            });
-            index = closest;
+            const slideWidth = track.clientWidth || 1;
+            index = Math.round(track.scrollLeft / slideWidth);
+            index = Math.max(0, Math.min(index, items.length - 1));
             updateUI();
         }
 
