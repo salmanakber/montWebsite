@@ -28,67 +28,78 @@ class Tool_Executor {
 	 * @return array
 	 */
 	public function definitions() {
+		// String types for IDs/numbers — Groq rejects tool calls when the model
+		// sends "123" but the schema expects integer.
+		$id = array(
+			'type'        => 'string',
+			'description' => 'Product ID as a number string, e.g. "123"',
+		);
+		$qty = array(
+			'type'        => 'string',
+			'description' => 'Quantity as a number string, e.g. "1"',
+		);
+
 		return array(
 			$this->fn(
 				'search_products',
-				'Search catalog. Returns products with images for the chat UI.',
+				'Search catalog when the customer describes what they want. Do NOT call for greetings like hi/hello.',
 				array(
-					'query' => array( 'type' => 'string', 'description' => 'Search keywords' ),
-					'limit' => array( 'type' => 'integer', 'description' => 'Max results 1-8' ),
+					'query' => array( 'type' => 'string', 'description' => 'Search keywords from the customer need' ),
+					'limit' => array( 'type' => 'string', 'description' => 'Max results 1-8 as string' ),
 				),
 				array( 'query' )
 			),
 			$this->fn(
 				'get_product',
-				'Get product details by ID.',
+				'Get product details by ID after a product is chosen.',
 				array(
-					'product_id' => array( 'type' => 'integer' ),
+					'product_id' => $id,
 				),
 				array( 'product_id' )
 			),
 			$this->fn(
 				'get_custom_options',
-				'Get required/optional options for a product. Also returns ready-made visual choice groups.',
+				'Load option schema for a chosen product. Do NOT show buttons yet — next call present_choices for ONE option.',
 				array(
-					'product_id' => array( 'type' => 'integer' ),
+					'product_id' => $id,
 				),
 				array( 'product_id' )
 			),
 			$this->fn(
 				'present_choices',
-				'REQUIRED whenever the customer must pick something (product, size, fit, collar, cuff, qty). Renders tappable buttons/images in the chat. Call this instead of asking them to type.',
+				'Show tappable buttons/images. Use ONLY after configuring a specific product — never on a greeting. One option group at a time.',
 				array(
-					'title'      => array( 'type' => 'string', 'description' => 'Short question shown above choices' ),
-					'field'      => array( 'type' => 'string', 'description' => 'Field key e.g. body_fit, size, collar_type, cuff_type, product_id, quantity' ),
-					'product_id' => array( 'type' => 'integer', 'description' => 'Related product id when applicable' ),
-					'option_key' => array( 'type' => 'string', 'description' => 'If showing a custom option group, pass its key (body_fit, size, collar_type, cuff_type) to auto-load labels/images' ),
-					'choices_csv'=> array( 'type' => 'string', 'description' => 'Optional comma-separated labels if not using option_key. Format: Label|optionalImageUrl,Label2' ),
+					'title'       => array( 'type' => 'string', 'description' => 'Short friendly question' ),
+					'field'       => array( 'type' => 'string', 'description' => 'body_fit, size, collar_type, cuff_type, quantity' ),
+					'product_id'  => $id,
+					'option_key'  => array( 'type' => 'string', 'description' => 'Same as field when loading from product options' ),
+					'choices_csv' => array( 'type' => 'string', 'description' => 'Optional Label|imageUrl,Label2 list' ),
 				),
 				array( 'title', 'field' )
 			),
 			$this->fn(
 				'validate_selection',
-				'Check required options before cart. Pass flat fields.',
+				'Validate required options before add_to_cart. All fields as strings.',
 				array(
-					'product_id'  => array( 'type' => 'integer' ),
+					'product_id'  => $id,
 					'body_fit'    => array( 'type' => 'string' ),
 					'size'        => array( 'type' => 'string' ),
 					'collar_type' => array( 'type' => 'string' ),
 					'cuff_type'   => array( 'type' => 'string' ),
-					'quantity'    => array( 'type' => 'integer' ),
+					'quantity'    => $qty,
 				),
 				array( 'product_id' )
 			),
 			$this->fn(
 				'add_to_cart',
-				'Add configured product to cart. Only after validate_selection ok.',
+				'Add configured product to cart after validation succeeds.',
 				array(
-					'product_id'  => array( 'type' => 'integer' ),
+					'product_id'  => $id,
 					'body_fit'    => array( 'type' => 'string' ),
 					'size'        => array( 'type' => 'string' ),
 					'collar_type' => array( 'type' => 'string' ),
 					'cuff_type'   => array( 'type' => 'string' ),
-					'quantity'    => array( 'type' => 'integer' ),
+					'quantity'    => $qty,
 				),
 				array( 'product_id' )
 			),
@@ -109,6 +120,8 @@ class Tool_Executor {
 	 * @return array
 	 */
 	public function execute( $name, array $args ) {
+		$args = $this->normalize_args( $args );
+
 		switch ( $name ) {
 			case 'search_products':
 				return $this->search_products( $args );
@@ -138,6 +151,30 @@ class Tool_Executor {
 			default:
 				return array( 'error' => 'Unknown tool: ' . $name );
 		}
+	}
+
+	/**
+	 * Coerce common tool args so Groq string/int mismatches never break the turn.
+	 *
+	 * @param array $args Raw args.
+	 * @return array
+	 */
+	private function normalize_args( array $args ) {
+		if ( isset( $args['product_id'] ) ) {
+			$args['product_id'] = (int) preg_replace( '/\D+/', '', (string) $args['product_id'] );
+		}
+		if ( isset( $args['limit'] ) ) {
+			$args['limit'] = (int) $args['limit'];
+		}
+		if ( isset( $args['quantity'] ) ) {
+			$args['quantity'] = max( 1, (int) $args['quantity'] );
+		}
+		foreach ( array( 'title', 'field', 'option_key', 'choices_csv', 'body_fit', 'size', 'collar_type', 'cuff_type', 'query', 'cart_key' ) as $key ) {
+			if ( isset( $args[ $key ] ) && ! is_string( $args[ $key ] ) ) {
+				$args[ $key ] = is_scalar( $args[ $key ] ) ? (string) $args[ $key ] : '';
+			}
+		}
+		return $args;
 	}
 
 	/**
@@ -320,20 +357,11 @@ class Tool_Executor {
 				$groups[ $opt['key'] ] = $group;
 			}
 		}
-		// Auto-show the first required choice group so the UI is ready.
-		$first = null;
-		foreach ( $options as $opt ) {
-			if ( ! empty( $opt['required'] ) && ! empty( $opt['choices'] ) ) {
-				$first = self::choices_from_option( $opt );
-				break;
-			}
-		}
 		return array(
 			'product_id'    => $id,
 			'options'       => $options,
 			'choice_groups' => $groups,
-			'choices'       => $first,
-			'hint'          => 'Call present_choices for each required option one at a time. Prefer using option_key.',
+			'hint'          => 'Do not show UI yet. Call present_choices for the next required option only (one at a time), starting with body_fit then size then collar then cuff.',
 		);
 	}
 

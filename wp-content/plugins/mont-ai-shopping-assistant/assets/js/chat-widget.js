@@ -10,11 +10,13 @@
 		var cfg = window.MontAIChat;
 		var STORAGE_LANG = 'mont_ai_lang';
 		var STORAGE_HISTORY = 'mont_ai_history';
+		var STORAGE_ACTIVE = 'mont_ai_session_active';
 
 		var root = document.getElementById('mont-ai-root');
 		var bubble = document.getElementById('mont-ai-bubble');
 		var panel = document.getElementById('mont-ai-panel');
 		var closeBtn = document.getElementById('mont-ai-close');
+		var newBtn = document.getElementById('mont-ai-new');
 		var messagesEl = document.getElementById('mont-ai-messages');
 		var input = document.getElementById('mont-ai-input');
 		var sendBtn = document.getElementById('mont-ai-send');
@@ -24,24 +26,41 @@
 		if (root.getAttribute('data-mont-ai-ready') === '1') return;
 		root.setAttribute('data-mont-ai-ready', '1');
 
-		var history = loadHistory();
+		// History lives only for the active chat session (panel open on this page).
+		// Closing the chat — or loading a new page — starts fresh.
+		var history = [];
 		var busy = false;
 		var lastSendAt = 0;
 		var language = localStorage.getItem(STORAGE_LANG) || cfg.defaultLang || 'en';
 
-		function loadHistory() {
+		function clearSessionHistory() {
+			history = [];
 			try {
+				sessionStorage.removeItem(STORAGE_HISTORY);
+				sessionStorage.removeItem(STORAGE_ACTIVE);
+			} catch (e) {}
+		}
+
+		// Always start clean on a new page load (don't force previous conversations).
+		clearSessionHistory();
+
+		function saveHistory() {
+			try {
+				sessionStorage.setItem(STORAGE_ACTIVE, '1');
+				sessionStorage.setItem(STORAGE_HISTORY, JSON.stringify(history.slice(-40)));
+			} catch (e) {}
+		}
+
+		function loadActiveSessionHistory() {
+			try {
+				if (sessionStorage.getItem(STORAGE_ACTIVE) !== '1') {
+					return [];
+				}
 				var raw = sessionStorage.getItem(STORAGE_HISTORY);
 				return raw ? JSON.parse(raw) : [];
 			} catch (e) {
 				return [];
 			}
-		}
-
-		function saveHistory() {
-			try {
-				sessionStorage.setItem(STORAGE_HISTORY, JSON.stringify(history.slice(-40)));
-			} catch (e) {}
 		}
 
 		function formatTime(date) {
@@ -250,6 +269,20 @@
 			root.classList.add('is-open');
 			bubble.classList.add('is-open');
 			bubble.setAttribute('aria-expanded', 'true');
+			// Resume only if this chat session is still marked active (panel was open / mid-chat).
+			// Otherwise start a fresh welcome.
+			if (!messagesEl.childElementCount) {
+				history = loadActiveSessionHistory();
+				if (history.length) {
+					history.forEach(function (h) {
+						if (h.role === 'user' || h.role === 'assistant') {
+							appendMessage(h.role, h.content);
+						}
+					});
+				} else {
+					seedWelcome();
+				}
+			}
 			if (input) {
 				window.setTimeout(function () {
 					try { input.focus(); } catch (e) {}
@@ -264,6 +297,20 @@
 			root.classList.remove('is-open');
 			bubble.classList.remove('is-open');
 			bubble.setAttribute('aria-expanded', 'false');
+			// End chat session — next open starts clean for new shopping.
+			clearSessionHistory();
+			messagesEl.innerHTML = '';
+		}
+
+		function startNewChat() {
+			clearSessionHistory();
+			messagesEl.innerHTML = '';
+			seedWelcome();
+			if (input) {
+				input.value = '';
+				autoGrow();
+				input.focus();
+			}
 		}
 
 		function refreshMiniCart() {
@@ -385,18 +432,6 @@
 			});
 		}
 
-		function restoreHistory() {
-			if (!history.length) {
-				seedWelcome();
-				return;
-			}
-			history.forEach(function (h) {
-				if (h.role === 'user' || h.role === 'assistant') {
-					appendMessage(h.role, h.content);
-				}
-			});
-		}
-
 		bubble.addEventListener('click', function (e) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -408,6 +443,14 @@
 				e.preventDefault();
 				e.stopPropagation();
 				closePanel();
+			});
+		}
+
+		if (newBtn) {
+			newBtn.addEventListener('click', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				startNewChat();
 			});
 		}
 
@@ -429,7 +472,7 @@
 		});
 
 		initLang();
-		restoreHistory();
+		// Do not force old history on page load — wait until the user opens chat.
 	}
 
 	if (document.readyState === 'loading') {

@@ -28,6 +28,7 @@ defined( 'ABSPATH' ) || exit;
 						<option value="vi">🇻🇳 VI</option>
 					</select>
 				</label>
+				<button type="button" class="mont-ai-icon-btn" id="mont-ai-new" title="<?php esc_attr_e( 'New chat', 'mont-ai-assistant' ); ?>" aria-label="<?php esc_attr_e( 'New chat', 'mont-ai-assistant' ); ?>">＋</button>
 				<button type="button" class="mont-ai-icon-btn" id="mont-ai-close" aria-label="<?php esc_attr_e( 'Close', 'mont-ai-assistant' ); ?>">×</button>
 			</div>
 		</header>

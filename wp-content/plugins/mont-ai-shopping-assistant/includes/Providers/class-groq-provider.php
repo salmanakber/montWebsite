@@ -64,14 +64,18 @@ class Groq_Provider implements Provider_Interface {
 					continue;
 				}
 
-				// Malformed tool call — retry once without tools so the user still gets a reply.
-				if ( false !== stripos( $msg, 'Failed to call a function' ) ) {
+				// Malformed / schema-invalid tool call — retry once without tools.
+				if (
+					false !== stripos( $msg, 'Failed to call a function' )
+					|| false !== stripos( $msg, 'tool call validation failed' )
+					|| false !== stripos( $msg, 'did not match schema' )
+				) {
 					if ( ! empty( $tools ) && empty( $args['no_tool_retry'] ) ) {
-						Plugin::log( 'Groq tool-call malformed — retrying text-only' );
+						Plugin::log( 'Groq tool-call invalid — retrying text-only' );
 						$repair = $messages;
 						$repair[] = array(
 							'role'    => 'user',
-							'content' => 'Continue helping the customer in plain text. Do not call tools in this reply. If they need to pick an option, list the choices clearly.',
+							'content' => 'Continue helping the customer in plain text. Do not call tools in this reply. If they only said hi, greet them and ask what they are looking for.',
 						);
 						return $this->request( $repair, array(), array_merge( $args, array( 'no_tool_retry' => true ) ) );
 					}

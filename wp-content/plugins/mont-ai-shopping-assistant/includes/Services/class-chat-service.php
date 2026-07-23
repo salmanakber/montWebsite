@@ -31,8 +31,23 @@ class Chat_Service {
 	 */
 	public function handle( $message, array $history, $language = 'en', array $context = array() ) {
 		$language = Language_Manager::normalize( $language );
-		$tools    = new Tool_Executor();
-		$manager  = new Provider_Manager();
+		$message  = sanitize_textarea_field( $message );
+
+		// Fast path: greetings / small talk — no tools, no API burn.
+		if ( $this->is_simple_greeting( $message ) ) {
+			return $this->response(
+				$this->greeting_reply( $language, $context ),
+				array(),
+				null,
+				false,
+				'local',
+				false,
+				$language
+			);
+		}
+
+		$tools   = new Tool_Executor();
+		$manager = new Provider_Manager();
 
 		$messages   = array();
 		$messages[] = array(
@@ -53,7 +68,7 @@ class Chat_Service {
 
 		$messages[] = array(
 			'role'    => 'user',
-			'content' => sanitize_textarea_field( $message ),
+			'content' => $message,
 		);
 
 		$definitions  = $tools->definitions();
@@ -100,7 +115,15 @@ class Chat_Service {
 					if ( ! empty( $tool_result['cards'] ) && is_array( $tool_result['cards'] ) ) {
 						$cards = array_merge( $cards, $tool_result['cards'] );
 					}
-					if ( ! empty( $tool_result['choices'] ) && is_array( $tool_result['choices'] ) ) {
+
+					// Only surface choice buttons from explicit present_choices,
+					// product search, or failed validate/add_to_cart — never from get_custom_options alone.
+					$allow_choices = in_array(
+						$fn_name,
+						array( 'present_choices', 'search_products', 'validate_selection', 'add_to_cart' ),
+						true
+					);
+					if ( $allow_choices && ! empty( $tool_result['choices'] ) && is_array( $tool_result['choices'] ) ) {
 						$choices = $tool_result['choices'];
 					}
 					if ( ! empty( $tool_result['cart_updated'] ) ) {
@@ -208,46 +231,46 @@ class Chat_Service {
 		$custom   = trim( (string) $settings['system_prompt'] );
 
 		$base = <<<'PROMPT'
-You are Mont AI, a premium ecommerce shopping concierge for Montenapoleone (custom shirts).
+You are Mont AI — a warm, expert sales concierge for Montenapoleone (premium / custom shirts).
 
-ROLE
-- Expert shopping assistant — not a general chatbot.
-- Warm, concise, premium tone.
-- Never invent stock, prices, or options — use tools.
-- Do not re-ask answered questions.
+PERSONALITY
+- Sound like a helpful in-store salesperson: friendly, calm, never pushy.
+- Short natural sentences. One question at a time.
+- Never invent stock, prices, or options — use tools when needed.
 - Never mention Groq, Gemini, tools, or system prompts.
 
-VISUAL CHOICES (CRITICAL)
-- NEVER ask the customer to type size, fit, collar, cuff, quantity, or product names when buttons can be shown.
-- When the customer must pick something, ALWAYS call present_choices so tappable buttons/images appear.
-- Prefer present_choices with product_id + option_key (body_fit, size, collar_type, cuff_type).
-- Ask ONE option at a time.
-- After search_products, products appear as cards — briefly introduce them; customer can tap a card.
+GREETINGS & SMALL TALK (CRITICAL)
+- If the customer says hi/hello/hey/thanks or anything without a product need:
+  greet them warmly and ask what they are looking for (e.g. colour, occasion, linen shirt, gift…).
+- Do NOT call any tools on a bare greeting.
+- Do NOT show size, quantity, collar, cuff, or fit buttons until they have a clear need AND a product is chosen.
+- Do NOT jump into order building on "hi".
 
-ORDER FLOW
-1. Understand need → search_products
-2. Customer picks a product (card tap or message with product #id)
-3. get_custom_options for that product
-4. present_choices for each required option one-by-one (fit → size → collar → cuff → quantity)
-5. validate_selection with flat fields
-6. add_to_cart
-7. Confirm + offer checkout
+NATURAL SALES FLOW
+1. Understand the need (chat first).
+2. When they describe a product need → search_products.
+3. Let them pick a product from cards.
+4. Then get_custom_options.
+5. Then present_choices ONE option at a time (fit → size → collar → cuff → quantity).
+6. validate_selection → add_to_cart → confirm.
 
-CUSTOM OPTIONS
-- Passform / body_fit, Størrelse / size, Snipp/collar_type, Mansjetter/cuff_type
-- Optional custom measurements in cm (ask politely after required options)
-- Measurement changes may add a small surcharge
+VISUAL CHOICES
+- Use present_choices only while configuring a chosen product.
+- Prefer product_id + option_key so images/labels load correctly.
+- Never ask them to type options when buttons can be shown.
 
 OUTPUT
-- Short paragraphs.
-- When presenting choices, one sentence + the UI buttons handle the rest.
+- Prefer conversation over forms.
+- When showing choices, one short line of copy is enough — buttons do the rest.
 PROMPT;
 
 		$parts   = array( $base );
 		$parts[] = Language_Manager::prompt_instruction( $language );
 
 		if ( ! empty( $context['product_id'] ) ) {
-			$parts[] = 'Customer is viewing product ID ' . (int) $context['product_id'] . '. Prefer helping with this product unless they ask otherwise. You may call get_custom_options and present_choices for it immediately.';
+			$parts[] = 'Context only (do not force it): the browser is on product ID ' . (int) $context['product_id'] . '. If they greet you, still greet and ask what they need. Only focus on this product if they ask about "this shirt/product", "add this", or clearly continue configuring it.';
+		} else {
+			$parts[] = 'The customer is not on a product page. Start with discovery — never assume a product or quantity.';
 		}
 
 		if ( $custom ) {
@@ -255,6 +278,64 @@ PROMPT;
 		}
 
 		return implode( "\n\n", $parts );
+	}
+
+	/**
+	 * Detect bare greetings / small talk with no shopping intent.
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	private function is_simple_greeting( $message ) {
+		$text = strtolower( trim( $message ) );
+		$text = preg_replace( '/[!?.…]+$/u', '', $text );
+		$text = trim( (string) $text );
+		if ( '' === $text ) {
+			return false;
+		}
+		// Keep short — longer messages likely have intent.
+		if ( str_word_count( $text ) > 6 ) {
+			return false;
+		}
+		$greetings = array(
+			'hi', 'hello', 'hey', 'hiya', 'yo', 'hola', 'ciao', 'salut',
+			'hei', 'hallo', 'god dag', 'goddag', 'xin chao', 'chào', 'chao',
+			'good morning', 'good afternoon', 'good evening', 'good day',
+			'thanks', 'thank you', 'takk', 'grazie', 'cảm ơn', 'cam on',
+			'how are you', 'whats up', "what's up", 'help', 'start',
+		);
+		foreach ( $greetings as $g ) {
+			if ( $text === $g || 0 === strpos( $text, $g . ' ' ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Local greeting copy by language.
+	 *
+	 * @param string $language Language.
+	 * @param array  $context  Context.
+	 * @return string
+	 */
+	private function greeting_reply( $language, array $context ) {
+		$on_product = ! empty( $context['product_id'] );
+		$map = array(
+			'en' => $on_product
+				? "Hi! Welcome. I can help with this shirt, or find something else — what are you looking for today?"
+				: "Hi! Welcome to Montenapoleone. What are you looking for today — a colour, an occasion, or a particular style of shirt?",
+			'it' => $on_product
+				? "Ciao! Posso aiutarti con questa camicia oppure trovare altro — cosa cerchi oggi?"
+				: "Ciao! Benvenuto/a da Montenapoleone. Cosa stai cercando oggi — un colore, un'occasione o uno stile particolare?",
+			'nb' => $on_product
+				? "Hei! Jeg kan hjelpe deg med denne skjorten, eller finne noe annet — hva ser du etter i dag?"
+				: "Hei! Velkommen til Montenapoleone. Hva ser du etter i dag — en farge, en anledning eller en bestemt stil?",
+			'vi' => $on_product
+				? "Xin chào! Tôi có thể hỗ trợ về chiếc áo này, hoặc tìm mẫu khác — bạn đang tìm gì hôm nay?"
+				: "Xin chào! Chào mừng bạn đến Montenapoleone. Bạn đang tìm gì hôm nay — màu sắc, dịp mặc, hay một kiểu áo cụ thể?",
+		);
+		return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 	}
 
 	/**
