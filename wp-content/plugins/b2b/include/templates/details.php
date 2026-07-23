@@ -106,35 +106,7 @@
 
 <script type="text/javascript">
 jQuery(document).ready(function($){
-	var detailsColumn = $('#details-column');
-	if (!detailsColumn.length || $(window).width() < 992) {
-		return;
-	}
-	var offset = detailsColumn.offset().top;
-	$(window).on('scroll', function() {
-		if ($(window).scrollTop() >= offset && $(window).scrollTop() < 480) {
-			detailsColumn.addClass('sticky').addClass('shadow');
-		} else {
-			detailsColumn.removeClass('sticky').removeClass('shadow');
-		}
-	});
-});
-
-jQuery(document).ready(function($) {
-	var formattedLastPart = document.referrer || '';
-	var urlParts = formattedLastPart.split('/');
-	var lastPart = urlParts[urlParts.length - 2] || '';
-	var referringPageURL = lastPart.replace(/-/g, ' ');
-	if (referringPageURL.length > 25) {
-		referringPageURL = referringPageURL.substring(0, 25) + '...';
-	}
-	if (referringPageURL) {
-		$('.GoBack').attr('title', referringPageURL);
-		$('.GoBack').on('click', function() {
-			window.location.href = document.referrer;
-		});
-	}
-
+	// Keep right column in normal sticky CSS flow — skip old jump sticky JS.
 	$('#mont_backButton').on('click', function() {
 		if (document.referrer) {
 			window.location.href = document.referrer;

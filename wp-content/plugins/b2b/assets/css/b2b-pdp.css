@@ -473,3 +473,79 @@
 		flex: 1 1 100%;
 	}
 }
+
+/* Compact right panel — less page scrolling */
+@media (min-width: 992px) {
+	.b2b-pdp .mont_layout_fourty,
+	.b2b-pdp #details-column,
+	.b2b-pdp .b2b-pdp__panel {
+		position: sticky !important;
+		top: 96px !important;
+		max-height: calc(100vh - 112px);
+		overflow-y: auto;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: thin;
+		padding: 0 18px 8px 4px !important;
+	}
+
+	.b2b-pdp .b2b-size-list ul {
+		display: grid !important;
+		grid-template-columns: 1fr 1fr;
+		gap: 0 8px;
+	}
+
+	.b2b-pdp .b2b-size-list li {
+		padding: 3px 0;
+	}
+
+	.b2b-pdp .b2b-size-input {
+		width: 52px;
+		min-height: 28px;
+		font-size: 13px !important;
+	}
+
+	.b2b-pdp .moq,
+	.b2b-pdp .b2b-pdp__summary,
+	.b2b-pdp .b2b-option-section,
+	.b2b-pdp .comment-box-b2b,
+	.b2b-pdp .price-block-b2b {
+		margin-bottom: 8px;
+		padding-top: 6px;
+		padding-bottom: 8px;
+	}
+
+	.b2b-pdp #s_comment,
+	.b2b-pdp textarea {
+		min-height: 48px !important;
+	}
+
+	.b2b-pdp label.b2b-check-to-go-collar,
+	.b2b-pdp label.b2b-check-to-go-cuff,
+	.b2b-pdp .b2b-option-tile {
+		width: 84px !important;
+		min-width: 84px !important;
+		max-width: 84px !important;
+		padding: 5px !important;
+	}
+
+	.b2b-pdp .b2b-add-to-cart-button {
+		position: sticky;
+		bottom: 0;
+		background: linear-gradient(180deg, rgba(255,255,255,0), #fff 30%);
+		padding-top: 10px;
+		margin-top: 8px;
+		z-index: 3;
+	}
+}
+
+@media (max-width: 991px) {
+	.b2b-pdp .mont_layout_fourty,
+	.b2b-pdp #details-column,
+	.b2b-pdp .b2b-pdp__panel {
+		position: relative !important;
+		top: auto !important;
+		max-height: none;
+		overflow: visible;
+	}
+}

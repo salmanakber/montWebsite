@@ -304,10 +304,11 @@ public function bubble_b2b_cart_button(){
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.2', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.3', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
-    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.4');
-    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.3');
+    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.5');
+    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.5');
+    wp_enqueue_style('b2b-modals', $this->url . 'assets/css/b2b-modals.css', array('b2b-style'), '1.1');
     wp_enqueue_style('b2b-notify', $this->url . 'assets/css/notify.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-css-min', $this->url . 'assets/css/owl.carousel.min.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');
@@ -324,7 +325,20 @@ public function enqueue_scripts_and_styles() {
         );
     }
 
-    wp_localize_script('b2b-custom-script', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
+    $b2b_page = get_page_by_path( 'monte-connected-b2b' );
+    $b2b_url  = $b2b_page ? get_permalink( $b2b_page ) : home_url( '/monte-connected-b2b/' );
+
+    wp_localize_script('b2b-custom-script', 'ajax_object', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+    ));
+    wp_localize_script('b2b-custom-script', 'ajaxurl', array(
+        'url' => admin_url('admin-ajax.php'),
+    ));
+    wp_add_inline_script(
+        'b2b-custom-script',
+        'var b2bShopUrl = ' . wp_json_encode( $b2b_url ) . ';',
+        'before'
+    );
 
 }
 }

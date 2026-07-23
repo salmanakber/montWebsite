@@ -1,39 +1,83 @@
 jQuery(document).ready(function($) {
 
-    $(document).on('click', '.add-to-cart-button-bubble' , function(){
-        $('#monte-b2b-form').show();
-        $('.monte-b2b-modal-content').addClass('model-loader');
+    function b2bAjaxUrl() {
+        if (typeof ajaxurl !== 'undefined' && ajaxurl && ajaxurl.url) {
+            return ajaxurl.url;
+        }
+        if (typeof ajax_object !== 'undefined' && ajax_object && ajax_object.ajax_url) {
+            return ajax_object.ajax_url;
+        }
+        return '/wp-admin/admin-ajax.php';
+    }
+
+    function openB2bModal($modal) {
+        $modal.addClass('is-open').attr('aria-hidden', 'false').show();
+        $('body').addClass('b2b-modal-open');
+    }
+
+    function closeB2bModals() {
+        $('.monte-b2b-modal').removeClass('is-open').attr('aria-hidden', 'true').hide();
+        $('body').removeClass('b2b-modal-open');
+        $('.monte-b2b-modal-content').removeClass('model-loader');
+    }
+
+    function loadB2bCartAndOpen() {
+        var $formModal = $('#monte-b2b-form');
+        openB2bModal($formModal);
+        $formModal.find('.monte-b2b-modal-content').addClass('model-loader');
         $.ajax({
-        type: "POST",
-        dataType: 'json',
-        url:  ajaxurl.url, // Use the global ajax_url variable provided by WordPress
-        data: {
-            action: 'show_cart_data_hook' // Action name to be handled by the server-side function
-        },
-        success: function(response) {
-            $('.cart-data').html(response.html);
-            $('.monte-b2b-modal-content').removeClass('model-loader');
-        },
-        error: function(xhr, status, error) {
-            console.error(xhr.responseText); // Log error message
-            $('.monte-b2b-modal-content').removeClass('model-loader');
+            type: 'POST',
+            dataType: 'json',
+            url: b2bAjaxUrl(),
+            data: { action: 'show_cart_data_hook' },
+            success: function(response) {
+                $('.cart-data').html(response && response.html ? response.html : '');
+                $formModal.find('.monte-b2b-modal-content').removeClass('model-loader');
+            },
+            error: function(xhr) {
+                console.error(xhr.responseText);
+                $formModal.find('.monte-b2b-modal-content').removeClass('model-loader');
+            }
+        });
+    }
+
+    // Cart FAB + "I'm done choosing"
+    $(document).on('click', '.add-to-cart-button-bubble, .submit-it-directly.add-to-cart-button-bubble', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        loadB2bCartAndOpen();
+    });
+
+    $(document).on('click', '.monte-b2b-close', function(e) {
+        e.preventDefault();
+        closeB2bModals();
+    });
+
+    $(document).on('click', '.monte-b2b-modal', function(e) {
+        if (e.target === this) {
+            closeB2bModals();
         }
     });
-})
- $('.monte-b2b-close').on('click', function(event) {
-    $('.monte-b2b-modal').hide();
+
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeB2bModals();
+        }
     });
 
-
-    $('[data-monte-b2b-modal-trigger]').on('click', function() {
-        var modalContentSelector = $(this).data('monte-b2b-modal-trigger');
-        $(modalContentSelector).show(); // Show the specified modal content
-        $('#monte-b2b-form').show();
+    // Size guide tabs
+    $(document).on('click', '.b2b-size-guide', function(e) {
+        e.preventDefault();
+        openB2bModal($('#monte-b2b-size'));
     });
 
-    // Close the modal when clicking on the close button or outside the modal
-
-
+    $(document).on('click', '.b2b-size-tab', function() {
+        var fit = $(this).data('fit');
+        $('.b2b-size-tab').removeClass('is-active').attr('aria-selected', 'false');
+        $(this).addClass('is-active').attr('aria-selected', 'true');
+        $('.b2b-size-pane').removeClass('is-active').attr('hidden', true);
+        $('.b2b-size-pane[data-fit="' + fit + '"]').addClass('is-active').removeAttr('hidden');
+    });
 
   $(document).on('click', '.b2b-check-to-go-collar', function(e) {
         e.preventDefault();
@@ -142,7 +186,7 @@ $(document).on('click', '.send-it-to-cart', function() {
     // Send formData via AJAX with a custom key
     $.ajax({
         type: "POST",
-        url: ajaxurl.url, // Use the global ajax_url variable provided by WordPress
+        url: b2bAjaxUrl(), // Use the global ajax_url variable provided by WordPress
         data: {
             action: 'add_to_car_b2b_hook', // Action name to be handled by the server-side function
             productData: formData // Use a custom key 'productData' to send formData
@@ -154,15 +198,13 @@ $(document).on('click', '.send-it-to-cart', function() {
 				{
 				$.notify(response.message, { type: "danger", align: "left", verticalAlign: "bottom" });
 				}
-            if(response.data.count > 0)
+            if(response.data && response.data.count > 0)
             {
 				$('.submit-it-directly').addClass('add-to-cart-button-bubble');
                 $.notify("Product added to cart.", { type: "toast", align: "left", verticalAlign: "bottom" });
-                $('.add-to-cart-button-bubble').removeClass('d-none');
+                $('.add-to-cart-button-bubble, .b2b-cart-fab').removeClass('d-none');
                 $('.count-item-b2b').text(response.data.count < 10 ? '0' + response.data.count : response.data.count);
-				window.location.href = "monte-connected-b2b";
-				$('.b2b-details').find('input').val('');
-			$('.b2b-details').find('input[type="checkbox"]').prop('checked', false);
+				window.location.href = (typeof b2bShopUrl !== 'undefined' && b2bShopUrl) ? b2bShopUrl : '/monte-connected-b2b/';
             }
 
         },
@@ -178,10 +220,10 @@ $(document).on('click', '.send-it-to-cart', function() {
 
 $(document).on('click', '.monte-b2b-remove-item' , function(){
     thisE = $(this);
-      $('.monte-b2b-modal-content').addClass('model-loader');
+      $('#monte-b2b-form .monte-b2b-modal-content').addClass('model-loader');
         $.ajax({
         type: "POST",
-        url:  ajaxurl.url, // Use the global ajax_url variable provided by WordPress
+        url:  b2bAjaxUrl(), // Use the global ajax_url variable provided by WordPress
         data: {
             action: 'removeKey', // Action name to be handled by the server-side function
             key: $(this).data('id')
@@ -191,20 +233,20 @@ $(document).on('click', '.monte-b2b-remove-item' , function(){
             if(response.data.count < 1)
             {
 				$('.submit-it-directly').removeClass('add-to-cart-button-bubble');
-                $('#monte-b2b-form').hide();
-                $('.add-to-cart-button-bubble').addClass('d-none');
+                closeB2bModals();
+                $('.add-to-cart-button-bubble, .b2b-cart-fab').addClass('d-none');
                $('.count-item-b2b').text(response.data.count < 10 ? '0' + response.data.count : response.data.count);
             }
             else
             {
-                $('.add-to-cart-button-bubble').removeClass('d-none');
+                $('.add-to-cart-button-bubble, .b2b-cart-fab').removeClass('d-none');
                 $('.count-item-b2b').text(response.data.count < 10 ? '0' + response.data.count : response.data.count);
             }
-            $('.monte-b2b-modal-content').removeClass('model-loader');
+            $('#monte-b2b-form .monte-b2b-modal-content').removeClass('model-loader');
         },
         error: function(xhr, status, error) {
             console.error(xhr.responseText); // Log error message
-            $('.monte-b2b-modal-content').removeClass('model-loader');
+            $('#monte-b2b-form .monte-b2b-modal-content').removeClass('model-loader');
         }
     });
 
@@ -259,7 +301,7 @@ $(document).on('click', '.order-btn', function() {
     // Send formData via AJAX with a custom key
     $.ajax({
         type: "POST",
-        url:  ajaxurl.url, // Use the global ajax_url variable provided by WordPress
+        url:  b2bAjaxUrl(),
         data: {
             action: 'placed_order', // Action name to be handled by the server-side function
             productData: formData // Use a custom key 'productData' to send formData
@@ -267,8 +309,8 @@ $(document).on('click', '.order-btn', function() {
         success: function(response) {
             if(response.success)
             {
-                $('#monte-b2b-form').hide();
-                $('.add-to-cart-button-bubble').addClass('d-none');
+                closeB2bModals();
+                $('.add-to-cart-button-bubble, .b2b-cart-fab').addClass('d-none');
                 $.notify(response.message, { type: "toast", align: "left", verticalAlign: "bottom" });
             }
 			else
@@ -312,10 +354,6 @@ function isValidEmail(email) {
     var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
-
-$(document).on('click', '.b2b-size-guide' , function(){
-	$('#monte-b2b-size').show();
-})
 
 $(document).on('click', '.this-hide' , function (){
 	$(this).parents('.'+$(this).data('tag')).remove();
