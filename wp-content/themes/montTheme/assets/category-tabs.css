@@ -119,9 +119,12 @@ a.category-item.category-active::after {
 
 .mont-cat-tabs__scroller,
 .category-slider-wrapper.mont-cat-tabs__scroller {
-	width: 100%;
-	overflow-x: auto;
+	width: 100%;	
 	-webkit-overflow-scrolling: touch;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
 
 .mont-cat-tabs__list,
