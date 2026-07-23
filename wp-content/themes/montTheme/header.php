@@ -7,6 +7,10 @@
     <?php wp_head(); ?>
 </head>
 <body <?php body_class(); ?>>
+	<?php
+	$is_b2b_page = is_page('monte-connected-b2b') || isset($_GET['productb2b']);
+	if (!$is_b2b_page) :
+	?>
 	<style>
 	.top-bar h3 {
     font-weight: 500;
@@ -22,13 +26,14 @@
     height: 21px;
 }
 	</style>
-<div class="top-bar">
+<!-- <div class="top-bar">
 	
 	<h3>
 		Gratis frakt over hele verden
 
 	</h3>
-	</div>
+	</div> -->
+	<?php endif; ?>
     <header class="mont_header_sticky-header removeWhite ">
         <nav class="mont_header_nav">
             <div class="mont_header_nav-left">
