@@ -27,10 +27,9 @@
 			</div>
 
 			<div class="b2b-pdp__grid row">
-				<div class="col-md-6 column-top column-left-top b2b-pdp__card">
+				<div class="col-md-6 column-top column-left-top">
 					<div class="size-type">
-						<h4>Size breakdowns</h4>
-						<p class="b2b-pdp__hint">Enter quantity per size. Total must meet MOQ.</p>
+						<h4>Size BreakDowns</h4>
 						<div class="b2b-size-list">
 							<ul>
 								<li><span class="size-name">37(S)</span><div class="b2b-input-container"><input type="number" class="b2b-size-input" data-value="37(S)" name="breakDown_quantity[]" min="0" max="1000" placeholder="0" inputmode="numeric"></div></li>
@@ -50,9 +49,8 @@
 					</div>
 				</div>
 
-				<div class="col-md-6 column-top column-right-top b2b-pdp__card">
-					<h4>Body fit</h4>
-					<p class="b2b-pdp__hint">Select one or more fits for this colour.</p>
+				<div class="col-md-6 column-top column-right-top">
+					<h4>BODY FIT</h4>
 					<ul class="b2b-ul-list">
 						<li>
 							<div class="b2b-left-text-inner">SLIM FIT</div>
@@ -79,29 +77,28 @@
 				</div>
 			</div>
 
-			<div class="price-block-b2b b2b-pdp__total">
+			<div class="price-block-b2b">
 				<input type="text" class="price-b2b" name="totalprice" placeholder="Total pieces" readonly>
 				<span class="custom_text-b2b"></span>
 			</div>
 
-			<div class="comment-box-b2b b2b-pdp__card">
-				<label class="b2b-pdp__label" for="s_comment">Comments</label>
-				<textarea placeholder="Special instructions for production…" id="s_comment" name="comment"></textarea>
+			<div class="comment-box-b2b">
+				<textarea placeholder="Comments" id="s_comment" name="comment"></textarea>
 			</div>
 
-			<div class="b2b-measure-boxes collar-type-b2b b2b-pdp__card">
-				<h4 class="b2b-h4">Collar type</h4>
+			<div class="b2b-measure-boxes collar-type-b2b">
+				<h4 class="b2b-h4">Collar Type</h4>
 				<div class="collardiv">{{collar}}</div>
 			</div>
 
-			<div class="measure-boxes-b2b cuff-type-b2b b2b-pdp__card">
-				<h4 class="b2b-h4">Cuff type</h4>
+			<div class="measure-boxes-b2b cuff-type-b2b">
+				<h4 class="b2b-h4">Cuff Type</h4>
 				<div class="collardiv">{{cuff}}</div>
 			</div>
 
-			<div class="b2b-add-to-cart-button b2b-pdp__actions">
-				<button type="submit" class="send-it-to-cart">Save &amp; add new colour</button>
-				<a href="javascript:void(0)" class="submit-it-directly {{done}}">I'm done choosing</a>
+			<div class="b2b-add-to-cart-button">
+				<button type="submit" class="send-it-to-cart">SAVE &amp; ADD NEW COLOUR</button>
+				<a href="javascript:void(0)" class="submit-it-directly {{done}}">I'M DONE CHOOSING</a>
 			</div>
 		</div>
 	</div>

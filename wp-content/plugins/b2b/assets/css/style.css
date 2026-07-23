@@ -939,16 +939,27 @@ ul#b2bmenu {
 }
 
 /* =========================================================
-   B2B listing — safe product grid (do NOT touch global .row)
+   B2B listing — safe product grid + clear of sticky header
    ========================================================= */
+
+.b2b-listing-page {
+  padding-top: 110px;
+  box-sizing: border-box;
+}
 
 .b2b-listing-page .category-slider-container.mont-cat-tabs,
 .category-slider-container.mont-cat-tabs {
   border: none;
   border-bottom: none;
-  margin: 24px auto 20px;
+  margin: 0 auto 24px;
   width: min(1180px, 95%);
   display: block;
+}
+
+.b2b-listing-page ul#b2bmenu,
+ul#b2bmenu.mont-cat-tabs__list,
+ul#b2bmenu.category-slider {
+  margin-top: 0 !important;
 }
 
 .b2b-listing-page #myTabContent,
@@ -1017,5 +1028,11 @@ ul#b2bmenu {
     flex: 0 0 100%;
     max-width: 100%;
     width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .b2b-listing-page {
+    padding-top: 88px;
   }
 }

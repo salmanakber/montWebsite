@@ -111,6 +111,12 @@ a.category-item.category-active::after {
 	margin: 18px auto 28px;
 }
 
+/* B2B listing page — keep tabs below sticky header */
+.b2b-listing-page .mont-cat-tabs,
+.b2b-listing-page .category-slider-container.mont-cat-tabs {
+	margin-top: 0;
+}
+
 .mont-cat-tabs__scroller,
 .category-slider-wrapper.mont-cat-tabs__scroller {
 	width: 100%;
