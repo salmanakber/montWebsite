@@ -18,9 +18,11 @@ if (empty($current) || !is_array($current)) {
     $current = array(
         'label'   => 'International',
         'display' => '$ USD',
+        'flag'    => 'globe',
     );
 }
 
+$current_flag  = !empty($current['flag']) ? $current['flag'] : 'globe';
 $current_label = $current['label'] . ' • ' . $current['display'];
 $panel_id = !empty($panel_id) ? $panel_id : 'dc-region-panel';
 ?>
@@ -28,6 +30,7 @@ $panel_id = !empty($panel_id) ? $panel_id : 'dc-region-panel';
     <button type="button" class="dc-region-trigger" aria-expanded="false" aria-controls="<?php echo esc_attr($panel_id); ?>">
         <span class="dc-region-trigger-label">Region / Currency</span>
         <span class="dc-region-trigger-value">
+            <span class="dc-region-flag dc-region-flag--<?php echo esc_attr($current_flag); ?> dc-region-flag--trigger" aria-hidden="true"></span>
             <span class="dc-region-trigger-text"><?php echo esc_html($current_label); ?></span>
             <svg class="dc-region-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                 <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -39,7 +42,10 @@ $panel_id = !empty($panel_id) ? $panel_id : 'dc-region-panel';
         <div class="dc-region-panel-header">
             <div class="dc-region-panel-current">
                 <span class="dc-region-panel-label">Region / Currency</span>
-                <span class="dc-region-panel-selected"><?php echo esc_html($current_label); ?></span>
+                <span class="dc-region-panel-selected">
+                    <span class="dc-region-flag dc-region-flag--<?php echo esc_attr($current_flag); ?> dc-region-flag--trigger" aria-hidden="true"></span>
+                    <?php echo esc_html($current_label); ?>
+                </span>
             </div>
             <button type="button" class="dc-region-close" aria-label="Close">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">

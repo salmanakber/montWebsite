@@ -22,6 +22,7 @@
 
 .dc-region-trigger-label {
     font-size: 10px;
+    font-weight: 300;
     color: #989797;
     letter-spacing: 0.02em;
     margin-bottom: 2px;
@@ -31,10 +32,27 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 300;
     color: #1a1a1a;
     white-space: nowrap;
+}
+
+.dc-region-trigger-text {
+    font-weight: 300;
+}
+
+.dc-region-flag--trigger {
+    width: 16px;
+    height: 16px;
+}
+
+.dc-region-flag--trigger.dc-region-flag--globe {
+    background-size: 12px;
+}
+
+.dc-region-flag--trigger.dc-region-flag--vn {
+    background-size: 10px;
 }
 
 .dc-region-chevron {
@@ -90,9 +108,11 @@
 }
 
 .dc-region-panel-selected {
-    display: block;
-    font-size: 16px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 400;
     color: #1a1a1a;
 }
 
