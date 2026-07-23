@@ -1,9 +1,12 @@
 /**
  * Mobile/tablet product gallery slider.
- * Forces one-slide-at-a-time for images AND video (desktop grid untouched).
+ * Pixel-based widths so video intrinsic size cannot force a 2-up layout.
  */
 (function () {
     'use strict';
+
+    if (window.__montGallerySliderInit) return;
+    window.__montGallerySliderInit = true;
 
     var MQ = window.matchMedia('(max-width: 1024px)');
 
@@ -27,6 +30,7 @@
         var startX = 0;
         var deltaX = 0;
         var dragging = false;
+        var slideW = 0;
 
         function isMobile() {
             return MQ.matches;
@@ -44,38 +48,57 @@
             });
         }
 
+        function measure() {
+            slideW = Math.round(wrapper.getBoundingClientRect().width) || wrapper.offsetWidth || window.innerWidth;
+            return slideW;
+        }
+
         function applyMobileLayout() {
             wrapper.classList.add('is-mobile-slider');
+            measure();
 
-            // Inline styles beat cached CSS
             wrapper.style.position = 'relative';
             wrapper.style.width = '100%';
             wrapper.style.overflow = 'hidden';
+            wrapper.style.maxWidth = '100%';
 
             track.style.display = 'flex';
             track.style.flexDirection = 'row';
             track.style.flexWrap = 'nowrap';
-            track.style.gap = '0';
-            track.style.width = '100%';
+            track.style.alignItems = 'stretch';
+            track.style.gap = '0px';
+            track.style.width = (slideW * slides.length) + 'px';
+            track.style.maxWidth = 'none';
             track.style.transition = 'transform 0.35s ease';
             track.style.willChange = 'transform';
-            // disable native scroll — we control via transform
-            track.style.overflow = 'hidden';
+            track.style.overflow = 'visible';
             track.style.scrollSnapType = 'none';
+            track.style.gridTemplateColumns = 'none';
 
             slides.forEach(function (slide) {
+                slide.classList.remove('initially-hidden');
                 slide.style.display = 'block';
-                slide.style.flex = '0 0 100%';
-                slide.style.width = '100%';
-                slide.style.minWidth = '100%';
-                slide.style.maxWidth = '100%';
+                slide.style.flex = '0 0 ' + slideW + 'px';
+                slide.style.flexGrow = '0';
+                slide.style.flexShrink = '0';
+                slide.style.flexBasis = slideW + 'px';
+                slide.style.width = slideW + 'px';
+                slide.style.minWidth = slideW + 'px';
+                slide.style.maxWidth = slideW + 'px';
                 slide.style.boxSizing = 'border-box';
                 slide.style.position = 'relative';
                 slide.style.overflow = 'hidden';
                 slide.style.aspectRatio = '3 / 4';
+                slide.style.height = 'auto';
 
                 var media = slide.querySelector('video, img');
                 if (media) {
+                    media.style.position = 'absolute';
+                    media.style.inset = '0';
+                    media.style.top = '0';
+                    media.style.left = '0';
+                    media.style.right = '0';
+                    media.style.bottom = '0';
                     media.style.width = '100%';
                     media.style.height = '100%';
                     media.style.maxWidth = '100%';
@@ -118,15 +141,15 @@
             if (dotsWrap) dotsWrap.style.display = '';
             var seeMore = wrapper.querySelector('.mont_see_more_container');
             if (seeMore) seeMore.style.display = '';
-            track.style.transform = '';
         }
 
         function goTo(i, animate) {
             if (!isMobile()) return;
             if (typeof animate === 'undefined') animate = true;
+            if (!slideW) measure();
             index = Math.max(0, Math.min(i, slides.length - 1));
             track.style.transition = animate ? 'transform 0.35s ease' : 'none';
-            track.style.transform = 'translate3d(' + (-index * 100) + '%, 0, 0)';
+            track.style.transform = 'translate3d(' + (-index * slideW) + 'px, 0, 0)';
 
             if (dotsWrap) {
                 var dots = dotsWrap.querySelectorAll('.mont_gallery_dot');
@@ -137,7 +160,6 @@
             if (prevBtn) prevBtn.disabled = index <= 0;
             if (nextBtn) nextBtn.disabled = index >= slides.length - 1;
 
-            // Pause off-slide videos; leave active slide alone (autoplay / user control)
             slides.forEach(function (slide, si) {
                 var vid = slide.querySelector('video');
                 if (!vid) return;
@@ -170,7 +192,6 @@
             });
         }
 
-        // Touch swipe
         track.addEventListener('touchstart', function (e) {
             if (!isMobile()) return;
             dragging = true;
@@ -182,8 +203,7 @@
         track.addEventListener('touchmove', function (e) {
             if (!dragging || !isMobile()) return;
             deltaX = e.touches[0].clientX - startX;
-            var pct = (deltaX / track.clientWidth) * 100;
-            track.style.transform = 'translate3d(' + ((-index * 100) + pct) + '%, 0, 0)';
+            track.style.transform = 'translate3d(' + ((-index * slideW) + deltaX) + 'px, 0, 0)';
         }, { passive: true });
 
         track.addEventListener('touchend', function () {
@@ -204,6 +224,9 @@
         }
         window.addEventListener('resize', onResize);
 
+        // Run after layout so widths are correct (fonts/images)
         onResize();
+        window.setTimeout(onResize, 50);
+        window.setTimeout(onResize, 300);
     });
 })();

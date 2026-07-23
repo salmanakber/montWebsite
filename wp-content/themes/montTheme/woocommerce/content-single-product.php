@@ -248,7 +248,112 @@ div#mont_backButton { z-index: 999; }
         margin: 8px 12px;
     }
 
-    /* Mobile slider rules live in product-page.css + product-gallery-slider.js */
+    /* Critical mobile slider — inline so cache of old CSS cannot keep 2-col grid */
+    .mont_gallery_wrapper-unified {
+        position: relative !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        max-width: 100% !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_grid_wrapper,
+    #mont_gallery_track {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 0 !important;
+        overflow: visible !important;
+        grid-template-columns: none !important;
+        grid-template-rows: none !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_item,
+    .mont_gallery_wrapper-unified .mont_gallery_item.video-trigger,
+    .mont_gallery_wrapper-unified .mont_gallery_item.initially-hidden,
+    #mont_gallery_track > .mont_gallery_item {
+        display: block !important;
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        aspect-ratio: 3 / 4 !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_item video,
+    .mont_gallery_wrapper-unified .mont_gallery_item img,
+    .mont_gallery_wrapper-unified .mont_gallery_main-video,
+    .mont_gallery_wrapper-unified .mont_gallery_main-image {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_item video {
+        pointer-events: none;
+    }
+    .mont_gallery_wrapper-unified .mont_video_overlay_btn {
+        pointer-events: auto !important;
+        z-index: 9 !important;
+    }
+    .mont_gallery_wrapper-unified .mont_see_more_container {
+        display: none !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_nav {
+        display: flex !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 0 !important;
+        right: 0 !important;
+        transform: translateY(-50%) !important;
+        justify-content: space-between !important;
+        pointer-events: none !important;
+        z-index: 10 !important;
+        padding: 0 8px !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_nav_btn {
+        pointer-events: auto !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        border: none !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        color: #111 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_nav_btn svg {
+        width: 18px !important;
+        height: 18px !important;
+        stroke: currentColor !important;
+        fill: none !important;
+        stroke-width: 1.5 !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_dots {
+        display: flex !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        padding: 10px 0 4px !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_dot {
+        width: 6px !important;
+        height: 6px !important;
+        border-radius: 50% !important;
+        background: #ccc !important;
+        border: none !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_dot.is-active {
+        background: #111 !important;
+    }
 
     .collar-options {
         grid-template-columns: repeat(2, 1fr) !important;
@@ -369,6 +474,8 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                 <?php endif; ?>
             </div>
         </div> 
+
+        <script src="<?php echo esc_url( get_template_directory_uri() . '/assets/product-gallery-slider.js' ); ?>?v=<?php echo (int) filemtime( get_template_directory() . '/assets/product-gallery-slider.js' ); ?>"></script>
 
         <!-- ========================== -->
         <!-- RIGHT: PRODUCT DETAILS     -->
