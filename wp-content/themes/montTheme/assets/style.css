@@ -941,43 +941,10 @@ flex-direction: column-reverse;
         margin-bottom: 32px;
     }
 
-    a.category-item {
-    border: 1px solid #949498 !important;
-    width: 100px;
-    border-top-right-radius: 20px;
-    border-top-left-radius: 20px;
-    color: #949498;
-		min-width: 100px;
-}
-
-ul#b2bmenu {
-    border: none !important;
-}
 .category-slider-container {
     border: none !important;
 }
 
-.nav-link-monte-b2b.active {
-    font-weight: 600;
-    position: relative;
-    background: rgba(148, 148, 152, 0.12) !important;
-    color: #3a3a3a !important;
-}
-
-.nav-link-monte-b2b.active::after{
-background-color: #949498 !important;
-}
-	.mont-cat-item {
-    border: 1px solid #949498 !important;
-    border-top-right-radius: 20px;
-    border-top-left-radius: 20px;
-    overflow: hidden;
-}
-	
-	.mont-cat-item button{
-		color: #949498;
-		width: 158px;
-	}
 	.tabb2b {
     width: 95%;
     margin: auto;

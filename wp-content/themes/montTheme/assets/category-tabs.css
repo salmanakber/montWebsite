@@ -1,14 +1,15 @@
 /**
  * Category tabs — shop archive (.category-slider) + B2B (#b2bmenu)
- * Active underline uses site primary #949498
+ * Active underline: blue, animated 0 → 100% on hover/active
  */
 
 :root {
-	--mont-tab-primary: #949498;
-	--mont-tab-primary-soft: rgba(148, 148, 152, 0.14);
-	--mont-tab-border: #e5e5e5;
+	--mont-tab-primary: #2f6ff2;
+	--mont-tab-primary-soft: rgba(47, 111, 242, 0.08);
+	--mont-tab-border: #ececec;
 	--mont-tab-text: #6b6b6b;
-	--mont-tab-text-active: #3a3a3a;
+	--mont-tab-text-active: #2b2b2b;
+	--mont-tab-shadow: 0 8px 24px rgba(20, 30, 55, 0.08), 0 2px 6px rgba(20, 30, 55, 0.04);
 }
 
 /* ---------- Shop category slider (content-product.php) ---------- */
@@ -35,8 +36,9 @@
 	min-width: min-content;
 	width: 100%;
 	border: 1px solid var(--mont-tab-border) !important;
-	border-radius: 10px !important;
+	border-radius: 12px !important;
 	background: #fff !important;
+	box-shadow: var(--mont-tab-shadow) !important;
 	overflow-x: auto !important;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: thin;
@@ -80,9 +82,30 @@ a.category-item {
 	border-right: 0 !important;
 }
 
+/* Animated underline — grows from 0 to 100% on hover/active */
+.category-slider a.category-item::after,
+a.category-item::after {
+	content: "";
+	position: absolute;
+	left: 18%;
+	right: 18%;
+	bottom: 0;
+	height: 3px;
+	border-radius: 3px 3px 0 0;
+	background: var(--mont-tab-primary);
+	transform: scaleX(0);
+	transform-origin: center;
+	transition: transform 0.3s ease;
+}
+
 .category-slider a.category-item:hover {
 	background: #fafafa !important;
 	color: var(--mont-tab-text-active) !important;
+}
+
+.category-slider a.category-item:hover::after,
+a.category-item:hover::after {
+	transform: scaleX(1);
 }
 
 .category-slider a.category-item.category-active,
@@ -95,14 +118,7 @@ a.category-item.category-active {
 
 .category-slider a.category-item.category-active::after,
 a.category-item.category-active::after {
-	content: "";
-	position: absolute;
-	left: 18%;
-	right: 18%;
-	bottom: 0;
-	height: 3px;
-	border-radius: 3px 3px 0 0;
-	background: var(--mont-tab-primary);
+	transform: scaleX(1);
 }
 
 /* ---------- B2B + archive mont-cat-tabs ---------- */
@@ -139,8 +155,9 @@ ul#b2bmenu.category-slider {
 	width: 100%;
 	min-width: min-content;
 	border: 1px solid var(--mont-tab-border) !important;
-	border-radius: 10px !important;
+	border-radius: 12px !important;
 	background: #fff !important;
+	box-shadow: var(--mont-tab-shadow) !important;
 	overflow: hidden;
 	justify-content: flex-start !important;
 }
@@ -186,10 +203,31 @@ a.mont-cat-tabs__link {
 	position: relative;
 }
 
+/* Animated underline — grows from 0 to 100% on hover/active */
+button.nav-link-monte-b2b::after,
+a.mont-cat-tabs__link::after {
+	content: "";
+	position: absolute;
+	left: 18%;
+	right: 18%;
+	bottom: 0;
+	height: 3px;
+	border-radius: 3px 3px 0 0;
+	background: var(--mont-tab-primary) !important;
+	transform: scaleX(0);
+	transform-origin: center;
+	transition: transform 0.3s ease;
+}
+
 button.nav-link-monte-b2b:hover,
 a.mont-cat-tabs__link:hover {
 	background: #fafafa !important;
 	color: var(--mont-tab-text-active) !important;
+}
+
+button.nav-link-monte-b2b:hover::after,
+a.mont-cat-tabs__link:hover::after {
+	transform: scaleX(1);
 }
 
 button.nav-link-monte-b2b.active,
@@ -205,14 +243,7 @@ button.nav-link-monte-b2b.active::after,
 li.is-active button.nav-link-monte-b2b::after,
 li.active-li button.nav-link-monte-b2b::after,
 a.mont-cat-tabs__link.is-active::after {
-	content: "";
-	position: absolute;
-	left: 18%;
-	right: 18%;
-	bottom: 0;
-	height: 3px;
-	border-radius: 3px 3px 0 0;
-	background: var(--mont-tab-primary) !important;
+	transform: scaleX(1);
 }
 
 /* Override old pill tabs */
