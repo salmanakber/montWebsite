@@ -147,7 +147,10 @@ class b2b extends getApi {
                    echo '</a></div>';
                }
            } else {
-            echo '<p>No products available for this category.</p>';
+            echo '<div class="b2b-empty-category">';
+            echo '<p class="b2b-empty-category__title">Nothing in this collection yet</p>';
+            echo '<p class="b2b-empty-category__text">New styles will appear here soon. Browse another category in the meantime.</p>';
+            echo '</div>';
         }
         echo '</div>';
         echo '</div>';
@@ -160,7 +163,10 @@ class b2b extends getApi {
 
     echo '</div>';
 } else {
-    echo '<p>No categories available.</p>';
+    echo '<div class="b2b-empty-category">';
+    echo '<p class="b2b-empty-category__title">No collections available</p>';
+    echo '<p class="b2b-empty-category__text">Please check back shortly.</p>';
+    echo '</div>';
 }
 }
 
@@ -307,7 +313,7 @@ public function bubble_b2b_cart_button(){
 
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
-    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.7');
+    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.8');
     wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.6');
     wp_enqueue_style('b2b-modals', $this->url . 'assets/css/b2b-modals.css', array('b2b-style'), '1.1');
     wp_enqueue_style('b2b-notify', $this->url . 'assets/css/notify.css', array(), '1.0');
