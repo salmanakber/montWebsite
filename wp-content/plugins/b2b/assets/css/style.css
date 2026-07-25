@@ -228,6 +228,24 @@ ul.b2b-ul-list li {
    line-height: 10px;
 }
 
+/* Collar/cuff selected indicator — simple dots only */
+.b2b-pdp .blank-check {
+    height: 10px !important;
+    width: 10px !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    background: #d8d8d8 !important;
+    box-shadow: none !important;
+}
+.b2b-pdp .blank-check.checkbtn {
+    background: #2f3033 !important;
+}
+.b2b-pdp .blank-check.checkbtn:after,
+.b2b-pdp .checkbtn:after {
+    content: none !important;
+    display: none !important;
+}
+
 .text-and-check {
     display: flex;
     align-items: center;
@@ -547,16 +565,16 @@ div#monteB2B .accordion-collapse {
 
 .monte-b2b-remove-item {
     cursor: pointer;
-    top: -24px;
-    right: -24px;
-    position: absolute;
-    background: black;
-    height: 20px;
-    width: 20px;
+    top: auto;
+    right: auto;
+    position: static;
+    background: #f4f4f4;
+    height: 32px;
+    width: 32px;
     border-radius: 50%;
-    color: white;
-    font-size: 11px;
-    line-height: 19px;
+    color: #666;
+    font-size: 18px;
+    line-height: 32px;
     text-align: center;
 }
 .product-name p {

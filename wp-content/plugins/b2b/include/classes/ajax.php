@@ -105,60 +105,54 @@ public function show_cart_data() {
         $html = '';
         $html .= '<div class="accordion-b2b" id="monteB2B">';
         foreach ($data as $key => $item) {
-            $html .= '<div class="accordion-item-monte-b2b">';
-            $html .= '<h2 class="accordion-header-monte-b2b" id="heading' . $key . '">';
-            $html .= $item['fabircDetails'][0]['fabricName'];
-            $html .= '<div style="display: flex;position: relative;"><button class="accordion-button-monte-b2b" type="button" data-bs-toggle="collapse" data-bs-target="#collapse' . $key . '" aria-expanded="true" aria-controls="collapse' . $key . '">';
-            $html .= '<span class="fa fa-caret-down"></span>';
+            $fabric_name = isset( $item['fabircDetails'][0]['fabricName'] ) ? $item['fabircDetails'][0]['fabricName'] : 'Item';
+            $html .= '<div class="accordion-item-monte-b2b b2b-cart-item">';
+            $html .= '<div class="accordion-header-monte-b2b b2b-cart-item__header" id="heading' . esc_attr( $key ) . '">';
+            $html .= '<button type="button" class="accordion-button-monte-b2b b2b-cart-item__toggle" data-bs-toggle="collapse" data-bs-target="#collapse' . esc_attr( $key ) . '" aria-expanded="false">';
+            $html .= '<span class="b2b-cart-item__title">' . esc_html( $fabric_name ) . '</span>';
+            $html .= '<span class="b2b-cart-item__chevron fa fa-caret-down" aria-hidden="true"></span>';
             $html .= '</button>';
-            $html .= '<span class="monte-b2b-remove-item" data-id="'.$key.'">&times;</span></div>';
-            $html .= '</h2>';
-            $html .= '<div id="collapse' . $key . '" class="accordion-collapse-monte-b2b collapse-monte-b2b d-none" aria-labelledby="heading' . $key . '" data-bs-parent="#accordionExample">';
+            $html .= '<button type="button" class="monte-b2b-remove-item b2b-cart-item__remove" data-id="' . esc_attr( $key ) . '" aria-label="Remove item">&times;</button>';
+            $html .= '</div>';
+            $html .= '<div id="collapse' . esc_attr( $key ) . '" class="accordion-collapse-monte-b2b collapse-monte-b2b d-none b2b-cart-item__body" aria-labelledby="heading' . esc_attr( $key ) . '">';
             $html .= '<div class="accordion-body-monte-b2b">';
-            // Output size data
-            $html .= '<p>Sizes</p>';
-            $html .= '<ul>';
+
+            $html .= '<div class="b2b-cart-meta">';
+            $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Sizes</span><ul class="b2b-cart-meta__list">';
             foreach ($item['size'] as $size) {
-                $html .= '<li>' . esc_html( $size['dataValue'] ) . ' — ' . esc_html( $size['value'] ) . ' pcs</li>';
+                $html .= '<li>' . esc_html( $size['dataValue'] ) . ' · ' . esc_html( $size['value'] ) . ' pcs</li>';
             }
-            $html .= '</ul>';           
+            $html .= '</ul></div>';
 
-            // Output price
-            $html .= '<div class="cupp"><b>Total shirts</b></div><ul><li>' . esc_html( $item['price'] ) . '</li></ul>';
+            $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Total</span><span class="b2b-cart-meta__value">' . esc_html( $item['price'] ) . '</span></div>';
 
-            // Output checked forms
             if ( ! empty( $item['checkedForms'] ) ) {
-                $html .= '<p>Body fit</p>';
-                $html .= '<ul>';
+                $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Body fit</span><ul class="b2b-cart-meta__list">';
                 foreach ($item['checkedForms'] as $checkedForm) {
-                    $html .= '<li>' . esc_html( str_replace( '_', ' ', $checkedForm ) ) . '</li>';
+                    $html .= '<li>' . esc_html( ucwords( str_replace( '_', ' ', $checkedForm ) ) ) . '</li>';
                 }
-                $html .= '</ul>';
+                $html .= '</ul></div>';
             }
 
-            // Output fabric details
-            $html .= '<p>Fabric</p>';
-            $html .= '<ul>';
+            $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Fabric</span><ul class="b2b-cart-meta__list">';
             foreach ($item['fabircDetails'] as $fabricDetail) {
-                $html .= '<li>Color: ' . esc_html( $fabricDetail['fabircColor'] ) . '</li>';
-                $html .= '<li>Quality: ' . esc_html( $fabricDetail['fabricQuality'] ) . '</li>';
-                $html .= '<li>Weight: ' . esc_html( $fabricDetail['fabricWeight'] ) . '</li>';
-    
+                $html .= '<li>' . esc_html( $fabricDetail['fabircColor'] ) . '</li>';
+                $html .= '<li>' . esc_html( $fabricDetail['fabricQuality'] ) . '</li>';
+                $html .= '<li>' . esc_html( $fabricDetail['fabricWeight'] ) . '</li>';
             }
-            $html .= '</ul>';
+            $html .= '</ul></div>';
 
-            // Output collar and cuff type
             if ( ! empty( $item['collarType'] ) ) {
-                $html .= '<div class="cupp"><b>Collar</b></div><ul><li>' . esc_html( $item['collarType'] ) . '</li></ul>';
+                $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Collar</span><span class="b2b-cart-meta__value">' . esc_html( $item['collarType'] ) . '</span></div>';
             }
             if ( ! empty( $item['cuffType'] ) ) {
-                $html .= '<div class="cupp"><b>Cuff</b></div><ul><li>' . esc_html( $item['cuffType'] ) . '</li></ul>';
+                $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Cuff</span><span class="b2b-cart-meta__value">' . esc_html( $item['cuffType'] ) . '</span></div>';
             }
 
-             // Output comments
             if ( ! empty( $item['comments'] ) ) {
-                $html .= '<p>Comments</p><span class="b2b-span">' . esc_html( $item['comments'] ) . '</span>';
+                $html .= '<div class="b2b-cart-meta__row"><span class="b2b-cart-meta__label">Notes</span><span class="b2b-cart-meta__value">' . esc_html( $item['comments'] ) . '</span></div>';
             }
+            $html .= '</div>';
 
             $html .= '</div></div></div>';
         }

@@ -432,32 +432,26 @@
 
 .b2b-pdp .blank-check {
 	flex-shrink: 0;
-	height: 14px;
-	width: 14px;
-	border: 1.5px solid #c8c8c8;
+	height: 10px;
+	width: 10px;
+	border: 0;
 	border-radius: 50%;
 	position: absolute;
 	top: 14px;
 	right: 14px;
-	background: #fff;
+	background: #d8d8d8;
 	z-index: 2;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+	box-shadow: none;
 }
 
 .b2b-pdp .blank-check.checkbtn {
 	background: #2f3033;
-	border-color: #2f3033;
+	border: 0;
 }
 
 .b2b-pdp .blank-check.checkbtn:after {
-	content: '';
-	position: absolute;
-	left: 3px;
-	top: 3px;
-	width: 5px;
-	height: 5px;
-	border-radius: 50%;
-	background: #fff;
+	display: none;
+	content: none;
 }
 
 .b2b-pdp .b2b-option-tile__name,
@@ -667,6 +661,8 @@
 		top: 16px;
 		right: 16px;
 		order: unset;
+		height: 10px !important;
+		width: 10px !important;
 	}
 
 	.b2b-pdp .b2b-add-to-cart-button {
