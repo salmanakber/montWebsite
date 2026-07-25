@@ -20,7 +20,7 @@
 		return home_url($fallback);
 	};
 	$store_url = $resolve_page_url(
-		array('store-location', 'store-locations', 'stores', 'butikk', 'butikker', 'find-us'),
+		array('store-location', 'store-locations', 'stores', 'butikk', 'butikker', 'find-us', 'monte-napoleone-partnere'),
 		'/store-location/'
 	);
 	$about_url = $resolve_page_url(
