@@ -116,41 +116,49 @@ public function show_cart_data() {
             $html .= '<div id="collapse' . $key . '" class="accordion-collapse-monte-b2b collapse-monte-b2b d-none" aria-labelledby="heading' . $key . '" data-bs-parent="#accordionExample">';
             $html .= '<div class="accordion-body-monte-b2b">';
             // Output size data
-            $html .= '<p>Size:</p>';
+            $html .= '<p>Sizes</p>';
             $html .= '<ul>';
             foreach ($item['size'] as $size) {
-                $html .= '<li>Pisces: ' . $size['value'] . ', Size: ' . $size['dataValue'] . '</li>';
+                $html .= '<li>' . esc_html( $size['dataValue'] ) . ' — ' . esc_html( $size['value'] ) . ' pcs</li>';
             }
             $html .= '</ul>';           
 
             // Output price
-            $html .= '<div class="cupp"><b>Total shirts: </b>'.$item['price'].'</div>';
+            $html .= '<div class="cupp"><b>Total shirts</b></div><ul><li>' . esc_html( $item['price'] ) . '</li></ul>';
 
             // Output checked forms
-            $html .= '<p>Checked Forms:</p>';
-            $html .= '<ul>';
-            foreach ($item['checkedForms'] as $checkedForm) {
-                $html .= '<li>' . $checkedForm . '</li>';
+            if ( ! empty( $item['checkedForms'] ) ) {
+                $html .= '<p>Body fit</p>';
+                $html .= '<ul>';
+                foreach ($item['checkedForms'] as $checkedForm) {
+                    $html .= '<li>' . esc_html( str_replace( '_', ' ', $checkedForm ) ) . '</li>';
+                }
+                $html .= '</ul>';
             }
-            $html .= '</ul>';
 
             // Output fabric details
-            $html .= '<p>Fabric Details:</p>';
+            $html .= '<p>Fabric</p>';
             $html .= '<ul>';
             foreach ($item['fabircDetails'] as $fabricDetail) {
-                $html .= "<li>Color: ".$fabricDetail['fabircColor'].'</li>';
-                $html .= "<li>Quality: ".$fabricDetail['fabricQuality'].'</li>';
-                $html .= "<li>Weight: ".$fabricDetail['fabricWeight'].'</li>';
+                $html .= '<li>Color: ' . esc_html( $fabricDetail['fabircColor'] ) . '</li>';
+                $html .= '<li>Quality: ' . esc_html( $fabricDetail['fabricQuality'] ) . '</li>';
+                $html .= '<li>Weight: ' . esc_html( $fabricDetail['fabricWeight'] ) . '</li>';
     
             }
             $html .= '</ul>';
 
             // Output collar and cuff type
-            $html .= '<div class="cupp"><b>Collar Type:</b> '.$item['collarType'].'</div>';
-            $html .= '<div class="cupp"><b>Cuff Type:</b> '.$item['cuffType'].'</div>';
+            if ( ! empty( $item['collarType'] ) ) {
+                $html .= '<div class="cupp"><b>Collar</b></div><ul><li>' . esc_html( $item['collarType'] ) . '</li></ul>';
+            }
+            if ( ! empty( $item['cuffType'] ) ) {
+                $html .= '<div class="cupp"><b>Cuff</b></div><ul><li>' . esc_html( $item['cuffType'] ) . '</li></ul>';
+            }
 
              // Output comments
-            $html .= '<p>Comments: </p> <span class="b2b-span">'. $item['comments'].'</span>';
+            if ( ! empty( $item['comments'] ) ) {
+                $html .= '<p>Comments</p><span class="b2b-span">' . esc_html( $item['comments'] ) . '</span>';
+            }
 
             $html .= '</div></div></div>';
         }
@@ -159,7 +167,7 @@ public function show_cart_data() {
         $response['html'] = $html;
     } else {
         // If 'products' session variable is not set or empty
-        $response['html'] = '<div class="empty-cart"><h2>Your cart is empty</h2></div>';
+        $response['html'] = '<div class="empty-cart"><h2>Your cart is empty</h2><p style="margin:8px 0 0;font-size:13px;color:#999;">Add a colour from the B2B catalogue to get started.</p></div>';
     }
 
     // Set the JSON response

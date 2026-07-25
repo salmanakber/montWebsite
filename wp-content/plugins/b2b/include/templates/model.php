@@ -124,46 +124,46 @@ $cart_icon = get_template_directory_uri() . '/assets/images/cart.svg';
 		<div class="modal-body-b2b">
 			<div class="disflx b2b-cart-modal__grid">
 				<div class="mont-b2b-form">
-					<h4>Shipping address</h4>
+					<h4>Shipping details</h4>
 					<form class="order-form">
 						<div class="form-group">
 							<label for="companyName">Company Name</label>
-							<input type="text" class="form-control" id="companyName" placeholder="Company Name" name="companyname" data-required="Please enter your company name">
+							<input type="text" class="form-control" id="companyName" placeholder="Company name" name="companyname" data-required="Please enter your company name">
 						</div>
 						<div class="form-group">
 							<label for="DeliveryAddress">Delivery Address</label>
-							<input type="text" class="form-control" id="DeliveryAddress" placeholder="Delivery Address" name="deliveryaddress" data-required="Please enter your delivery address">
+							<input type="text" class="form-control" id="DeliveryAddress" placeholder="Street, city" name="deliveryaddress" data-required="Please enter your delivery address">
 						</div>
 						<div class="form-group">
 							<label for="Country">Country</label>
 							<input type="text" class="form-control" id="Country" placeholder="Country" name="country" data-required="Please enter your country">
 						</div>
 						<div class="form-group">
-							<label for="postbox">Post Box</label>
-							<input type="text" class="form-control" id="postbox" placeholder="Post Box" name="postbox" data-required="Please enter your post box">
+							<label for="postbox">Postcode</label>
+							<input type="text" class="form-control" id="postbox" placeholder="Postcode" name="postbox" data-required="Please enter your post box">
 						</div>
 						<div class="form-group">
 							<label for="email">Email</label>
-							<input type="email" class="form-control" id="email" placeholder="Email" name="email" data-required="Please enter your email">
+							<input type="email" class="form-control" id="email" placeholder="name@company.com" name="email" data-required="Please enter your email">
 						</div>
 						<div class="form-group">
 							<label for="contactperson">Contact Person</label>
-							<input type="text" class="form-control" id="contactperson" placeholder="Contact Person" name="contactperson" data-required="Please enter your contact info">
+							<input type="text" class="form-control" id="contactperson" placeholder="Full name" name="contactperson" data-required="Please enter your contact info">
 						</div>
 						<div class="form-group">
 							<label for="mobilenumber">Mobile Number</label>
-							<input type="text" class="form-control" id="mobilenumber" placeholder="Mobile Number" name="mobilenumber" data-required="Please enter your mobile number">
+							<input type="text" class="form-control" id="mobilenumber" placeholder="+47 …" name="mobilenumber" data-required="Please enter your mobile number">
 						</div>
 					</form>
 				</div>
 				<div class="order-data-b2b-monte">
-					<h4>B2B cart items</h4>
+					<h4>Order summary</h4>
 					<div class="cart-data"></div>
 				</div>
 			</div>
-			<div class="footer-model-b2b-monte">
-				<button type="button" class="button btn-monte order-btn">Order now</button>
-			</div>
 		</div>
+			<div class="footer-model-b2b-monte">
+				<button type="button" class="button btn-monte order-btn">Place order</button>
+			</div>
 	</div>
 </div>

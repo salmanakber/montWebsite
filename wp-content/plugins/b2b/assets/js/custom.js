@@ -21,6 +21,18 @@ jQuery(document).ready(function($) {
         $('.monte-b2b-modal-content').removeClass('model-loader');
     }
 
+    function bounceB2bCartFab() {
+        var $fab = $('.b2b-cart-fab');
+        if (!$fab.length || $fab.hasClass('d-none')) return;
+        $fab.removeClass('is-bouncing');
+        // restart animation
+        void $fab[0].offsetWidth;
+        $fab.addClass('is-bouncing');
+        setTimeout(function () {
+            $fab.removeClass('is-bouncing');
+        }, 2400);
+    }
+
     function loadB2bCartAndOpen() {
         var $formModal = $('#monte-b2b-form');
         openB2bModal($formModal);
@@ -40,6 +52,22 @@ jQuery(document).ready(function($) {
             }
         });
     }
+
+    // After redirect from "save & add", open cart modal once
+    try {
+        if (sessionStorage.getItem('b2b_open_cart') === '1') {
+            sessionStorage.removeItem('b2b_open_cart');
+            setTimeout(function () {
+                $('.b2b-cart-fab').removeClass('d-none');
+                bounceB2bCartFab();
+                loadB2bCartAndOpen();
+            }, 350);
+        } else if ($('.b2b-cart-fab').length && !$('.b2b-cart-fab').hasClass('d-none')) {
+            // Gentle bounce on load when cart already has items
+            setTimeout(bounceB2bCartFab, 600);
+        }
+    } catch (err) {}
+
 
     // Cart FAB + "I'm done choosing"
     $(document).on('click', '.add-to-cart-button-bubble, .submit-it-directly.add-to-cart-button-bubble', function(e) {
@@ -201,9 +229,13 @@ $(document).on('click', '.send-it-to-cart', function() {
             if(response.data && response.data.count > 0)
             {
 				$('.submit-it-directly').addClass('add-to-cart-button-bubble');
-                $.notify("Product added to cart.", { type: "toast", align: "left", verticalAlign: "bottom" });
+                $.notify("Product added to cart.", { type: "toast", align: "right", verticalAlign: "bottom" });
                 $('.add-to-cart-button-bubble, .b2b-cart-fab').removeClass('d-none');
                 $('.count-item-b2b').text(response.data.count < 10 ? '0' + response.data.count : response.data.count);
+                bounceB2bCartFab();
+                try {
+                    sessionStorage.setItem('b2b_open_cart', '1');
+                } catch (err) {}
 				window.location.href = (typeof b2bShopUrl !== 'undefined' && b2bShopUrl) ? b2bShopUrl : '/monte-connected-b2b/';
             }
 

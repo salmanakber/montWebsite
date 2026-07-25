@@ -336,6 +336,14 @@ p.text-block-b2b {
     z-index: 999;
 }
 
+/* Prefer B2B FAB rules from b2b-modals.css (right side) */
+.bubble-circle.b2b-cart-fab {
+    left: auto !important;
+    right: 20px !important;
+    bottom: 96px !important;
+    z-index: 10050 !important;
+}
+
 .bubble-circle img {
     width: 29px;
 }
