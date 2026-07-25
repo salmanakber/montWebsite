@@ -120,6 +120,21 @@ body.single-product {margin: 0 !important;}
     height: 100%;
     display: block;
     object-fit: cover;
+    transition: transform 0.35s ease;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+.mont_gallery_item img.lightbox-trigger {
+    cursor: zoom-in;
+}
+
+/* Desktop hover zoom — follow cursor */
+@media (hover: hover) and (min-width: 1025px) {
+    .mont_gallery_item:hover img.mont_gallery_main-image,
+    .mont_gallery_item.is-zooming img.mont_gallery_main-image {
+        transform: scale(1.35);
+    }
 }
 
 /* =========================================
@@ -312,29 +327,32 @@ div#mont_backButton { z-index: 999; }
         justify-content: space-between !important;
         pointer-events: none !important;
         z-index: 10 !important;
-        padding: 0 8px !important;
+        padding: 0 6px !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn {
         pointer-events: auto !important;
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 50% !important;
+        width: 28px !important;
+        height: 48px !important;
+        border-radius: 0 !important;
         border: none !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        color: #111 !important;
+        background: transparent !important;
+        color: #1a1a1a !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: none !important;
         cursor: pointer !important;
         padding: 0 !important;
+        opacity: 0.85;
+    }
+    .mont_gallery_wrapper-unified .mont_gallery_nav_btn:disabled {
+        opacity: 0.25 !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn svg {
-        width: 18px !important;
-        height: 18px !important;
+        width: 22px !important;
+        height: 22px !important;
         stroke: currentColor !important;
         fill: none !important;
-        stroke-width: 1.5 !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_dots {
         display: flex !important;
@@ -458,10 +476,10 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                 <?php if ($total_items > 1) : ?>
                 <div class="mont_gallery_nav" aria-label="Gallery navigation">
                     <button type="button" class="mont_gallery_nav_btn mont_gallery_prev" aria-label="Previous">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <button type="button" class="mont_gallery_nav_btn mont_gallery_next" aria-label="Next">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                 </div>
                 <div class="mont_gallery_dots" id="mont_gallery_dots"></div>

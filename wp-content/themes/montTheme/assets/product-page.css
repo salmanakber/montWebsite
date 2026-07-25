@@ -697,6 +697,7 @@ a.custom-add-to-cart {
         height: 100% !important;
         object-fit: cover !important;
         display: block !important;
+        transform: none !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_item video {
@@ -722,31 +723,35 @@ a.custom-add-to-cart {
         justify-content: space-between !important;
         pointer-events: none !important;
         z-index: 10 !important;
-        padding: 0 8px !important;
+        padding: 0 6px !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn {
         pointer-events: auto !important;
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 50% !important;
+        width: 28px !important;
+        height: 48px !important;
+        border-radius: 0 !important;
         border: none !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        color: #111 !important;
+        background: transparent !important;
+        color: #1a1a1a !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: none !important;
         cursor: pointer !important;
         padding: 0 !important;
+        opacity: 0.85;
+    }
+
+    .mont_gallery_wrapper-unified .mont_gallery_nav_btn:disabled {
+        opacity: 0.25 !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn svg {
-        width: 18px !important;
-        height: 18px !important;
+        width: 22px !important;
+        height: 22px !important;
         stroke: currentColor !important;
         fill: none !important;
-        stroke-width: 1.5 !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_dots {
