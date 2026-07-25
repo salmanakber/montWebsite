@@ -952,12 +952,12 @@ ul#b2bmenu {
   border: none;
   border-bottom: none;
   margin: 0 auto 28px;
-  width: min(1180px, 95%);
+  width: min(1180px, calc(100% - 32px));
   max-width: 100%;
   display: block;
   position: relative;
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
