@@ -953,9 +953,12 @@ ul#b2bmenu {
   border-bottom: none;
   margin: 0 auto 28px;
   width: min(1180px, 95%);
+  max-width: 100%;
   display: block;
   position: relative;
   z-index: 1;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .b2b-listing-page ul#b2bmenu,

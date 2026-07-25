@@ -56,7 +56,7 @@ if ( ! isset( $category_slider_displayed ) || true !== $category_slider_displaye
 			?>
 			<nav class="category-slider-container ssds mont-shop-tabs" aria-label="<?php esc_attr_e( 'Product categories', 'montenapoleone' ); ?>">
 				<button type="button" class="slider-arrow prev-arrow" aria-label="<?php esc_attr_e( 'Previous categories', 'montenapoleone' ); ?>">
-					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</button>
 				<div class="category-slider" id="<?php echo esc_attr( $slider_id ); ?>">
 					<?php foreach ( $categories_to_show as $category ) : ?>
@@ -68,7 +68,7 @@ if ( ! isset( $category_slider_displayed ) || true !== $category_slider_displaye
 					<?php endforeach; ?>
 				</div>
 				<button type="button" class="slider-arrow next-arrow" aria-label="<?php esc_attr_e( 'Next categories', 'montenapoleone' ); ?>">
-					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</button>
 			</nav>
 			<?php

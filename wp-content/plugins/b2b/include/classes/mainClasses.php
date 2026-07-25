@@ -75,7 +75,7 @@ class b2b extends getApi {
 // Your existing PHP code with some modifications for the slider
             echo '<div class="category-slider-container mont-cat-tabs">';
             echo '<button type="button" class="slider-arrow prev-arrow" aria-label="Previous categories">'
-                . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
                 . '</button>';
             echo '<div class="category-slider-wrapper mont-cat-tabs__scroller">';
             echo '<ul class="category-slider mont-cat-tabs__list" id="b2bmenu" role="tablist">';
@@ -103,7 +103,7 @@ class b2b extends getApi {
             echo '</ul>';
             echo '</div>';
             echo '<button type="button" class="slider-arrow next-arrow" aria-label="Next categories">'
-                . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
                 . '</button>';
             echo '</div>';
 
