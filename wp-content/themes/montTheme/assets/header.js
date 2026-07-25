@@ -10,7 +10,8 @@ jQuery(document).ready(function($) {
 	var $mobileMenuContainer = $('.mont_header_mobile_menu_container');
 	var $mainMobileMenu = $('.mont_header_mobile_main_menu');
 	var $mobileMegaMenu = $('.mont_header_mobile_mega_menu');
-	var $megaMenuLink = $('.mont_mega');
+	// Only the shirts mega link should open the Elementor submenu panel.
+	var $megaMenuLink = $('.mont_header_menu_mobile__item--shirts .mont_mega, .mont_header_menu_mobile__item--shirts .right-icon-menu');
 	var $backButton = $('.mont_header_mobile_back_button');
 
             // Initialize mobile menu state
@@ -135,7 +136,7 @@ jQuery(document).ready(function($) {
 		isMegaMenuOpen = false;
 	}
 
-            // Show mega menu when mega menu link is clicked
+            // Show mega menu only when shirts mega link / chevron is clicked
 	$megaMenuLink.on('click', function(e) {
 		e.preventDefault();
 		e.stopPropagation();
@@ -175,11 +176,6 @@ jQuery(document).ready(function($) {
 			closeMobileMenu();
 			$hamburger.removeClass('active');
 		}
-	});
-
-            // Prevent clicks inside menu from closing it
-	$mobileMenuContainer.on('click touchstart', function(e) {
-		e.stopPropagation();
 	});
 
             // Handle window resize
@@ -222,28 +218,33 @@ jQuery(document).ready(function($) {
 		}
 	});
 
-            // Add touch support
+            // Swipe right closes mega submenu only — never open it via swipe/tap.
 	var touchStartX = 0;
 	var touchEndX = 0;
+	var didTouchMove = false;
 
 	$mobileMenuContainer.on('touchstart', function(e) {
 		touchStartX = e.originalEvent.touches[0].clientX;
+		touchEndX = touchStartX;
+		didTouchMove = false;
 	});
 
 	$mobileMenuContainer.on('touchmove', function(e) {
 		touchEndX = e.originalEvent.touches[0].clientX;
+		didTouchMove = true;
 	});
 
 	$mobileMenuContainer.on('touchend', function() {
+		if (!didTouchMove || !isMegaMenuOpen) {
+			return;
+		}
+
 		var swipeThreshold = 100;
 		var swipeDistance = touchStartX - touchEndX;
 
-		if (Math.abs(swipeDistance) > swipeThreshold) {
-			if (swipeDistance > 0 && !isMegaMenuOpen) {
-				openMegaMenu();
-			} else if (swipeDistance < 0 && isMegaMenuOpen) {
-				closeMegaMenu();
-			}
+		// Right swipe (negative distance) while mega is open → go back.
+		if (swipeDistance < -swipeThreshold) {
+			closeMegaMenu();
 		}
 	});
             // Cache close button
