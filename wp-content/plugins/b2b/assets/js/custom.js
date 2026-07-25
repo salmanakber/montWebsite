@@ -379,23 +379,8 @@ $(document).on('click', '.this-hide' , function (){
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  const items = document.querySelectorAll("#b2bmenu .category-item")
-  const tabButtons = document.querySelectorAll(".nav-link-monte-b2b")
-
-  tabButtons.forEach((button) => {
-    button.addEventListener("click", function () {
-      tabButtons.forEach((btn) => btn.classList.remove("active"))
-      items.forEach((item) => {
-        item.classList.remove("active-li", "is-active")
-      })
-
-      this.classList.add("active")
-      const parent = this.closest(".category-item")
-      if (parent) {
-        parent.classList.add("active-li", "is-active")
-      }
-    })
-  })
+  // Tab pane show/hide is handled in templates.php.
+  // Keep this light: sync active classes only if needed as a backup.
 })
 
 

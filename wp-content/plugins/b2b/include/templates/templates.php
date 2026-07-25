@@ -10,18 +10,23 @@ Template Name: Monte Connected B2B
 	</main>
 	<script type="text/javascript">
 		jQuery(document).ready(function($){
-			$('.tab-pane-monte-b2b').not(':first').hide();
+			$('.tab-pane-monte-b2b').removeClass('active show').hide();
+			$('.tab-pane-monte-b2b').first().addClass('active show').show();
 
 			$('.nav-link-monte-b2b').on('click', function(e) {
 				e.preventDefault();
+				e.stopPropagation();
 				var $btn = $(this);
-				$('.nav-link-monte-b2b').removeClass('active');
-				$('.mont-cat-tabs__item, .category-item').removeClass('is-active active-li');
-				$btn.addClass('active');
+				var target = $btn.attr('data-bs-target') || $btn.data('bs-target');
+				if (!target) return;
+
+				$('.nav-link-monte-b2b').removeClass('active').attr('aria-selected', 'false');
+				$('.mont-cat-tabs__item, #b2bmenu .category-item').removeClass('is-active active-li');
+				$btn.addClass('active').attr('aria-selected', 'true');
 				$btn.closest('li').addClass('is-active active-li');
-				$('.tab-pane-monte-b2b').hide();
-				var target = $btn.data('bs-target');
-				$(target).show().css('display', 'block');
+
+				$('.tab-pane-monte-b2b').removeClass('active show').hide();
+				$(target).addClass('active show').show();
 			});
 		});
 	</script>

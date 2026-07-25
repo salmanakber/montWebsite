@@ -975,7 +975,12 @@ ul#b2bmenu.category-slider {
 
 /* Products live in .container-fluid > .row > .col-sm-3 */
 .tab-pane-monte-b2b {
-  display: block !important;
+  display: none;
+}
+
+.tab-pane-monte-b2b.active,
+.tab-pane-monte-b2b.show {
+  display: block;
 }
 
 .tab-pane-monte-b2b .container-fluid {
