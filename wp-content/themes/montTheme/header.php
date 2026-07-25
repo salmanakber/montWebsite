@@ -9,6 +9,25 @@
 <body <?php body_class(); ?>>
 	<?php
 	$is_b2b_page = is_page('monte-connected-b2b') || isset($_GET['productb2b']);
+
+	$resolve_page_url = static function ($slugs, $fallback) {
+		foreach ((array) $slugs as $slug) {
+			$page = get_page_by_path($slug);
+			if ($page instanceof WP_Post) {
+				return get_permalink($page);
+			}
+		}
+		return home_url($fallback);
+	};
+	$store_url = $resolve_page_url(
+		array('store-location', 'store-locations', 'stores', 'butikk', 'butikker', 'find-us'),
+		'/store-location/'
+	);
+	$about_url = $resolve_page_url(
+		array('about-us', 'about', 'om-oss', 'om-monte-napoleone'),
+		'/about-us/'
+	);
+
 	if (!$is_b2b_page) :
 	?>
 	<style>
@@ -43,11 +62,8 @@
                     <span></span>
                 </div>
                 <div class="mont_header_switchers mont_header_switchers--desktop">
-                    <!-- <div class="mont_header_language-switcher"> -->
-                        <?php //echo do_shortcode('[gtranslate]'); ?>
-                    <!-- </div> -->
                     <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
-                        <?php echo do_shortcode('[dc_region_switcher]'); ?>
+                        <?php echo do_shortcode('[dc_region_switcher context="desktop"]'); ?>
                     <?php endif; ?>
                 </div>
             </div>
@@ -59,12 +75,12 @@
             <div class="mont_header_nav-right">
 
                  <?php
-                    $menu_name = 'MainMenu'; // Change this to your menu name
+                    $menu_name = 'MainMenu';
                     $menu = wp_get_nav_menu_object($menu_name);
 
                     if ($menu) {
                         wp_nav_menu([
-                        'menu'        => $menu->term_id, // Use the menu ID to display
+                        'menu'        => $menu->term_id,
                         'container'   => false,
                         'items_wrap'  => '<ul class="mont_header_menu">%3$s</ul>',
                         'depth'       => 2,
@@ -92,53 +108,53 @@
 
     <!-- Mobile Menu Structure -->
     <div class="mont_header_mobile_menu_container">
-        <!-- Close Button -->
         <div class="mont_header_second_menu_header">
-            <div class="mont_header_mobile_close">
-<!--                 <i data-lucide="x"></i> -->
-            </div>
-            <div class="mont_header_switchers">
-                <!-- <div class="mont_header_language-switcher">
-                    <?php// echo do_shortcode('[gtranslate]'); ?>
-                </div> -->
-                <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
-                    <?php echo do_shortcode('[dc_region_switcher]'); ?>
-                <?php endif; ?>
-            </div>
-            <!-- Main Mobile Menu -->
+            <div class="mont_header_mobile_close" aria-label="Close menu"></div>
+        </div>
+
+        <div class="mont_header_mobile_menu_body">
             <div class="mont_header_mobile_main_menu">
                 <ul class="mont_header_menu_mobile">
-                    <li><a href="#" class="mont_mega">Skjorter</a> <i data-lucide="chevron-right" class="right-icon-menu"></i></li>
-                 <?php
-                    $menu_name = 'MainMenu'; // Change this to your menu name
+                    <li class="mont_header_menu_mobile__item mont_header_menu_mobile__item--shirts">
+                        <a href="#" class="mont_mega">Skjorter</a>
+                        <i data-lucide="chevron-right" class="right-icon-menu"></i>
+                    </li>
+                    <?php
+                    $menu_name = 'MainMenu';
                     $menu = wp_get_nav_menu_object($menu_name);
 
                     if ($menu) {
                         wp_nav_menu([
-                        'menu'        => $menu->term_id, // Use the menu ID to display
+                        'menu'        => $menu->term_id,
                         'container'   => false,
                         'items_wrap'  => '%3$s',
                         'depth'       => 2,
                         ]);
-                    } else {
-                        echo '<p style="color: red;">Menu not found: ' . $menu_name . '</p>';
                     }
-                ?>
+                    ?>
                 </ul>
+
+                <div class="mont_header_mobile_footer">
+                    <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
+
+                    <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
+                        <div class="mont_header_mobile_footer__region">
+                            <?php echo do_shortcode('[dc_region_switcher context="mobile-footer"]'); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $about_url ); ?>">About us</a>
+                </div>
             </div>
 
-            <!-- Mobile Mega Menu -->
             <div class="mont_header_mobile_mega_menu">
                 <div class="mont_header_mobile_back_button">
                     <span><i data-lucide="chevron-left"></i></span> Back
                 </div>
                 <div class="mont_header_mobile_mega_content">
-                    <?php echo do_shortcode('[custom_elementor_template id="20468"]'); ?> 
+                    <?php echo do_shortcode('[custom_elementor_template id="20468"]'); ?>
                 </div>
             </div>
         </div>
+    </div>
     </header>
-
-  
-
-  

@@ -421,6 +421,7 @@ class DC_Region_Currency {
         $current = self::get_region($current_slug);
         $regions = self::get_regions();
         $panel_id = 'dc-region-panel-' . $instance;
+        $context = $atts['context'];
 
         ob_start();
         include DC_PM_PLUGIN_DIR . 'public/partials/region-switcher.php';

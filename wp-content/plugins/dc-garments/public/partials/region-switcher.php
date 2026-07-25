@@ -8,6 +8,7 @@
  * @var array  $current
  * @var array  $regions
  * @var string $panel_id
+ * @var string $context
  */
 
 if (!defined('ABSPATH')) {
@@ -19,23 +20,42 @@ if (empty($current) || !is_array($current)) {
         'label'   => 'International',
         'display' => '$ USD',
         'flag'    => 'globe',
+        'lang'    => 'en',
     );
 }
 
+$context = !empty($context) ? $context : 'default';
 $current_flag  = !empty($current['flag']) ? $current['flag'] : 'globe';
 $current_label = $current['label'] . ' • ' . $current['display'];
+
+$lang_names = array(
+    'en' => 'English',
+    'it' => 'Italian',
+    'nb' => 'Norwegian',
+    'no' => 'Norwegian',
+    'vi' => 'Vietnamese',
+);
+$lang_code = !empty($current['lang']) ? $current['lang'] : 'en';
+$lang_name = isset($lang_names[$lang_code]) ? $lang_names[$lang_code] : strtoupper($lang_code);
+$compact_label = $current['label'] . ' (' . $current['display'] . ') - ' . $lang_name;
+
 $panel_id = !empty($panel_id) ? $panel_id : 'dc-region-panel';
+$switcher_class = 'dc-region-switcher dc-region-switcher--' . sanitize_html_class($context);
 ?>
-<div class="dc-region-switcher" data-current="<?php echo esc_attr($current_slug); ?>">
+<div class="<?php echo esc_attr($switcher_class); ?>" data-current="<?php echo esc_attr($current_slug); ?>" data-context="<?php echo esc_attr($context); ?>">
     <button type="button" class="dc-region-trigger" aria-expanded="false" aria-controls="<?php echo esc_attr($panel_id); ?>">
-        <span class="dc-region-trigger-label">Region / Currency</span>
-        <span class="dc-region-trigger-value">
-            <span class="dc-region-flag dc-region-flag--<?php echo esc_attr($current_flag); ?> dc-region-flag--trigger" aria-hidden="true"></span>
-            <span class="dc-region-trigger-text"><?php echo esc_html($current_label); ?></span>
-            <svg class="dc-region-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </span>
+        <?php if ($context === 'mobile-footer') : ?>
+            <span class="dc-region-trigger-compact"><?php echo esc_html($compact_label); ?></span>
+        <?php else : ?>
+            <span class="dc-region-trigger-label">Region / Currency</span>
+            <span class="dc-region-trigger-value">
+                <span class="dc-region-flag dc-region-flag--<?php echo esc_attr($current_flag); ?> dc-region-flag--trigger" aria-hidden="true"></span>
+                <span class="dc-region-trigger-text"><?php echo esc_html($current_label); ?></span>
+                <svg class="dc-region-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+        <?php endif; ?>
     </button>
 
     <div id="<?php echo esc_attr($panel_id); ?>" class="dc-region-panel" hidden aria-hidden="true">
@@ -63,6 +83,7 @@ $panel_id = !empty($panel_id) ? $panel_id : 'dc-region-panel';
                         type="button"
                         class="dc-region-option<?php echo $slug === $current_slug ? ' is-active' : ''; ?>"
                         data-region="<?php echo esc_attr($slug); ?>"
+                        data-lang="<?php echo esc_attr(!empty($region['lang']) ? $region['lang'] : 'en'); ?>"
                         role="option"
                         aria-selected="<?php echo $slug === $current_slug ? 'true' : 'false'; ?>"
                     >

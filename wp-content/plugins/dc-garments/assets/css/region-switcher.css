@@ -43,6 +43,14 @@
     font-weight: 300;
 }
 
+.dc-region-trigger-compact {
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    line-height: 1.4;
+    padding: 12px 0;
+}
+
 .dc-region-flag--trigger {
     width: 16px;
     height: 16px;
@@ -233,6 +241,64 @@ body.dc-region-open {
     overflow: hidden;
 }
 
+/* Mobile footer compact trigger */
+.dc-region-switcher--mobile-footer {
+    padding-left: 0;
+    z-index: 1;
+    width: 100%;
+}
+
+.dc-region-switcher--mobile-footer .dc-region-trigger {
+    width: 100%;
+}
+
+/* Desktop: dropdown under trigger (not right drawer) */
+@media (min-width: 769px) {
+    .mont_header_sticky-header,
+    .mont_header_nav,
+    .mont_header_nav-left,
+    .mont_header_switchers--desktop {
+        overflow: visible;
+    }
+
+    .dc-region-switcher--desktop {
+        z-index: 120;
+    }
+
+    .dc-region-switcher--desktop .dc-region-overlay {
+        background: transparent;
+    }
+
+    .dc-region-switcher--desktop .dc-region-panel {
+        position: absolute;
+        top: calc(100% + 14px);
+        left: 0;
+        right: auto;
+        width: 380px;
+        max-width: min(380px, calc(100vw - 32px));
+        height: auto;
+        max-height: min(72vh, 560px);
+        border-radius: 2px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    .dc-region-switcher--desktop .dc-region-panel-header {
+        padding: 20px 20px 14px;
+    }
+
+    .dc-region-switcher--desktop .dc-region-panel-title {
+        padding: 22px 20px 14px;
+    }
+
+    .dc-region-switcher--desktop .dc-region-list {
+        padding: 0 20px 28px;
+    }
+
+    .dc-region-switcher--desktop .dc-region-option {
+        padding: 16px 0;
+    }
+}
+
 /* Header layout */
 .mont_header_switchers {
     display: flex;
@@ -257,21 +323,23 @@ body.dc-region-open {
     .mont_header_nav-left .mont_header_switchers--desktop {
         display: none;
     }
-
-    .mont_header_second_menu_header .mont_header_switchers {
-        display: flex;
-        gap: 16px;
-    }
-
-    .mont_header_second_menu_header .mont_header_language-switcher {
-        display: block !important;
-    }
 }
 
 @media (min-width: 769px) {
-    .mont_header_second_menu_header .mont_header_switchers {
-        display: none;
+    .mont_header_mobile_menu_container {
+        display: none !important;
     }
+}
+
+/* Hide Google Translate chrome when we drive language via region */
+#google_translate_element2,
+.skiptranslate,
+.goog-te-banner-frame {
+    display: none !important;
+}
+
+body {
+    top: 0 !important;
 }
 
 /* Multi-currency fields in CRM */

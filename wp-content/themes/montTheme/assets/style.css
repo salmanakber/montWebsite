@@ -44,6 +44,14 @@ button.button {
 .page-id-66 .removeWhite a {
     color: white !important;
 }
+.page-id-66 .removeWhite .dc-region-trigger-label {
+    color: rgba(255, 255, 255, 0.65) !important;
+}
+.page-id-66 .removeWhite .dc-region-trigger-value,
+.page-id-66 .removeWhite .dc-region-trigger-text,
+.page-id-66 .removeWhite .dc-region-chevron {
+    color: #fff !important;
+}
 .mega-menu-width .mont_header_mega-menu {
     width: 100% !important;
     left: 0;
@@ -398,24 +406,42 @@ justify-content: space-between;
     left: 0;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     background: white;
     z-index: 1000;
     overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+.mont_header_mobile_menu_body {
+    position: absolute;
+    top: 53px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
 /* Main Mobile Menu and Mega Menu Positioning */
 .mont_header_mobile_main_menu,
 .mont_header_mobile_mega_menu {
     position: absolute;
-    top: 53px;
-    left: 0 !important; /* Override any inline styles */
+    top: 0;
+    left: 0 !important;
     width: 100%;
     height: 100%;
     transition: transform 0.3s ease;
     overflow-y: auto;
     will-change: transform;
     background: #fff;
+}
+
+.mont_header_mobile_main_menu {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0 0;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 /* Initial position of mega menu */
@@ -426,48 +452,81 @@ justify-content: space-between;
 /* Mobile Menu List Styling */
 .mont_header_menu_mobile {
     list-style: none;
-    padding: 20px;
+    padding: 12px 24px 24px;
     margin: 0;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
-.mont_header_menu_mobile li {
-    margin-bottom: 15px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.mont_header_menu_mobile li:last-child {
+.mont_header_menu_mobile > li {
+    position: relative;
+    margin-bottom: 0;
     border-bottom: none;
 }
 
 .mont_header_menu_mobile a {
     display: block;
-    padding: 12px 0;
+    padding: 14px 0;
     text-decoration: none;
     font-size: 16px;
-    color: #333;
+    color: #111;
     font-weight: 500;
     transition: color 0.2s ease;
 }
 
 .mont_header_menu_mobile a:hover,
 .mont_header_menu_mobile a:focus {
-    color: #007bff;
+    color: #111;
+    opacity: 0.7;
 }
 
 /* Highlight the mega menu link */
 .mont_header_menu_mobile a.mont_mega {
-    font-weight: 600;
+    font-weight: 500;
     position: relative;
-    padding-right: 20px;
+    padding-right: 36px;
 }
 
 .right-icon-menu {
     position: absolute;
-    width: 55px;
+    width: 24px;
+    height: 24px;
     right: 0;
-    top: 5%;
+    top: 50%;
     transform: translateY(-50%);
-    height: 36px;
+    color: #111;
+    pointer-events: none;
+}
+
+/* Footer utility links at bottom of mobile sidebar */
+.mont_header_mobile_footer {
+    margin-top: auto;
+    flex-shrink: 0;
+    padding: 24px 24px max(28px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mont_header_mobile_footer__link {
+    display: block;
+    padding: 12px 0;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: #111;
+    line-height: 1.4;
+}
+
+.mont_header_mobile_footer__link:hover,
+.mont_header_mobile_footer__link:focus {
+    color: #111;
+    opacity: 0.7;
+}
+
+.mont_header_mobile_footer__region {
+    width: 100%;
 }
 
 /* Back Button Styling */
@@ -597,11 +656,30 @@ justify-content: space-between;
 }
 .mont_header_second_menu_header {
     background: #000000;
-    display: flex
-    ;
-    justify-content: space-between;
+    display: flex;
+    justify-content: flex-start;
     align-items: center;
-    padding: 8px 19px 7px 16px;
+    padding: 8px 16px;
+    min-height: 53px;
+    box-sizing: border-box;
+}
+
+.mont_header_second_menu_header .mont_header_mobile_close {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 36px;
+    height: 36px;
+    background: #fff;
+    border-radius: 50%;
+    color: #111;
+}
+
+.mont_header_second_menu_header .mont_header_mobile_close:after {
+    content: "×";
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 400;
 }
 
 
