@@ -74,7 +74,9 @@ class b2b extends getApi {
 
 // Your existing PHP code with some modifications for the slider
             echo '<div class="category-slider-container mont-cat-tabs">';
-            echo '<button class="slider-arrow prev-arrow" aria-label="Previous categories" style="display:none;">&lt;</button>';
+            echo '<button type="button" class="slider-arrow prev-arrow" aria-label="Previous categories">'
+                . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                . '</button>';
             echo '<div class="category-slider-wrapper mont-cat-tabs__scroller">';
             echo '<ul class="category-slider mont-cat-tabs__list" id="b2bmenu" role="tablist">';
 
@@ -100,7 +102,9 @@ class b2b extends getApi {
 
             echo '</ul>';
             echo '</div>';
-            echo '<button class="slider-arrow next-arrow" aria-label="Next categories" style="display:none;">&gt;</button>';
+            echo '<button type="button" class="slider-arrow next-arrow" aria-label="Next categories">'
+                . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                . '</button>';
             echo '</div>';
 
 
@@ -304,7 +308,7 @@ public function bubble_b2b_cart_button(){
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.3', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.4', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
     wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.6');
     wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.6');
@@ -322,6 +326,16 @@ public function enqueue_scripts_and_styles() {
             get_template_directory_uri() . '/assets/category-tabs.css',
             array( 'b2b-style' ),
             (string) filemtime( $theme_tabs )
+        );
+    }
+    $theme_tabs_js = get_template_directory() . '/assets/category-tabs.js';
+    if ( file_exists( $theme_tabs_js ) ) {
+        wp_enqueue_script(
+            'mont-category-tabs',
+            get_template_directory_uri() . '/assets/category-tabs.js',
+            array(),
+            (string) filemtime( $theme_tabs_js ),
+            true
         );
     }
 

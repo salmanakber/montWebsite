@@ -937,7 +937,7 @@ flex-direction: column-reverse;
     .category-slider-container.ssds {
         justify-content: center;
         border: none;
-		margin-top: 115px;
+		margin-top: 115px !important;
         margin-bottom: 32px;
     }
 

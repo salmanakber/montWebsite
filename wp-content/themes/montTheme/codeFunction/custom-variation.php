@@ -372,6 +372,9 @@ public static function display_slider_on_product_page() {
             ?>
             <!-- START PRODUCT CATEGORY SLIDER -->
             <div class="category-slider-container ssds">
+                <button type="button" class="slider-arrow prev-arrow" aria-label="Previous categories">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
                 <div class="category-slider" id="<?php echo esc_attr($slider_id); ?>">
                     <?php foreach ($categories_to_show as $category) : ?>
                         <a href="<?php echo esc_url(get_term_link($category)); ?>"
@@ -380,17 +383,15 @@ public static function display_slider_on_product_page() {
                         </a>
                     <?php endforeach; ?>
                 </div>
+                <button type="button" class="slider-arrow next-arrow" aria-label="Next categories">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
             </div>
 
             <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const slider = document.getElementById('<?php echo esc_js($slider_id); ?>');
                 if (!slider) return;
-
-                const activeCategory = slider.querySelector('.category-active');
-                if (activeCategory) {
-                    activeCategory.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-                }
 
                 let isDown = false, startX, scrollLeft;
                 slider.addEventListener('mousedown', (e) => {

@@ -379,74 +379,23 @@ $(document).on('click', '.this-hide' , function (){
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  const sliderWrapper = document.querySelector(".category-slider-wrapper")
-  const slider = document.querySelector(".category-slider")
-  const prevArrow = document.querySelector(".prev-arrow")
-  const nextArrow = document.querySelector(".next-arrow")
-  const items = document.querySelectorAll(".category-item")
-
-  let scrollPosition = 0
-  const itemWidth = items[0]?.offsetWidth || 0
-
-  // Function to update arrow visibility
-  function updateArrowVisibility() {
-    // Hide prev arrow if at the beginning
-    prevArrow.classList.toggle("hidden", scrollPosition <= 0)
-
-    // Hide next arrow if at the end
-    const maxScroll = slider.scrollWidth - sliderWrapper.offsetWidth
-    nextArrow.classList.toggle("hidden", scrollPosition >= maxScroll)
-  }
-
-  // Initialize arrow visibility
-  updateArrowVisibility()
-
-  // Scroll to the active tab on page load
-  const activeItem = document.querySelector(".active-li")
-  if (activeItem) {
-    const activeIndex = Array.from(items).indexOf(activeItem)
-    if (activeIndex > 0) {
-      // Calculate position to center the active item if possible
-      const centerPosition = activeItem.offsetLeft - sliderWrapper.offsetWidth / 2 + activeItem.offsetWidth / 2
-      scrollPosition = Math.max(0, Math.min(centerPosition, slider.scrollWidth - sliderWrapper.offsetWidth))
-      slider.style.transform = `translateX(-${scrollPosition}px)`
-      updateArrowVisibility()
-    }
-  }
-
-  // Previous button click handler
-  prevArrow.addEventListener("click", () => {
-    // Scroll by the width of one item, or to the beginning
-    scrollPosition = Math.max(0, scrollPosition - sliderWrapper.offsetWidth / 2)
-    slider.style.transform = `translateX(-${scrollPosition}px)`
-    updateArrowVisibility()
-  })
-
-  // Next button click handler
-  nextArrow.addEventListener("click", () => {
-    // Scroll by the width of one item, or to the end
-    const maxScroll = slider.scrollWidth - sliderWrapper.offsetWidth
-    scrollPosition = Math.min(maxScroll, scrollPosition + sliderWrapper.offsetWidth / 2)
-    slider.style.transform = `translateX(-${scrollPosition}px)`
-    updateArrowVisibility()
-  })
-
-  // Handle tab clicks to update active state
+  const items = document.querySelectorAll("#b2bmenu .category-item")
   const tabButtons = document.querySelectorAll(".nav-link-monte-b2b")
+
   tabButtons.forEach((button) => {
     button.addEventListener("click", function () {
-      // Remove active class from all buttons and list items
       tabButtons.forEach((btn) => btn.classList.remove("active"))
-      items.forEach((item) => item.classList.remove("active-li"))
+      items.forEach((item) => {
+        item.classList.remove("active-li", "is-active")
+      })
 
-      // Add active class to clicked button and its parent li
       this.classList.add("active")
-      this.closest(".category-item").classList.add("active-li")
+      const parent = this.closest(".category-item")
+      if (parent) {
+        parent.classList.add("active-li", "is-active")
+      }
     })
   })
-
-  // Update arrow visibility on window resize
-  window.addEventListener("resize", updateArrowVisibility)
 })
 
 

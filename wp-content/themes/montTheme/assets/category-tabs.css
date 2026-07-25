@@ -253,7 +253,72 @@ li.nav-item-b2b,
 	background: transparent !important;
 }
 
+/* ---------- Mobile scroll arrows ---------- */
+.category-slider-container,
+.mont-cat-tabs {
+	position: relative;
+}
+
+.slider-arrow {
+	display: none;
+	align-items: center;
+	justify-content: center;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 4;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	margin: 0;
+	border: 1px solid var(--mont-tab-border);
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 2px 8px rgba(20, 30, 55, 0.12);
+	color: var(--mont-tab-text-active);
+	cursor: pointer;
+	line-height: 0;
+	-webkit-tap-highlight-color: transparent;
+	transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.slider-arrow svg {
+	width: 14px;
+	height: 14px;
+	display: block;
+	pointer-events: none;
+}
+
+.slider-arrow.prev-arrow {
+	left: 2px;
+}
+
+.slider-arrow.next-arrow {
+	right: 2px;
+}
+
+.slider-arrow:hover {
+	background: #f7f8fa;
+}
+
+.slider-arrow.is-disabled {
+	opacity: 0.35;
+	pointer-events: none;
+	cursor: default;
+}
+
 @media (max-width: 991px) {
+	.category-slider-container.has-tab-overflow,
+	.mont-cat-tabs.has-tab-overflow {
+		padding-left: 36px !important;
+		padding-right: 36px !important;
+	}
+
+	.category-slider-container.has-tab-overflow .slider-arrow,
+	.mont-cat-tabs.has-tab-overflow .slider-arrow {
+		display: flex !important;
+	}
+
 	.category-slider a.category-item,
 	button.nav-link-monte-b2b,
 	a.mont-cat-tabs__link {
@@ -266,6 +331,24 @@ li.nav-item-b2b,
 	li.mont-cat-tabs__item {
 		flex: 0 0 auto;
 	}
+
+	/* B2B: scroll the wrapper, not the bordered list */
+	ul#b2bmenu.mont-cat-tabs__list,
+	ul#b2bmenu.category-slider {
+		overflow: visible !important;
+		width: max-content !important;
+		min-width: 100%;
+	}
+
+	.mont-cat-tabs__scroller,
+	.category-slider-wrapper.mont-cat-tabs__scroller {
+		scrollbar-width: none;
+	}
+
+	.mont-cat-tabs__scroller::-webkit-scrollbar,
+	.category-slider-wrapper.mont-cat-tabs__scroller::-webkit-scrollbar {
+		display: none;
+	}
 }
 
 @media (max-width: 575px) {
@@ -274,5 +357,15 @@ li.nav-item-b2b,
 		min-height: 44px;
 		min-width: 112px;
 		padding: 10px 14px !important;
+	}
+
+	.slider-arrow {
+		width: 28px;
+		height: 28px;
+	}
+
+	.slider-arrow svg {
+		width: 12px;
+		height: 12px;
 	}
 }

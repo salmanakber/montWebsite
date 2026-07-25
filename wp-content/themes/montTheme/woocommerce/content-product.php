@@ -55,6 +55,9 @@ if ( ! isset( $category_slider_displayed ) || true !== $category_slider_displaye
 			$slider_id = 'category_slider_' . wp_rand( 1000, 9999 );
 			?>
 			<nav class="category-slider-container ssds mont-shop-tabs" aria-label="<?php esc_attr_e( 'Product categories', 'montenapoleone' ); ?>">
+				<button type="button" class="slider-arrow prev-arrow" aria-label="<?php esc_attr_e( 'Previous categories', 'montenapoleone' ); ?>">
+					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</button>
 				<div class="category-slider" id="<?php echo esc_attr( $slider_id ); ?>">
 					<?php foreach ( $categories_to_show as $category ) : ?>
 						<?php if ( 'Uncategorized' === $category->name ) { continue; } ?>
@@ -64,17 +67,10 @@ if ( ! isset( $category_slider_displayed ) || true !== $category_slider_displaye
 						</a>
 					<?php endforeach; ?>
 				</div>
+				<button type="button" class="slider-arrow next-arrow" aria-label="<?php esc_attr_e( 'Next categories', 'montenapoleone' ); ?>">
+					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</button>
 			</nav>
-			<script>
-			document.addEventListener('DOMContentLoaded', function () {
-				var slider = document.getElementById(<?php echo wp_json_encode( $slider_id ); ?>);
-				if (!slider) return;
-				var active = slider.querySelector('.category-active');
-				if (active && active.scrollIntoView) {
-					active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-				}
-			});
-			</script>
 			<?php
 			$category_slider_displayed = true;
 		}
