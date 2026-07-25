@@ -181,7 +181,7 @@ ul.b2b-ul-list li {
 }
 
 .collar-type-b2b label, .cuff-type-b2b label {
-    width: 24%;
+    width: auto;
     cursor: pointer;
 }
 

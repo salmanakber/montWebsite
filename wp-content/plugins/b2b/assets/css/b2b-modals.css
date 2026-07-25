@@ -87,22 +87,29 @@
 
 /* Shared modal shell */
 body.b2b-modal-open {
-	overflow: hidden;
+	overflow: hidden !important;
 }
 
 .monte-b2b-modal {
-	display: none;
-	position: fixed;
-	inset: 0;
-	z-index: 10060;
-	background: rgba(17, 17, 17, 0.52);
+	display: none !important;
+	position: fixed !important;
+	inset: 0 !important;
+	left: 0 !important;
+	top: 0 !important;
+	right: 0 !important;
+	bottom: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	z-index: 100060 !important;
+	background: rgba(17, 17, 17, 0.52) !important;
 	backdrop-filter: blur(2px);
 	-webkit-backdrop-filter: blur(2px);
-	align-items: center;
-	justify-content: center;
-	padding: 20px 14px;
-	box-sizing: border-box;
-	overflow: auto;
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 20px 14px !important;
+	box-sizing: border-box !important;
+	overflow: auto !important;
+	margin: 0 !important;
 }
 
 .monte-b2b-modal.is-open {
@@ -110,19 +117,21 @@ body.b2b-modal-open {
 }
 
 .monte-b2b-modal-content {
-	position: relative;
-	background: #fff;
-	margin: auto;
-	width: min(960px, 100%);
-	max-height: min(90vh, 920px);
-	overflow: auto;
-	border: 0;
-	border-radius: 16px;
-	padding: 0;
-	box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28);
-	left: auto;
-	right: auto;
-	top: auto;
+	position: relative !important;
+	background: #fff !important;
+	margin: auto !important;
+	width: min(960px, 100%) !important;
+	max-width: 960px !important;
+	max-height: min(90vh, 920px) !important;
+	overflow: auto !important;
+	border: 0 !important;
+	border-radius: 16px !important;
+	padding: 0 !important;
+	box-shadow: 0 28px 80px rgba(0, 0, 0, 0.28) !important;
+	left: auto !important;
+	right: auto !important;
+	top: auto !important;
+	bottom: auto !important;
 	animation: b2b-modal-in 0.28s ease;
 }
 

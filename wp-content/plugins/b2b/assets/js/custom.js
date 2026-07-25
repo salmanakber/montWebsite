@@ -11,12 +11,22 @@ jQuery(document).ready(function($) {
     }
 
     function openB2bModal($modal) {
-        $modal.addClass('is-open').attr('aria-hidden', 'false').show();
+        if (!$modal || !$modal.length) {
+            console.warn('B2B modal not found');
+            return;
+        }
+        $modal
+            .addClass('is-open')
+            .attr('aria-hidden', 'false')
+            .css('display', 'flex');
         $('body').addClass('b2b-modal-open');
     }
 
     function closeB2bModals() {
-        $('.monte-b2b-modal').removeClass('is-open').attr('aria-hidden', 'true').hide();
+        $('.monte-b2b-modal')
+            .removeClass('is-open')
+            .attr('aria-hidden', 'true')
+            .css('display', 'none');
         $('body').removeClass('b2b-modal-open');
         $('.monte-b2b-modal-content').removeClass('model-loader');
     }
@@ -25,7 +35,6 @@ jQuery(document).ready(function($) {
         var $fab = $('.b2b-cart-fab');
         if (!$fab.length || $fab.hasClass('d-none')) return;
         $fab.removeClass('is-bouncing');
-        // restart animation
         void $fab[0].offsetWidth;
         $fab.addClass('is-bouncing');
         setTimeout(function () {
@@ -35,6 +44,10 @@ jQuery(document).ready(function($) {
 
     function loadB2bCartAndOpen() {
         var $formModal = $('#monte-b2b-form');
+        if (!$formModal.length) {
+            console.warn('B2B cart modal #monte-b2b-form missing from page');
+            return;
+        }
         openB2bModal($formModal);
         $formModal.find('.monte-b2b-modal-content').addClass('model-loader');
         $.ajax({
@@ -61,27 +74,38 @@ jQuery(document).ready(function($) {
                 $('.b2b-cart-fab').removeClass('d-none');
                 bounceB2bCartFab();
                 loadB2bCartAndOpen();
-            }, 350);
+            }, 400);
         } else if ($('.b2b-cart-fab').length && !$('.b2b-cart-fab').hasClass('d-none')) {
-            // Gentle bounce on load when cart already has items
             setTimeout(bounceB2bCartFab, 600);
         }
     } catch (err) {}
 
-
-    // Cart FAB + "I'm done choosing"
-    $(document).on('click', '.add-to-cart-button-bubble, .submit-it-directly.add-to-cart-button-bubble', function(e) {
+    // Cart FAB — dedicated handlers (avoid click-through closing modal)
+    $(document).on('click', '.b2b-cart-fab, [data-monte-b2b-modal-trigger="#monte-b2b-form"]', function(e) {
         e.preventDefault();
-        e.stopImmediatePropagation();
-        loadB2bCartAndOpen();
+        e.stopPropagation();
+        var $btn = $(this);
+        if ($btn.hasClass('d-none')) return;
+        setTimeout(function () {
+            loadB2bCartAndOpen();
+        }, 10);
+    });
+
+    $(document).on('click', '.submit-it-directly.add-to-cart-button-bubble', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setTimeout(function () {
+            loadB2bCartAndOpen();
+        }, 10);
     });
 
     $(document).on('click', '.monte-b2b-close', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         closeB2bModals();
     });
 
-    $(document).on('click', '.monte-b2b-modal', function(e) {
+    $(document).on('click', '.monte-b2b-modal.is-open', function(e) {
         if (e.target === this) {
             closeB2bModals();
         }

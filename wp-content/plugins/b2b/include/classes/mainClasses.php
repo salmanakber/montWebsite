@@ -314,14 +314,14 @@ public function bubble_b2b_cart_button(){
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
     wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.8');
-    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.8');
-    wp_enqueue_style('b2b-modals', $this->url . 'assets/css/b2b-modals.css', array('b2b-style'), '1.3');
+    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '1.9');
+    wp_enqueue_style('b2b-modals', $this->url . 'assets/css/b2b-modals.css', array('b2b-style'), '1.4');
     wp_enqueue_style('b2b-notify', $this->url . 'assets/css/notify.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-css-min', $this->url . 'assets/css/owl.carousel.min.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');
     wp_enqueue_style('b2b-fontaweseom', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css');
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.6', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.7', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
 
     // Shared category tab design (theme file when available).

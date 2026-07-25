@@ -323,84 +323,82 @@
 	border-bottom-color: var(--b2b-primary) !important;
 }
 
-/* ========== Collar / Cuff — one beautiful horizontal row ========== */
+/* ========== Collar / Cuff — polished option tiles ========== */
 .b2b-pdp .b2b-option-section {
-	padding: 18px 0 8px;
+	padding: 22px 0 14px;
 	margin: 0;
 	border-bottom: 1px solid var(--b2b-line);
 }
 
 .b2b-pdp .b2b-option-section h4 {
-	margin-bottom: 12px;
+	margin-bottom: 14px;
 }
 
 .b2b-pdp .collardiv,
-.b2b-pdp .b2b-option-row {
-	display: flex !important;
-	flex-wrap: nowrap !important;
+.b2b-pdp .b2b-option-row,
+.b2b-pdp .collar-type-b2b .collardiv,
+.b2b-pdp .cuff-type-b2b .collardiv {
+	display: grid !important;
+	grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)) !important;
+	gap: 12px !important;
 	align-items: stretch;
-	gap: 12px;
-	overflow-x: auto;
-	overflow-y: hidden;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: thin;
-	padding: 4px 2px 14px;
-	width: 100%;
-}
-
-.b2b-pdp .b2b-option-row::-webkit-scrollbar {
-	height: 4px;
-}
-
-.b2b-pdp .b2b-option-row::-webkit-scrollbar-thumb {
-	background: #d0d0d0;
-	border-radius: 4px;
+	overflow: visible !important;
+	flex-wrap: unset !important;
+	padding: 2px 0 8px !important;
+	width: 100% !important;
+	margin: 0 !important;
 }
 
 .b2b-pdp label.b2b-check-to-go-collar,
 .b2b-pdp label.b2b-check-to-go-cuff,
-.b2b-pdp .b2b-option-tile {
-	flex: 0 0 auto;
-	width: 108px;
-	min-width: 108px;
-	max-width: 108px;
+.b2b-pdp .b2b-option-tile,
+.b2b-pdp .collar-type-b2b label,
+.b2b-pdp .cuff-type-b2b label {
+	flex: none !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	max-width: none !important;
 	margin: 0 !important;
-	padding: 8px 8px 10px !important;
-	border: 1px solid var(--b2b-line);
-	border-radius: 10px;
-	background: #fff;
+	padding: 10px 10px 12px !important;
+	border: 1px solid var(--b2b-line) !important;
+	border-radius: 12px !important;
+	background: #fff !important;
 	cursor: pointer;
 	display: flex !important;
-	flex-direction: column;
+	flex-direction: column !important;
 	align-items: center;
-	gap: 8px;
+	gap: 10px;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 	box-sizing: border-box;
 	position: relative;
+	box-shadow: 0 1px 3px rgba(20, 30, 55, 0.04);
 }
 
 .b2b-pdp label.b2b-check-to-go-collar:hover,
 .b2b-pdp label.b2b-check-to-go-cuff:hover,
 .b2b-pdp .b2b-option-tile:hover {
-	border-color: #b0b0b0;
-	transform: translateY(-1px);
+	border-color: #c5c5c5 !important;
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(20, 30, 55, 0.08);
 }
 
 .b2b-pdp label.b2b-check-to-go-collar.is-selected,
 .b2b-pdp label.b2b-check-to-go-cuff.is-selected,
 .b2b-pdp .b2b-option-tile.is-selected {
-	border-color: var(--b2b-primary);
-	box-shadow: 0 0 0 1px var(--b2b-primary);
+	border-color: #2f3033 !important;
+	box-shadow: 0 0 0 1px #2f3033, 0 6px 16px rgba(20, 30, 55, 0.08);
 }
 
 .b2b-pdp .b2b-option-tile input[type="radio"],
 .b2b-pdp .collar-type-b2b label input,
-.b2b-pdp .cuff-type-b2b label input {
+.b2b-pdp .cuff-type-b2b label input,
+.b2b-pdp .collar-type-b2b label input[type="hidden"],
+.b2b-pdp .cuff-type-b2b label input[type="hidden"] {
 	position: absolute !important;
 	opacity: 0 !important;
-	pointer-events: none;
-	width: 1px;
-	height: 1px;
+	pointer-events: none !important;
+	width: 1px !important;
+	height: 1px !important;
 }
 
 .b2b-pdp .b2b-option-tile__media {
@@ -408,8 +406,8 @@
 	width: 100%;
 	aspect-ratio: 1 / 1;
 	overflow: hidden;
-	border-radius: 6px;
-	background: #f6f6f6;
+	border-radius: 8px;
+	background: #f4f4f4;
 }
 
 .b2b-pdp .b2b-option-tile__media img,
@@ -424,6 +422,7 @@
 .b2b-pdp .b2b-option-tile__meta,
 .b2b-pdp .text-and-check {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
@@ -433,17 +432,21 @@
 
 .b2b-pdp .blank-check {
 	flex-shrink: 0;
-	height: 12px;
-	width: 12px;
-	border: 1px solid #bcb5b5;
+	height: 14px;
+	width: 14px;
+	border: 1.5px solid #c8c8c8;
 	border-radius: 50%;
-	position: relative;
+	position: absolute;
+	top: 14px;
+	right: 14px;
 	background: #fff;
+	z-index: 2;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .b2b-pdp .blank-check.checkbtn {
-	background: var(--b2b-primary);
-	border-color: var(--b2b-primary);
+	background: #2f3033;
+	border-color: #2f3033;
 }
 
 .b2b-pdp .blank-check.checkbtn:after {
@@ -451,24 +454,27 @@
 	position: absolute;
 	left: 3px;
 	top: 3px;
-	width: 4px;
-	height: 4px;
+	width: 5px;
+	height: 5px;
 	border-radius: 50%;
 	background: #fff;
 }
 
 .b2b-pdp .b2b-option-tile__name,
-.b2b-pdp .collar-type-b2b span,
-.b2b-pdp .cuff-type-b2b span {
-	font-size: 11px !important;
-	font-weight: 500;
+.b2b-pdp .collar-type-b2b span.b2b-option-tile__name,
+.b2b-pdp .cuff-type-b2b span.b2b-option-tile__name,
+.b2b-pdp .collar-type-b2b .b2b-option-tile__name,
+.b2b-pdp .cuff-type-b2b .b2b-option-tile__name {
+	font-size: 12px !important;
+	font-weight: 500 !important;
 	color: var(--b2b-ink) !important;
-	line-height: 1.25;
+	line-height: 1.3 !important;
 	text-align: center;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	max-width: 78px;
+	white-space: normal !important;
+	overflow: visible !important;
+	text-overflow: unset !important;
+	max-width: none !important;
+	display: block !important;
 }
 
 .b2b-pdp .b2b-add-to-cart-button {
@@ -513,7 +519,7 @@
 
 @media (max-width: 991px) {
 	.b2b-pdp {
-		padding: 88px 0 100px;
+		padding: 88px 0 120px;
 	}
 
 	.b2b-pdp .mont_top_layout,
@@ -534,11 +540,12 @@
 	}
 
 	.b2b-pdp .mont_back_button {
-		margin: 0 4% 12px;
+		margin: 0 20px 14px;
 	}
 
 	.b2b-pdp .b2b-pdp__panel {
-		padding: 20px 4% 0 !important;
+		padding: 22px 20px 0 !important;
+		box-sizing: border-box;
 	}
 
 	.b2b-pdp .moq,
@@ -601,25 +608,22 @@
 		padding: 16px 0;
 	}
 
-	/* Collar / Cuff — readable horizontal cards on mobile */
+	/* Collar / Cuff — 2-col grid on mobile */
 	.b2b-pdp .b2b-option-section {
-		padding: 20px 0 12px;
+		padding: 22px 0 14px;
 	}
 
 	.b2b-pdp .collardiv,
-	.b2b-pdp .b2b-option-row {
-		display: flex !important;
-		flex-wrap: nowrap !important;
-		gap: 10px !important;
-		overflow-x: auto !important;
-		padding: 2px 4% 16px 0 !important;
-		margin: 0 -4% 0 0;
-		scrollbar-width: none;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.b2b-pdp .b2b-option-row::-webkit-scrollbar {
-		display: none;
+	.b2b-pdp .b2b-option-row,
+	.b2b-pdp .collar-type-b2b .collardiv,
+	.b2b-pdp .cuff-type-b2b .collardiv {
+		display: grid !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 12px !important;
+		overflow: visible !important;
+		flex-wrap: unset !important;
+		padding: 2px 0 10px !important;
+		margin: 0 !important;
 	}
 
 	.b2b-pdp label.b2b-check-to-go-collar,
@@ -627,12 +631,12 @@
 	.b2b-pdp .b2b-option-tile,
 	.collar-type-b2b label,
 	.cuff-type-b2b label {
-		flex: 0 0 112px !important;
-		width: 112px !important;
-		min-width: 112px !important;
-		max-width: 112px !important;
-		padding: 10px 8px 12px !important;
-		border-radius: 12px !important;
+		flex: none !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: none !important;
+		padding: 12px 10px 14px !important;
+		border-radius: 14px !important;
 		border: 1px solid var(--b2b-line) !important;
 		background: #fff !important;
 		box-shadow: 0 2px 8px rgba(20, 30, 55, 0.04);
@@ -640,14 +644,14 @@
 
 	.b2b-pdp .b2b-option-tile__media {
 		aspect-ratio: 4 / 5;
-		border-radius: 8px;
+		border-radius: 10px;
 	}
 
 	.b2b-pdp .b2b-option-tile__name,
-	.b2b-pdp .collar-type-b2b span,
-	.b2b-pdp .cuff-type-b2b span {
-		font-size: 11px !important;
-		max-width: 96px;
+	.b2b-pdp .collar-type-b2b span.b2b-option-tile__name,
+	.b2b-pdp .cuff-type-b2b span.b2b-option-tile__name {
+		font-size: 12px !important;
+		max-width: none !important;
 		white-space: normal !important;
 		line-height: 1.3;
 	}
@@ -655,11 +659,14 @@
 	.b2b-pdp .b2b-option-tile__meta,
 	.b2b-pdp .text-and-check {
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
 	}
 
 	.b2b-pdp .blank-check {
-		order: -1;
+		position: absolute;
+		top: 16px;
+		right: 16px;
+		order: unset;
 	}
 
 	.b2b-pdp .b2b-add-to-cart-button {
@@ -731,18 +738,15 @@
 
 @media (max-width: 575px) {
 	.b2b-pdp {
-		padding: 84px 0 110px;
+		padding: 84px 0 130px;
 	}
 
-	.b2b-pdp label.b2b-check-to-go-collar,
-	.b2b-pdp label.b2b-check-to-go-cuff,
-	.b2b-pdp .b2b-option-tile,
-	.collar-type-b2b label,
-	.cuff-type-b2b label {
-		flex: 0 0 104px !important;
-		width: 104px !important;
-		min-width: 104px !important;
-		max-width: 104px !important;
+	.b2b-pdp .mont_back_button {
+		margin: 0 16px 12px;
+	}
+
+	.b2b-pdp .b2b-pdp__panel {
+		padding: 18px 16px 0 !important;
 	}
 
 	.b2b-pdp .b2b-size-list ul {
@@ -799,10 +803,16 @@
 	.b2b-pdp label.b2b-check-to-go-collar,
 	.b2b-pdp label.b2b-check-to-go-cuff,
 	.b2b-pdp .b2b-option-tile {
-		width: 84px !important;
-		min-width: 84px !important;
-		max-width: 84px !important;
-		padding: 5px !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: none !important;
+		padding: 10px !important;
+	}
+
+	.b2b-pdp .collardiv,
+	.b2b-pdp .b2b-option-row {
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+		gap: 10px !important;
 	}
 
 	.b2b-pdp .b2b-add-to-cart-button {
