@@ -54,6 +54,13 @@ class Mont_DeepL_Cache {
         return $wpdb->prefix . MONT_DEEPL_TABLE;
     }
 
+    public static function table_exists() {
+        global $wpdb;
+        $table = self::table_name();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
+    }
+
     public static function make_hash($text) {
         return sha1((string) $text);
     }
@@ -192,6 +199,9 @@ class Mont_DeepL_Cache {
     }
 
     public static function count_entries() {
+        if (!self::table_exists()) {
+            return 0;
+        }
         global $wpdb;
         $table = self::table_name();
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared

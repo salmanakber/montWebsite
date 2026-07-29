@@ -113,10 +113,15 @@
                     Object.keys(json.data.translations).forEach(function (k) {
                         sessionCache[k] = json.data.translations[k];
                     });
+                } else if (json && !json.success && window.console && console.warn) {
+                    console.warn('[Mont DeepL]', json.data && json.data.message ? json.data.message : 'Translation request failed');
                 }
                 done(sessionCache);
             })
-            .catch(function () {
+            .catch(function (err) {
+                if (window.console && console.warn) {
+                    console.warn('[Mont DeepL]', err);
+                }
                 done(sessionCache);
             });
     }

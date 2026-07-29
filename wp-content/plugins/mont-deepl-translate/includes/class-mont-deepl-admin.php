@@ -14,7 +14,37 @@ class Mont_DeepL_Admin {
     public static function init() {
         add_action('admin_menu', array(__CLASS__, 'menu'));
         add_action('admin_init', array(__CLASS__, 'register'));
+        add_action('admin_enqueue_scripts', array(__CLASS__, 'enqueue'));
         add_action('admin_post_mont_deepl_clear_cache', array(__CLASS__, 'clear_cache'));
+    }
+
+    public static function enqueue($hook) {
+        if ($hook !== 'settings_page_mont-deepl-translate') {
+            return;
+        }
+
+        $ver = file_exists(MONT_DEEPL_DIR . 'assets/js/admin.js')
+            ? (string) filemtime(MONT_DEEPL_DIR . 'assets/js/admin.js')
+            : MONT_DEEPL_VERSION;
+
+        wp_enqueue_script(
+            'mont-deepl-admin',
+            MONT_DEEPL_URL . 'assets/js/admin.js',
+            array('jquery'),
+            $ver,
+            true
+        );
+
+        wp_localize_script('mont-deepl-admin', 'montDeepLAdmin', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('mont_deepl_test_api'),
+            'i18n'    => array(
+                'testing'  => __('Testing DeepL API…', 'mont-deepl'),
+                'testBtn'  => __('Test DeepL API', 'mont-deepl'),
+                'success'  => __('Connection successful', 'mont-deepl'),
+                'failed'   => __('Connection failed', 'mont-deepl'),
+            ),
+        ));
     }
 
     public static function menu() {
@@ -36,22 +66,33 @@ class Mont_DeepL_Admin {
     }
 
     public static function sanitize($input) {
+        $existing = Mont_DeepL_Plugin::settings();
         $defaults = Mont_DeepL_Plugin::defaults();
         $out      = $defaults;
 
         if (!is_array($input)) {
-            return $out;
+            return $existing;
         }
 
-        $out['enabled']       = !empty($input['enabled']) ? 1 : 0;
-        $out['api_key']       = isset($input['api_key']) ? sanitize_text_field($input['api_key']) : '';
-        $out['api_plan']      = (isset($input['api_plan']) && $input['api_plan'] === 'pro') ? 'pro' : 'free';
-        $out['source_lang']   = Mont_DeepL_API::normalize_lang(isset($input['source_lang']) ? $input['source_lang'] : 'NB');
+        $out['enabled']        = !empty($input['enabled']) ? 1 : 0;
+        $out['api_plan']       = (isset($input['api_plan']) && $input['api_plan'] === 'pro') ? 'pro' : 'free';
+        $out['source_lang']    = Mont_DeepL_API::normalize_lang(isset($input['source_lang']) ? $input['source_lang'] : 'NB');
         if ($out['source_lang'] === '') {
             $out['source_lang'] = 'NB';
         }
-        $out['monthly_limit'] = max(1000, (int) (isset($input['monthly_limit']) ? $input['monthly_limit'] : 500000));
-        $out['disable_google']= !empty($input['disable_google']) ? 1 : 0;
+        $out['monthly_limit']  = max(1000, (int) (isset($input['monthly_limit']) ? $input['monthly_limit'] : 500000));
+        $out['disable_google'] = !empty($input['disable_google']) ? 1 : 0;
+
+        $new_key = isset($input['api_key']) ? trim(sanitize_text_field($input['api_key'])) : '';
+        if ($new_key !== '') {
+            $out['api_key'] = $new_key;
+        } else {
+            $out['api_key'] = $existing['api_key'];
+        }
+
+        if (!empty($out['api_key'])) {
+            $out['api_plan'] = Mont_DeepL_API::detect_plan_from_key($out['api_key']);
+        }
 
         return $out;
     }
@@ -80,6 +121,8 @@ class Mont_DeepL_Admin {
         $limit    = (int) $settings['monthly_limit'];
         $used     = (int) $usage['characters'];
         $pct      = $limit > 0 ? min(100, round(($used / $limit) * 100, 1)) : 0;
+        $diag     = Mont_DeepL_Plugin::diagnostics();
+        $masked   = self::mask_key($settings['api_key']);
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Mont DeepL Translate', 'mont-deepl'); ?></h1>
@@ -88,15 +131,19 @@ class Mont_DeepL_Admin {
                 <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Translation cache cleared.', 'mont-deepl'); ?></p></div>
             <?php endif; ?>
 
-            <p><?php esc_html_e('Translates the storefront with DeepL when the visitor changes region. Every unique string is stored forever in a local cache so DeepL is only called once per string/language.', 'mont-deepl'); ?></p>
+            <?php if (!empty($_GET['settings-updated'])) : ?>
+                <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Settings saved.', 'mont-deepl'); ?></p></div>
+            <?php endif; ?>
+
+            <p><?php esc_html_e('Translates the storefront with DeepL when the visitor changes region. Every unique string is stored in a local cache so DeepL is only called once per string/language.', 'mont-deepl'); ?></p>
 
             <div style="max-width:720px;margin:16px 0 24px;padding:16px 18px;background:#fff;border:1px solid #dcdcde;border-radius:6px;">
-                <h2 style="margin-top:0;"><?php esc_html_e('Usage this month', 'mont-deepl'); ?></h2>
+                <h2 style="margin-top:0;"><?php esc_html_e('Local usage this month', 'mont-deepl'); ?></h2>
                 <p style="margin:0 0 8px;">
                     <strong><?php echo esc_html(number_format_i18n($used)); ?></strong>
                     /
                     <?php echo esc_html(number_format_i18n($limit)); ?>
-                    <?php esc_html_e('characters', 'mont-deepl'); ?>
+                    <?php esc_html_e('characters tracked locally', 'mont-deepl'); ?>
                     (<?php echo esc_html((string) $pct); ?>%)
                 </p>
                 <div style="height:10px;background:#f0f0f1;border-radius:999px;overflow:hidden;">
@@ -105,12 +152,24 @@ class Mont_DeepL_Admin {
                 <p style="margin:12px 0 0;color:#646970;">
                     <?php
                     printf(
-                        /* translators: %s: cache entry count */
-                        esc_html__('Cached strings: %s (these never cost API characters again)', 'mont-deepl'),
+                        esc_html__('Cached strings: %s', 'mont-deepl'),
                         '<strong>' . esc_html(number_format_i18n($cached)) . '</strong>'
                     );
                     ?>
                 </p>
+            </div>
+
+            <div style="max-width:720px;margin:0 0 24px;padding:16px 18px;background:#fff;border:1px solid #dcdcde;border-radius:6px;">
+                <h2 style="margin-top:0;"><?php esc_html_e('Status', 'mont-deepl'); ?></h2>
+                <ul style="margin:0;padding-left:18px;">
+                    <li><?php echo $diag['plugin_enabled'] ? '✅' : '⚠️'; ?> <?php esc_html_e('Plugin enabled', 'mont-deepl'); ?>: <strong><?php echo $diag['plugin_enabled'] ? esc_html__('Yes', 'mont-deepl') : esc_html__('No — check “Enable DeepL” below', 'mont-deepl'); ?></strong></li>
+                    <li><?php echo $diag['has_api_key'] ? '✅' : '❌'; ?> <?php esc_html_e('API key saved', 'mont-deepl'); ?>: <strong><?php echo $diag['has_api_key'] ? esc_html($masked) : esc_html__('Missing', 'mont-deepl'); ?></strong></li>
+                    <li><?php echo $diag['cache_table'] ? '✅' : '❌'; ?> <?php esc_html_e('Cache database table', 'mont-deepl'); ?></li>
+                    <li><?php esc_html_e('Detected API plan', 'mont-deepl'); ?>: <strong><?php echo esc_html(strtoupper($diag['api_plan'])); ?></strong> <?php esc_html_e('(Free keys end with :fx)', 'mont-deepl'); ?></li>
+                    <li><?php esc_html_e('Source language', 'mont-deepl'); ?>: <strong><?php echo esc_html($diag['source_lang']); ?></strong></li>
+                    <li><?php esc_html_e('Current region target', 'mont-deepl'); ?>: <strong><?php echo esc_html($diag['target_lang'] ?: '—'); ?></strong> <?php echo $diag['current_region'] ? '(' . esc_html($diag['current_region']) . ')' : ''; ?></li>
+                    <li><?php echo $diag['should_translate'] ? '✅' : 'ℹ️'; ?> <?php esc_html_e('Frontend will translate on this visit', 'mont-deepl'); ?>: <strong><?php echo $diag['should_translate'] ? esc_html__('Yes', 'mont-deepl') : esc_html__('No — switch region (e.g. Italy / International) to test', 'mont-deepl'); ?></strong></li>
+                </ul>
             </div>
 
             <form method="post" action="options.php">
@@ -128,15 +187,19 @@ class Mont_DeepL_Admin {
                     <tr>
                         <th scope="row"><label for="mont_deepl_api_key"><?php esc_html_e('DeepL API key', 'mont-deepl'); ?></label></th>
                         <td>
-                            <input type="password" class="regular-text" id="mont_deepl_api_key" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[api_key]" value="<?php echo esc_attr($settings['api_key']); ?>" autocomplete="off" />
-                            <p class="description"><?php esc_html_e('Get a free key at deepl.com/pro-api (Free plan ≈ 500,000 characters / month).', 'mont-deepl'); ?></p>
+                            <input type="password" class="regular-text" id="mont_deepl_api_key" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[api_key]" value="" placeholder="<?php echo esc_attr($masked ?: __('Paste API key', 'mont-deepl')); ?>" autocomplete="off" />
+                            <?php if ($masked) : ?>
+                                <p class="description"><?php printf(esc_html__('Saved key: %s — leave blank to keep current key.', 'mont-deepl'), esc_html($masked)); ?></p>
+                            <?php else : ?>
+                                <p class="description"><?php esc_html_e('Get a free key at deepl.com/pro-api (Free plan ≈ 500,000 characters / month).', 'mont-deepl'); ?></p>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row"><?php esc_html_e('API plan', 'mont-deepl'); ?></th>
                         <td>
                             <select name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[api_plan]">
-                                <option value="free" <?php selected($settings['api_plan'], 'free'); ?>><?php esc_html_e('Free (api-free.deepl.com)', 'mont-deepl'); ?></option>
+                                <option value="free" <?php selected($settings['api_plan'], 'free'); ?>><?php esc_html_e('Free (api-free.deepl.com) — auto-detected from :fx key', 'mont-deepl'); ?></option>
                                 <option value="pro" <?php selected($settings['api_plan'], 'pro'); ?>><?php esc_html_e('Pro (api.deepl.com)', 'mont-deepl'); ?></option>
                             </select>
                         </td>
@@ -151,14 +214,12 @@ class Mont_DeepL_Admin {
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <p class="description"><?php esc_html_e('Language your content is written in (this store looks Norwegian — NB is recommended).', 'mont-deepl'); ?></p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="mont_deepl_limit"><?php esc_html_e('Monthly character soft limit', 'mont-deepl'); ?></label></th>
                         <td>
                             <input type="number" min="1000" step="1000" id="mont_deepl_limit" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[monthly_limit]" value="<?php echo esc_attr((string) $settings['monthly_limit']); ?>" />
-                            <p class="description"><?php esc_html_e('Stops new DeepL calls when reached. Cached translations still apply.', 'mont-deepl'); ?></p>
                         </td>
                     </tr>
                     <tr>
@@ -166,7 +227,7 @@ class Mont_DeepL_Admin {
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[disable_google]" value="1" <?php checked(!empty($settings['disable_google'])); ?> />
-                                <?php esc_html_e('Turn off Google/GTranslate hooks from the region switcher (recommended)', 'mont-deepl'); ?>
+                                <?php esc_html_e('Turn off Google/GTranslate hooks from the region switcher', 'mont-deepl'); ?>
                             </label>
                         </td>
                     </tr>
@@ -174,21 +235,41 @@ class Mont_DeepL_Admin {
                 <?php submit_button(); ?>
             </form>
 
+            <div style="max-width:720px;margin:24px 0;padding:16px 18px;background:#fff;border:1px solid #dcdcde;border-radius:6px;">
+                <h2 style="margin-top:0;"><?php esc_html_e('Test DeepL connection', 'mont-deepl'); ?></h2>
+                <p><?php esc_html_e('Sends one short Norwegian sentence to DeepL and shows the result. Use this to confirm your API key works before testing on the storefront.', 'mont-deepl'); ?></p>
+                <p>
+                    <label for="mont_deepl_test_target"><?php esc_html_e('Test target language', 'mont-deepl'); ?></label>
+                    <select id="mont_deepl_test_target">
+                        <option value="EN-US">English (US)</option>
+                        <option value="IT">Italian</option>
+                        <option value="DE">German</option>
+                        <option value="FR">French</option>
+                    </select>
+                </p>
+                <p>
+                    <button type="button" class="button button-primary" id="mont_deepl_test_btn"><?php esc_html_e('Test DeepL API', 'mont-deepl'); ?></button>
+                </p>
+                <div id="mont_deepl_test_result" style="display:none;margin-top:12px;padding:12px 14px;border-radius:4px;"></div>
+            </div>
+
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return confirm('Clear all cached translations? Next page loads may use API characters again.');">
                 <input type="hidden" name="action" value="mont_deepl_clear_cache" />
                 <?php wp_nonce_field('mont_deepl_clear_cache'); ?>
                 <?php submit_button(__('Clear translation cache', 'mont-deepl'), 'delete'); ?>
             </form>
-
-            <hr />
-            <h2><?php esc_html_e('Region → language mapping', 'mont-deepl'); ?></h2>
-            <ul>
-                <li><?php esc_html_e('International → English (EN)', 'mont-deepl'); ?></li>
-                <li><?php esc_html_e('Italy → Italian (IT)', 'mont-deepl'); ?></li>
-                <li><?php esc_html_e('Norway → Norwegian (NB) — usually no API call if source is NB', 'mont-deepl'); ?></li>
-                <li><?php esc_html_e('Việt Nam → not supported by DeepL (page stays in source language)', 'mont-deepl'); ?></li>
-            </ul>
         </div>
         <?php
+    }
+
+    private static function mask_key($key) {
+        $key = trim((string) $key);
+        if ($key === '') {
+            return '';
+        }
+        if (strlen($key) <= 8) {
+            return str_repeat('•', strlen($key));
+        }
+        return substr($key, 0, 4) . str_repeat('•', max(4, strlen($key) - 8)) . substr($key, -4);
     }
 }

@@ -24,6 +24,8 @@ class Mont_DeepL_Plugin {
     }
 
     private function __construct() {
+        add_action('init', array($this, 'maybe_install_table'), 5);
+
         if (is_admin()) {
             Mont_DeepL_Admin::init();
         }
@@ -31,6 +33,13 @@ class Mont_DeepL_Plugin {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_front'), 40);
         add_action('wp_ajax_mont_deepl_translate', array($this, 'ajax_translate'));
         add_action('wp_ajax_nopriv_mont_deepl_translate', array($this, 'ajax_translate'));
+        add_action('wp_ajax_mont_deepl_test_api', array($this, 'ajax_test_api'));
+    }
+
+    public function maybe_install_table() {
+        if (!Mont_DeepL_Cache::table_exists()) {
+            Mont_DeepL_Cache::install();
+        }
     }
 
     public static function defaults() {
@@ -49,12 +58,13 @@ class Mont_DeepL_Plugin {
         if (!is_array($saved)) {
             $saved = array();
         }
-        return array_merge(self::defaults(), $saved);
+        $settings = array_merge(self::defaults(), $saved);
+        if (!empty($settings['api_key'])) {
+            $settings['api_plan'] = Mont_DeepL_API::detect_plan_from_key($settings['api_key']);
+        }
+        return $settings;
     }
 
-    /**
-     * Resolve target DeepL language from current region.
-     */
     public static function current_target_lang() {
         $lang = '';
 
@@ -67,7 +77,6 @@ class Mont_DeepL_Plugin {
         }
 
         if ($lang === '' && !empty($_COOKIE['dc_region'])) {
-            // Fallback if class not loaded yet — cookie is region slug.
             $slug = sanitize_key(wp_unslash($_COOKIE['dc_region']));
             $map  = array(
                 'intl' => 'en',
@@ -83,14 +92,42 @@ class Mont_DeepL_Plugin {
         return Mont_DeepL_API::normalize_lang($lang);
     }
 
+    public static function diagnostics() {
+        $settings = self::settings();
+        $source   = Mont_DeepL_API::normalize_lang($settings['source_lang']);
+        $target   = self::current_target_lang();
+        $region   = '';
+
+        if (class_exists('DC_Product_Manager\\DC_Region_Currency')) {
+            $region = \DC_Product_Manager\DC_Region_Currency::get_current_region_slug();
+        }
+
+        return array(
+            'plugin_enabled'   => !empty($settings['enabled']),
+            'has_api_key'      => trim((string) $settings['api_key']) !== '',
+            'api_plan'         => !empty($settings['api_plan']) ? $settings['api_plan'] : 'free',
+            'cache_table'      => Mont_DeepL_Cache::table_exists(),
+            'cache_entries'    => Mont_DeepL_Cache::count_entries(),
+            'source_lang'      => $source,
+            'target_lang'      => $target,
+            'current_region'   => $region,
+            'should_translate' => ($target && $source && $target !== $source),
+        );
+    }
+
     public function enqueue_front() {
         if (is_admin()) {
             return;
         }
 
         $settings = self::settings();
-        if (empty($settings['enabled']) || empty($settings['api_key'])) {
-            // Still expose flag so region-switcher can skip Google when requested.
+        $diag     = self::diagnostics();
+
+        if (empty($settings['api_key'])) {
+            return;
+        }
+
+        if (empty($settings['enabled'])) {
             if (!empty($settings['disable_google'])) {
                 wp_register_script('mont-deepl-bridge', false, array(), MONT_DEEPL_VERSION, true);
                 wp_enqueue_script('mont-deepl-bridge');
@@ -98,10 +135,6 @@ class Mont_DeepL_Plugin {
             }
             return;
         }
-
-        $source = Mont_DeepL_API::normalize_lang($settings['source_lang']);
-        $target = self::current_target_lang();
-        $should = ($target && $source && $target !== $source);
 
         $ver = file_exists(MONT_DEEPL_DIR . 'assets/js/frontend.js')
             ? (string) filemtime(MONT_DEEPL_DIR . 'assets/js/frontend.js')
@@ -116,14 +149,14 @@ class Mont_DeepL_Plugin {
         );
 
         wp_localize_script('mont-deepl-front', 'montDeepL', array(
-            'enabled'       => (bool) $settings['enabled'],
-            'disableGoogle' => !empty($settings['disable_google']),
-            'ajaxUrl'       => admin_url('admin-ajax.php'),
-            'nonce'         => wp_create_nonce('mont_deepl_translate'),
-            'sourceLang'    => $source,
-            'targetLang'    => $target,
-            'shouldTranslate' => (bool) $should,
-            'batchSize'     => 60,
+            'enabled'         => true,
+            'disableGoogle'   => !empty($settings['disable_google']),
+            'ajaxUrl'         => admin_url('admin-ajax.php'),
+            'nonce'           => wp_create_nonce('mont_deepl_translate'),
+            'sourceLang'      => $diag['source_lang'],
+            'targetLang'      => $diag['target_lang'],
+            'shouldTranslate' => (bool) $diag['should_translate'],
+            'batchSize'       => 60,
         ));
     }
 
@@ -132,11 +165,15 @@ class Mont_DeepL_Plugin {
 
         $settings = self::settings();
         if (empty($settings['enabled'])) {
-            wp_send_json_error(array('message' => 'Disabled'), 403);
+            wp_send_json_error(array('message' => __('DeepL translation is disabled in settings.', 'mont-deepl')), 403);
         }
 
         $target = isset($_POST['target_lang']) ? sanitize_text_field(wp_unslash($_POST['target_lang'])) : '';
         $source = isset($_POST['source_lang']) ? sanitize_text_field(wp_unslash($_POST['source_lang'])) : $settings['source_lang'];
+
+        if ($target === '') {
+            $target = self::current_target_lang();
+        }
 
         $texts = array();
         if (isset($_POST['texts'])) {
@@ -157,6 +194,10 @@ class Mont_DeepL_Plugin {
             $texts = array_slice($texts, 0, 80);
         }
 
+        if (!$texts) {
+            wp_send_json_success(array('translations' => array(), 'usage' => Mont_DeepL_Cache::get_usage()));
+        }
+
         $result = Mont_DeepL_API::translate_batch($texts, $target, $source);
         if (is_wp_error($result)) {
             wp_send_json_error(array(
@@ -165,11 +206,38 @@ class Mont_DeepL_Plugin {
             ), 400);
         }
 
-        $usage = Mont_DeepL_Cache::get_usage();
-
         wp_send_json_success(array(
             'translations' => $result,
-            'usage'        => $usage,
+            'usage'        => Mont_DeepL_Cache::get_usage(),
         ));
+    }
+
+    public function ajax_test_api() {
+        check_ajax_referer('mont_deepl_test_api', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Forbidden', 'mont-deepl')), 403);
+        }
+
+        $settings = self::settings();
+        $api_key  = isset($_POST['api_key']) ? sanitize_text_field(wp_unslash($_POST['api_key'])) : '';
+        if ($api_key === '') {
+            $api_key = trim((string) $settings['api_key']);
+        }
+
+        $source = isset($_POST['source_lang']) ? sanitize_text_field(wp_unslash($_POST['source_lang'])) : $settings['source_lang'];
+        $target = isset($_POST['target_lang']) ? sanitize_text_field(wp_unslash($_POST['target_lang'])) : 'EN-US';
+
+        $result = Mont_DeepL_API::test_connection($api_key, $source, $target);
+        if (is_wp_error($result)) {
+            $error_data = $result->get_error_data();
+            wp_send_json_error(array(
+                'message' => $result->get_error_message(),
+                'code'    => $result->get_error_code(),
+                'details' => is_array($error_data) ? $error_data : null,
+            ), 400);
+        }
+
+        wp_send_json_success($result);
     }
 }
