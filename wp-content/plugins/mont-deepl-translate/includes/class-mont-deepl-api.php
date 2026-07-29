@@ -36,9 +36,9 @@ class Mont_DeepL_API {
     }
 
     /**
-     * Map site / region lang codes → DeepL codes.
+     * Map site / region lang codes to DeepL target language codes.
      */
-    public static function normalize_lang($code) {
+    public static function normalize_target_lang($code) {
         $code = strtolower(trim((string) $code));
         $map  = array(
             'en'    => 'EN-US',
@@ -62,6 +62,54 @@ class Mont_DeepL_API {
         }
 
         return isset(self::supported_targets()[$upper]) ? $upper : '';
+    }
+
+    /**
+     * Map site / region codes to DeepL source language codes.
+     * Source language must be generic (e.g. EN, not EN-US).
+     */
+    public static function normalize_source_lang($code) {
+        $code = strtolower(trim((string) $code));
+        $map  = array(
+            'en'    => 'EN',
+            'en-us' => 'EN',
+            'en-gb' => 'EN',
+            'it'    => 'IT',
+            'nb'    => 'NB',
+            'no'    => 'NB',
+            'nn'    => 'NB',
+            'de'    => 'DE',
+            'fr'    => 'FR',
+            'es'    => 'ES',
+            'nl'    => 'NL',
+            'pl'    => 'PL',
+            'sv'    => 'SV',
+            'da'    => 'DA',
+            'fi'    => 'FI',
+            'pt'    => 'PT',
+            'ru'    => 'RU',
+            'ja'    => 'JA',
+            'zh'    => 'ZH',
+            'vi'    => '',
+            'vn'    => '',
+        );
+        if (isset($map[$code])) {
+            return $map[$code];
+        }
+        $upper = strtoupper($code);
+        if ($upper === 'EN-US' || $upper === 'EN-GB') {
+            return 'EN';
+        }
+        // DeepL source language list.
+        $supported = array('BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'ID', 'IT', 'JA', 'KO', 'LT', 'LV', 'NB', 'NL', 'PL', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TR', 'UK', 'ZH');
+        return in_array($upper, $supported, true) ? $upper : '';
+    }
+
+    /**
+     * Backward-compatible alias (target normalization).
+     */
+    public static function normalize_lang($code) {
+        return self::normalize_target_lang($code);
     }
 
     /**
@@ -171,8 +219,8 @@ class Mont_DeepL_API {
     public static function test_connection($api_key = null, $source_lang = 'NB', $target_lang = 'EN-US') {
         $settings = Mont_DeepL_Plugin::settings();
         $api_key  = $api_key !== null ? trim((string) $api_key) : trim((string) $settings['api_key']);
-        $source   = self::normalize_lang($source_lang);
-        $target   = self::normalize_lang($target_lang);
+        $source   = self::normalize_source_lang($source_lang);
+        $target   = self::normalize_target_lang($target_lang);
 
         if ($api_key === '') {
             return new WP_Error('mont_deepl_no_key', __('DeepL API key is not configured.', 'mont-deepl'));
@@ -250,8 +298,8 @@ class Mont_DeepL_API {
      * @return array|\WP_Error
      */
     public static function translate_batch(array $texts, $target_lang, $source_lang, $force_api = false) {
-        $target_lang = self::normalize_lang($target_lang);
-        $source_lang = self::normalize_lang($source_lang);
+        $target_lang = self::normalize_target_lang($target_lang);
+        $source_lang = self::normalize_source_lang($source_lang);
 
         if (!$target_lang) {
             return new WP_Error('mont_deepl_unsupported', __('Target language is not supported by DeepL.', 'mont-deepl'));

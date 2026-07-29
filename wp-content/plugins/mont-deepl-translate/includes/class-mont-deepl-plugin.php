@@ -179,12 +179,13 @@ class Mont_DeepL_Plugin {
             }
         }
 
-        return Mont_DeepL_API::normalize_lang($lang);
+        return Mont_DeepL_API::normalize_target_lang($lang);
     }
 
     public static function diagnostics() {
         $settings = self::settings();
-        $source   = Mont_DeepL_API::normalize_lang($settings['source_lang']);
+        $source_api = Mont_DeepL_API::normalize_source_lang($settings['source_lang']);
+        $source_for_compare = Mont_DeepL_API::normalize_target_lang($settings['source_lang']);
         $target   = self::current_target_lang();
         $region   = '';
 
@@ -198,16 +199,17 @@ class Mont_DeepL_Plugin {
             'api_plan'         => !empty($settings['api_plan']) ? $settings['api_plan'] : 'free',
             'cache_table'      => Mont_DeepL_Cache::table_exists(),
             'cache_entries'    => Mont_DeepL_Cache::count_entries(),
-            'source_lang'      => $source,
+            'source_lang'      => $source_api,
+            'source_lang_compare' => $source_for_compare,
             'target_lang'      => $target,
             'current_region'   => $region,
             'normalize_mixed_to_source' => !empty($settings['normalize_mixed_to_source']),
             'should_translate' => (
                 $target &&
-                $source &&
+                $source_for_compare &&
                 (
-                    $target !== $source ||
-                    (!empty($settings['normalize_mixed_to_source']) && $target === $source)
+                    $target !== $source_for_compare ||
+                    (!empty($settings['normalize_mixed_to_source']) && $target === $source_for_compare)
                 )
             ),
         );

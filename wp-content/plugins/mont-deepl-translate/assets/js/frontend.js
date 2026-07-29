@@ -187,6 +187,8 @@
                     Object.keys(json.data.translations).forEach(function (k) {
                         sessionCache[k] = json.data.translations[k];
                     });
+                } else if (json && !json.success && debug) {
+                    log('AJAX error:', json.data && json.data.message ? json.data.message : json);
                 }
                 done(sessionCache);
             })
@@ -243,7 +245,7 @@
         }
 
         if (regular.length) applyEntriesWithSource(regular, null);
-        if (englishSource.length) applyEntriesWithSource(englishSource, 'EN-US');
+        if (englishSource.length) applyEntriesWithSource(englishSource, 'EN');
     }
 
     function translateRoot(root) {
