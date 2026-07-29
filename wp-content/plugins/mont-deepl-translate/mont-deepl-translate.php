@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('MONT_DEEPL_VERSION', '1.0.1');
+define('MONT_DEEPL_VERSION', '1.0.2');
 define('MONT_DEEPL_FILE', __FILE__);
 define('MONT_DEEPL_DIR', plugin_dir_path(__FILE__));
 define('MONT_DEEPL_URL', plugin_dir_url(__FILE__));

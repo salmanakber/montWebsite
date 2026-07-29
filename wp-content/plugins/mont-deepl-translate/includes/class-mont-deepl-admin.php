@@ -30,7 +30,7 @@ class Mont_DeepL_Admin {
         wp_enqueue_script(
             'mont-deepl-admin',
             MONT_DEEPL_URL . 'assets/js/admin.js',
-            array('jquery'),
+            array(),
             $ver,
             true
         );

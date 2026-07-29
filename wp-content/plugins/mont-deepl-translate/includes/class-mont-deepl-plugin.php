@@ -161,11 +161,17 @@ class Mont_DeepL_Plugin {
     }
 
     public function ajax_translate() {
-        check_ajax_referer('mont_deepl_translate', 'nonce');
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'mont_deepl_translate')) {
+            wp_send_json_error(array('message' => __('Invalid security token. Reload the page.', 'mont-deepl')), 403);
+        }
 
         $settings = self::settings();
         if (empty($settings['enabled'])) {
             wp_send_json_error(array('message' => __('DeepL translation is disabled in settings.', 'mont-deepl')), 403);
+        }
+
+        if (empty($settings['api_key'])) {
+            wp_send_json_error(array('message' => __('DeepL API key is missing.', 'mont-deepl')), 403);
         }
 
         $target = isset($_POST['target_lang']) ? sanitize_text_field(wp_unslash($_POST['target_lang'])) : '';
@@ -213,7 +219,9 @@ class Mont_DeepL_Plugin {
     }
 
     public function ajax_test_api() {
-        check_ajax_referer('mont_deepl_test_api', 'nonce');
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'mont_deepl_test_api')) {
+            wp_send_json_error(array('message' => __('Invalid security token. Reload the page.', 'mont-deepl')), 403);
+        }
 
         if (!current_user_can('manage_options')) {
             wp_send_json_error(array('message' => __('Forbidden', 'mont-deepl')), 403);
