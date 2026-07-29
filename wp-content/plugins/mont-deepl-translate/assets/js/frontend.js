@@ -1,6 +1,5 @@
 /**
  * Frontend DeepL applicator.
- * Translates visible text nodes, UI attributes, and forced CSS selector blocks.
  */
 (function () {
     'use strict';
@@ -11,6 +10,7 @@
     var sameLanguage = (cfg.sourceLang && cfg.targetLang && cfg.sourceLang === cfg.targetLang);
     var shouldNormalizeMixed = sameLanguage && normalizeMixed;
     var includeSelectors = Array.isArray(cfg.includeSelectors) ? cfg.includeSelectors : [];
+    var VARIATION_ROOT = '.mont_custom_options, .mont_variation-selector, .skreddersydd';
 
     function log() {
         if (debug && window.console && console.log) {
@@ -19,17 +19,14 @@
     }
 
     if (!cfg.enabled) {
-        log('Disabled');
         return;
     }
 
     if (!cfg.targetLang) {
-        log('No target language for region');
         return;
     }
 
     if (!cfg.shouldTranslate && !shouldNormalizeMixed) {
-        log('Skipped');
         return;
     }
 
@@ -41,6 +38,7 @@
     var sessionCache = Object.create(null);
     var flushTimer = null;
     var applied = false;
+    var nodeId = 0;
 
     function hasLetters(text) {
         try {
@@ -53,7 +51,7 @@
     function looksEnglish(text) {
         if (!text || !/[A-Za-z]/.test(text)) return false;
         if (/[æøåÆØÅ]/.test(text)) return false;
-        return /\b(the|and|for|with|search|wishlist|account|store|location|about|shirts|shirt|size|color|cart|checkout|back|home|shop|menu|add|view|read|more|free|shipping|sale|new|collection)\b/i.test(text);
+        return /\b(the|and|for|with|search|wishlist|account|store|location|about|shirts|shirt|size|color|cart|checkout|back|home|shop|menu|add|view|read|more|free|shipping|sale|new|collection|left|right|charge|optional|sleeve|shoulder|waist|chest|bottom|length|passform|collar|cuff|snipp|mansjetter)\b/i.test(text);
     }
 
     function shouldSkipElement(el) {
@@ -77,29 +75,6 @@
         return true;
     }
 
-    function entryKey(entry) {
-        if (entry.type === 'text' && entry.node) {
-            return 't:' + entry.source;
-        }
-        if (entry.type === 'attr' && entry.el && entry.attr) {
-            return 'a:' + entry.attr + ':' + entry.source;
-        }
-        return 'x:' + entry.source;
-    }
-
-    function dedupeEntries(entries) {
-        var map = Object.create(null);
-        var out = [];
-        for (var i = 0; i < entries.length; i++) {
-            var key = entryKey(entries[i]);
-            if (!map[key]) {
-                map[key] = 1;
-                out.push(entries[i]);
-            }
-        }
-        return out;
-    }
-
     function collectTextEntries(root, force) {
         var entries = [];
         var walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT, {
@@ -111,6 +86,9 @@
         });
         var current;
         while ((current = walker.nextNode())) {
+            if (!current._montDeepLId) {
+                current._montDeepLId = 'n' + (++nodeId);
+            }
             entries.push({ type: 'text', node: current, source: current.nodeValue, force: !!force });
         }
         return entries;
@@ -144,8 +122,9 @@
         return entries;
     }
 
-    function collectSelectorEntries() {
+    function collectSelectorEntries(root) {
         var entries = [];
+        var scope = root || document;
         if (!includeSelectors.length) return entries;
 
         for (var s = 0; s < includeSelectors.length; s++) {
@@ -154,9 +133,8 @@
 
             var nodes;
             try {
-                nodes = document.querySelectorAll(selector);
+                nodes = scope.querySelectorAll(selector);
             } catch (e) {
-                log('Invalid selector skipped:', selector);
                 continue;
             }
 
@@ -170,6 +148,14 @@
         }
 
         return entries;
+    }
+
+    function collectEntries(root) {
+        var scope = root || document.body;
+        if (!scope) return [];
+        return collectTextEntries(scope, false)
+            .concat(collectAttributeEntries(scope, false))
+            .concat(collectSelectorEntries(scope));
     }
 
     function requestTranslate(texts, overrideSourceLang, done) {
@@ -201,13 +187,10 @@
                     Object.keys(json.data.translations).forEach(function (k) {
                         sessionCache[k] = json.data.translations[k];
                     });
-                } else if (json && !json.success) {
-                    log('API error:', json.data && json.data.message ? json.data.message : json);
                 }
                 done(sessionCache);
             })
-            .catch(function (err) {
-                log('Fetch error', err);
+            .catch(function () {
                 done(sessionCache);
             });
     }
@@ -243,7 +226,7 @@
                 document.documentElement.classList.add('mont-deepl-translated');
                 applied = true;
             }
-            log('Applied entries:', changed, overrideSourceLang || cfg.sourceLang);
+            log('Applied', changed, overrideSourceLang || cfg.sourceLang);
         });
     }
 
@@ -259,32 +242,34 @@
             }
         }
 
-        if (regular.length) {
-            applyEntriesWithSource(regular, null);
-        }
-        if (englishSource.length) {
-            applyEntriesWithSource(englishSource, 'EN-US');
+        if (regular.length) applyEntriesWithSource(regular, null);
+        if (englishSource.length) applyEntriesWithSource(englishSource, 'EN-US');
+    }
+
+    function translateRoot(root) {
+        if (!root) return;
+        var entries = collectEntries(root);
+        if (!entries.length) return;
+        log('Entries in scope:', entries.length, root.className || root.tagName);
+        var size = cfg.batchSize || 60;
+        for (var i = 0; i < entries.length; i += size) {
+            applyEntries(entries.slice(i, i + size));
         }
     }
 
     function translatePage() {
         if (!document.body) return;
+        translateRoot(document.body);
+    }
 
-        var entries = dedupeEntries(
-            collectTextEntries(document.body, false)
-                .concat(collectAttributeEntries(document.body, false))
-                .concat(collectSelectorEntries())
-        );
-
-        if (!entries.length) {
-            log('No entries');
+    function translateVariations() {
+        var roots = document.querySelectorAll(VARIATION_ROOT);
+        if (!roots.length) {
+            translatePage();
             return;
         }
-
-        log('Translatable entries:', entries.length, 'selectors:', includeSelectors.length);
-        var size = cfg.batchSize || 60;
-        for (var i = 0; i < entries.length; i += size) {
-            applyEntries(entries.slice(i, i + size));
+        for (var i = 0; i < roots.length; i++) {
+            translateRoot(roots[i]);
         }
     }
 
@@ -292,6 +277,14 @@
         clearTimeout(flushTimer);
         flushTimer = setTimeout(translatePage, 90);
     }
+
+    function scheduleVariationTranslate() {
+        clearTimeout(flushTimer);
+        flushTimer = setTimeout(translateVariations, 120);
+    }
+
+    window.montDeepLRetranslate = scheduleTranslate;
+    window.montDeepLRetranslateVariations = scheduleVariationTranslate;
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', scheduleTranslate);
@@ -301,25 +294,70 @@
 
     window.addEventListener('load', function () {
         setTimeout(translatePage, 700);
-        setTimeout(translatePage, 2000);
+        setTimeout(translateVariations, 1500);
+        setTimeout(translateVariations, 3500);
     });
+
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        if (t.closest('.mont_variation-header, .mont_option-item, .collar-option, .mont_sizes-change-btn, .mont_sizes-close-btn')) {
+            scheduleVariationTranslate();
+        }
+    }, true);
+
+    if (typeof jQuery !== 'undefined') {
+        jQuery(document).ajaxComplete(function (_event, _xhr, settings) {
+            var data = settings && settings.data ? String(settings.data) : '';
+            if (
+                data.indexOf('get_variation_details') !== -1 ||
+                data.indexOf('get_all_variation') !== -1
+            ) {
+                scheduleVariationTranslate();
+            }
+        });
+    }
 
     if (typeof MutationObserver !== 'undefined') {
         var obsTimer = null;
         var observer = new MutationObserver(function (mutations) {
             var relevant = false;
             for (var i = 0; i < mutations.length; i++) {
-                if (mutations[i].addedNodes && mutations[i].addedNodes.length) {
+                var m = mutations[i];
+                if (m.type === 'childList' && m.addedNodes && m.addedNodes.length) {
                     relevant = true;
                     break;
+                }
+                if (m.type === 'characterData') {
+                    relevant = true;
+                    break;
+                }
+                if (m.type === 'attributes' && m.attributeName === 'class') {
+                    var el = m.target;
+                    if (el && el.closest && el.closest(VARIATION_ROOT)) {
+                        relevant = true;
+                        break;
+                    }
                 }
             }
             if (!relevant) return;
             clearTimeout(obsTimer);
-            obsTimer = setTimeout(translatePage, 450);
+            obsTimer = setTimeout(function () {
+                translateVariations();
+            }, 300);
         });
+
         document.addEventListener('DOMContentLoaded', function () {
-            if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+            var watchRoot = document.querySelector('.mont_custom_options') || document.body;
+            if (watchRoot) {
+                observer.observe(watchRoot, {
+                    childList: true,
+                    subtree: true,
+                    characterData: true,
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }
         });
     }
 })();
