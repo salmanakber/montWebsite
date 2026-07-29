@@ -337,6 +337,19 @@ li.nav-item-b2b,
 		display: flex !important;
 	}
 
+	/* Keep first/last items clear from arrow overlap */
+	.category-slider-container.has-tab-overflow .category-slider,
+	.category-slider-container.has-tab-overflow .mont-cat-tabs__scroller,
+	.category-slider-container.has-tab-overflow .category-slider-wrapper.mont-cat-tabs__scroller,
+	.mont-cat-tabs.has-tab-overflow .category-slider,
+	.mont-cat-tabs.has-tab-overflow .mont-cat-tabs__scroller,
+	.mont-cat-tabs.has-tab-overflow .category-slider-wrapper.mont-cat-tabs__scroller {
+		padding-left: 54px !important;
+		padding-right: 54px !important;
+		scroll-padding-left: 54px;
+		scroll-padding-right: 54px;
+	}
+
 	.category-slider-container.has-tab-overflow::before,
 	.category-slider-container.has-tab-overflow::after,
 	.mont-cat-tabs.has-tab-overflow::before,

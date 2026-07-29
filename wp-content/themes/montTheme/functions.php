@@ -77,7 +77,11 @@ add_filter('woocommerce_currency_symbol', 'change_currency_symbol', 10, 2);
 
 function change_currency_symbol($currency_symbol, $currency) {
     if ($currency === 'NOK') {
-        return '';
+        // Keep NOK symbol visible on PDP and variation pricing.
+        if (class_exists('DC_Product_Manager\\DC_Region_Currency')) {
+            return $currency_symbol !== '' ? $currency_symbol : 'kr';
+        }
+        return 'kr';
     }
     return $currency_symbol;
 }
