@@ -995,6 +995,32 @@ flex-direction: column-reverse;
         top: 60% !important;
 }
 
+/* Improve mobile close button visibility/tap area */
+#discount-popup .popup-close {
+    top: max(10px, env(safe-area-inset-top));
+    right: 10px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+    z-index: 100001;
+}
+
+#discount-popup .popup-close:hover,
+#discount-popup .popup-close:focus-visible,
+#discount-popup .popup-close:active {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.02);
+}
+
     .product-image-wrapper,
     .product-image-wrapper img {
         height: 450px;
