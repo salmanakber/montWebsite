@@ -1,11 +1,15 @@
 /**
  * Frontend DeepL applicator.
+ * Translates visible text nodes + common UI attributes.
  */
 (function () {
     'use strict';
 
     var cfg = window.montDeepL || {};
     var debug = /[?&]mont_deepl_debug=1/.test(window.location.search);
+    var normalizeMixed = !!cfg.normalizeMixedToSource;
+    var sameLanguage = (cfg.sourceLang && cfg.targetLang && cfg.sourceLang === cfg.targetLang);
+    var shouldNormalizeMixed = sameLanguage && normalizeMixed;
 
     function log() {
         if (debug && window.console && console.log) {
@@ -14,28 +18,25 @@
     }
 
     if (!cfg.enabled) {
-        log('Disabled — enable in Settings → DeepL Translate');
+        log('Disabled');
         return;
     }
 
     if (!cfg.targetLang) {
-        log('No target language for current region');
+        log('No target language for region');
         return;
     }
 
-    if (!cfg.shouldTranslate) {
-        log('Skipped — source (' + cfg.sourceLang + ') equals target (' + cfg.targetLang + '). Switch region to Italy or International.');
+    if (!cfg.shouldTranslate && !shouldNormalizeMixed) {
+        log('Skipped');
         return;
     }
-
-    log('Active', cfg);
 
     var SKIP_TAGS = {
         SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, CODE: 1, PRE: 1,
-        TEXTAREA: 1, INPUT: 1, SELECT: 1, OPTION: 1,
-        SVG: 1, PATH: 1, MATH: 1, IFRAME: 1
+        TEXTAREA: 1, SVG: 1, PATH: 1, MATH: 1, IFRAME: 1
     };
-
+    var ATTRIBUTE_LIST = ['placeholder', 'title', 'aria-label', 'alt'];
     var sessionCache = Object.create(null);
     var flushTimer = null;
     var applied = false;
@@ -48,37 +49,73 @@
         }
     }
 
-    function shouldSkipNode(node) {
-        if (!node || node.nodeType !== 3) return true;
-        var parent = node.parentElement;
-        if (!parent) return true;
-        if (SKIP_TAGS[parent.tagName]) return true;
-        if (parent.isContentEditable) return true;
-        if (parent.closest && parent.closest('.notranslate, [translate="no"], .dc-region-switcher, .goog-te-banner-frame, #google_translate_element2')) {
+    function looksEnglish(text) {
+        if (!text || !/[A-Za-z]/.test(text)) return false;
+        if (/[æøåÆØÅ]/.test(text)) return false;
+        return /\b(the|and|for|with|search|wishlist|account|store|location|about|shirts|shirt|size|color|cart|checkout|back|home|shop|menu)\b/i.test(text);
+    }
+
+    function shouldSkipElement(el) {
+        if (!el) return true;
+        if (SKIP_TAGS[el.tagName]) return true;
+        if (el.isContentEditable) return true;
+        if (el.closest && el.closest('.notranslate, [translate="no"], .dc-region-switcher, .goog-te-banner-frame, #google_translate_element2')) {
             return true;
         }
-        var text = node.nodeValue;
-        if (!text || !/\S/.test(text)) return true;
-        if (!hasLetters(text)) return true;
-        if (text.trim().length < 2) return true;
         return false;
     }
 
-    function collectNodes(root) {
-        var nodes = [];
+    function shouldTranslateText(text) {
+        if (!text || !/\S/.test(text)) return false;
+        if (!hasLetters(text)) return false;
+        if (text.trim().length < 2) return false;
+        if (shouldNormalizeMixed) {
+            return looksEnglish(text);
+        }
+        return true;
+    }
+
+    function collectTextEntries(root) {
+        var entries = [];
         var walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT, {
             acceptNode: function (node) {
-                return shouldSkipNode(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+                var parent = node.parentElement;
+                if (!parent || shouldSkipElement(parent)) return NodeFilter.FILTER_REJECT;
+                return shouldTranslateText(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
             }
         });
         var current;
         while ((current = walker.nextNode())) {
-            nodes.push(current);
+            entries.push({ type: 'text', node: current, source: current.nodeValue });
         }
-        return nodes;
+        return entries;
     }
 
-    function requestTranslate(texts, done) {
+    function collectAttributeEntries(root) {
+        var entries = [];
+        var elements = (root || document).querySelectorAll('*');
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i];
+            if (shouldSkipElement(el)) continue;
+            for (var j = 0; j < ATTRIBUTE_LIST.length; j++) {
+                var attr = ATTRIBUTE_LIST[j];
+                if (!el.hasAttribute(attr)) continue;
+                var val = el.getAttribute(attr);
+                if (shouldTranslateText(val)) {
+                    entries.push({ type: 'attr', el: el, attr: attr, source: val });
+                }
+            }
+            if ((el.tagName === 'INPUT' || el.tagName === 'BUTTON') && el.hasAttribute('value')) {
+                var value = el.getAttribute('value');
+                if (shouldTranslateText(value)) {
+                    entries.push({ type: 'attr', el: el, attr: 'value', source: value });
+                }
+            }
+        }
+        return entries;
+    }
+
+    function requestTranslate(texts, overrideSourceLang, done) {
         var unique = [];
         var seen = Object.create(null);
         texts.forEach(function (t) {
@@ -93,35 +130,17 @@
             return;
         }
 
-        log('Requesting', unique.length, 'strings via AJAX');
-
         var body = new FormData();
         body.append('action', 'mont_deepl_translate');
         body.append('nonce', cfg.nonce);
-        body.append('source_lang', cfg.sourceLang || 'NB');
+        body.append('source_lang', overrideSourceLang || cfg.sourceLang || 'NB');
         body.append('target_lang', cfg.targetLang);
         body.append('texts', JSON.stringify(unique));
 
-        fetch(cfg.ajaxUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: body
-        })
-            .then(function (r) {
-                return r.text().then(function (text) {
-                    try {
-                        return { ok: r.ok, json: JSON.parse(text) };
-                    } catch (e) {
-                        log('Non-JSON response', text.slice(0, 200));
-                        return { ok: false, json: null };
-                    }
-                });
-            })
-            .then(function (result) {
-                var json = result.json;
+        fetch(cfg.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
+            .then(function (r) { return r.json(); })
+            .then(function (json) {
                 if (json && json.success && json.data && json.data.translations) {
-                    var count = Object.keys(json.data.translations).length;
-                    log('Received', count, 'translations');
                     Object.keys(json.data.translations).forEach(function (k) {
                         sessionCache[k] = json.data.translations[k];
                     });
@@ -136,50 +155,55 @@
             });
     }
 
-    function applyToNodes(nodes) {
+    function applyEntries(entries) {
+        if (!entries.length) return;
         var texts = [];
-        nodes.forEach(function (n) {
-            var t = n.nodeValue;
-            if (t && !sessionCache[t]) texts.push(t);
-        });
+        for (var i = 0; i < entries.length; i++) {
+            if (!sessionCache[entries[i].source]) texts.push(entries[i].source);
+        }
 
-        requestTranslate(texts, function (map) {
+        var sourceOverride = shouldNormalizeMixed ? 'EN-US' : null;
+        requestTranslate(texts, sourceOverride, function (map) {
             var changed = 0;
-            nodes.forEach(function (n) {
-                var src = n.nodeValue;
-                if (map[src] && map[src] !== src) {
-                    n.nodeValue = map[src];
+            for (var j = 0; j < entries.length; j++) {
+                var e = entries[j];
+                var translated = map[e.source];
+                if (!translated || translated === e.source) continue;
+                if (e.type === 'text') {
+                    e.node.nodeValue = translated;
+                    changed++;
+                } else if (e.type === 'attr' && e.el && e.el.getAttribute(e.attr) === e.source) {
+                    e.el.setAttribute(e.attr, translated);
                     changed++;
                 }
-            });
-            if (changed > 0) {
-                log('Applied', changed, 'text nodes');
             }
-            if (!applied) {
+
+            if (!applied && changed > 0) {
                 document.documentElement.setAttribute('lang', (cfg.targetLang || 'en').toLowerCase());
                 document.documentElement.classList.add('mont-deepl-translated');
                 applied = true;
             }
+            log('Applied entries:', changed);
         });
     }
 
     function translatePage() {
         if (!document.body) return;
-        var nodes = collectNodes(document.body);
-        if (!nodes.length) {
-            log('No translatable text nodes found');
+        var entries = collectTextEntries(document.body).concat(collectAttributeEntries(document.body));
+        if (!entries.length) {
+            log('No entries');
             return;
         }
-        log('Found', nodes.length, 'text nodes');
+        log('Translatable entries:', entries.length);
         var size = cfg.batchSize || 60;
-        for (var i = 0; i < nodes.length; i += size) {
-            applyToNodes(nodes.slice(i, i + size));
+        for (var i = 0; i < entries.length; i += size) {
+            applyEntries(entries.slice(i, i + size));
         }
     }
 
     function scheduleTranslate() {
         clearTimeout(flushTimer);
-        flushTimer = setTimeout(translatePage, 80);
+        flushTimer = setTimeout(translatePage, 90);
     }
 
     if (document.readyState === 'loading') {
@@ -189,7 +213,7 @@
     }
 
     window.addEventListener('load', function () {
-        setTimeout(translatePage, 600);
+        setTimeout(translatePage, 700);
     });
 
     if (typeof MutationObserver !== 'undefined') {
@@ -204,12 +228,10 @@
             }
             if (!relevant) return;
             clearTimeout(obsTimer);
-            obsTimer = setTimeout(translatePage, 400);
+            obsTimer = setTimeout(translatePage, 450);
         });
         document.addEventListener('DOMContentLoaded', function () {
-            if (document.body) {
-                observer.observe(document.body, { childList: true, subtree: true });
-            }
+            if (document.body) observer.observe(document.body, { childList: true, subtree: true });
         });
     }
 })();

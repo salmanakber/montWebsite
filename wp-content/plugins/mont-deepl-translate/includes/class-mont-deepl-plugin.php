@@ -50,6 +50,7 @@ class Mont_DeepL_Plugin {
             'source_lang'    => 'NB',
             'monthly_limit'  => 500000,
             'disable_google' => 1,
+            'normalize_mixed_to_source' => 1,
         );
     }
 
@@ -111,7 +112,15 @@ class Mont_DeepL_Plugin {
             'source_lang'      => $source,
             'target_lang'      => $target,
             'current_region'   => $region,
-            'should_translate' => ($target && $source && $target !== $source),
+            'normalize_mixed_to_source' => !empty($settings['normalize_mixed_to_source']),
+            'should_translate' => (
+                $target &&
+                $source &&
+                (
+                    $target !== $source ||
+                    (!empty($settings['normalize_mixed_to_source']) && $target === $source)
+                )
+            ),
         );
     }
 
@@ -156,6 +165,7 @@ class Mont_DeepL_Plugin {
             'sourceLang'      => $diag['source_lang'],
             'targetLang'      => $diag['target_lang'],
             'shouldTranslate' => (bool) $diag['should_translate'],
+            'normalizeMixedToSource' => (bool) $diag['normalize_mixed_to_source'],
             'batchSize'       => 60,
         ));
     }
@@ -196,8 +206,8 @@ class Mont_DeepL_Plugin {
         }
 
         $texts = array_values(array_unique($texts));
-        if (count($texts) > 80) {
-            $texts = array_slice($texts, 0, 80);
+        if (count($texts) > 250) {
+            $texts = array_slice($texts, 0, 250);
         }
 
         if (!$texts) {

@@ -82,6 +82,7 @@ class Mont_DeepL_Admin {
         }
         $out['monthly_limit']  = max(1000, (int) (isset($input['monthly_limit']) ? $input['monthly_limit'] : 500000));
         $out['disable_google'] = !empty($input['disable_google']) ? 1 : 0;
+        $out['normalize_mixed_to_source'] = !empty($input['normalize_mixed_to_source']) ? 1 : 0;
 
         $new_key = isset($input['api_key']) ? trim(sanitize_text_field($input['api_key'])) : '';
         if ($new_key !== '') {
@@ -169,6 +170,7 @@ class Mont_DeepL_Admin {
                     <li><?php esc_html_e('Source language', 'mont-deepl'); ?>: <strong><?php echo esc_html($diag['source_lang']); ?></strong></li>
                     <li><?php esc_html_e('Current region target', 'mont-deepl'); ?>: <strong><?php echo esc_html($diag['target_lang'] ?: '—'); ?></strong> <?php echo $diag['current_region'] ? '(' . esc_html($diag['current_region']) . ')' : ''; ?></li>
                     <li><?php echo $diag['should_translate'] ? '✅' : 'ℹ️'; ?> <?php esc_html_e('Frontend will translate on this visit', 'mont-deepl'); ?>: <strong><?php echo $diag['should_translate'] ? esc_html__('Yes', 'mont-deepl') : esc_html__('No — switch region (e.g. Italy / International) to test', 'mont-deepl'); ?></strong></li>
+                    <li><?php echo !empty($settings['normalize_mixed_to_source']) ? '✅' : 'ℹ️'; ?> <?php esc_html_e('Normalize English leftovers into source language', 'mont-deepl'); ?>: <strong><?php echo !empty($settings['normalize_mixed_to_source']) ? esc_html__('Enabled', 'mont-deepl') : esc_html__('Disabled', 'mont-deepl'); ?></strong></li>
                 </ul>
             </div>
 
@@ -228,6 +230,15 @@ class Mont_DeepL_Admin {
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[disable_google]" value="1" <?php checked(!empty($settings['disable_google'])); ?> />
                                 <?php esc_html_e('Turn off Google/GTranslate hooks from the region switcher', 'mont-deepl'); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Normalize mixed-language source', 'mont-deepl'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[normalize_mixed_to_source]" value="1" <?php checked(!empty($settings['normalize_mixed_to_source'])); ?> />
+                                <?php esc_html_e('When target equals source (ex: Norway/NB), still translate likely English leftovers to source language', 'mont-deepl'); ?>
                             </label>
                         </td>
                     </tr>
