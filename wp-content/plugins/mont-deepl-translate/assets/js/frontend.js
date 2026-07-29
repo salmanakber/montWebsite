@@ -1,6 +1,6 @@
 /**
  * Frontend DeepL applicator.
- * Translates visible text nodes + common UI attributes.
+ * Translates visible text nodes, UI attributes, and forced CSS selector blocks.
  */
 (function () {
     'use strict';
@@ -10,6 +10,7 @@
     var normalizeMixed = !!cfg.normalizeMixedToSource;
     var sameLanguage = (cfg.sourceLang && cfg.targetLang && cfg.sourceLang === cfg.targetLang);
     var shouldNormalizeMixed = sameLanguage && normalizeMixed;
+    var includeSelectors = Array.isArray(cfg.includeSelectors) ? cfg.includeSelectors : [];
 
     function log() {
         if (debug && window.console && console.log) {
@@ -52,7 +53,7 @@
     function looksEnglish(text) {
         if (!text || !/[A-Za-z]/.test(text)) return false;
         if (/[æøåÆØÅ]/.test(text)) return false;
-        return /\b(the|and|for|with|search|wishlist|account|store|location|about|shirts|shirt|size|color|cart|checkout|back|home|shop|menu)\b/i.test(text);
+        return /\b(the|and|for|with|search|wishlist|account|store|location|about|shirts|shirt|size|color|cart|checkout|back|home|shop|menu|add|view|read|more|free|shipping|sale|new|collection)\b/i.test(text);
     }
 
     function shouldSkipElement(el) {
@@ -65,53 +66,109 @@
         return false;
     }
 
-    function shouldTranslateText(text) {
+    function shouldTranslateText(text, force) {
         if (!text || !/\S/.test(text)) return false;
         if (!hasLetters(text)) return false;
         if (text.trim().length < 2) return false;
+        if (force) return true;
         if (shouldNormalizeMixed) {
             return looksEnglish(text);
         }
         return true;
     }
 
-    function collectTextEntries(root) {
+    function entryKey(entry) {
+        if (entry.type === 'text' && entry.node) {
+            return 't:' + entry.source;
+        }
+        if (entry.type === 'attr' && entry.el && entry.attr) {
+            return 'a:' + entry.attr + ':' + entry.source;
+        }
+        return 'x:' + entry.source;
+    }
+
+    function dedupeEntries(entries) {
+        var map = Object.create(null);
+        var out = [];
+        for (var i = 0; i < entries.length; i++) {
+            var key = entryKey(entries[i]);
+            if (!map[key]) {
+                map[key] = 1;
+                out.push(entries[i]);
+            }
+        }
+        return out;
+    }
+
+    function collectTextEntries(root, force) {
         var entries = [];
         var walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT, {
             acceptNode: function (node) {
                 var parent = node.parentElement;
                 if (!parent || shouldSkipElement(parent)) return NodeFilter.FILTER_REJECT;
-                return shouldTranslateText(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                return shouldTranslateText(node.nodeValue, force) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
             }
         });
         var current;
         while ((current = walker.nextNode())) {
-            entries.push({ type: 'text', node: current, source: current.nodeValue });
+            entries.push({ type: 'text', node: current, source: current.nodeValue, force: !!force });
         }
         return entries;
     }
 
-    function collectAttributeEntries(root) {
+    function collectAttributeEntries(root, force) {
         var entries = [];
-        var elements = (root || document).querySelectorAll('*');
+        var scope = root || document;
+        var elements = scope.querySelectorAll ? scope.querySelectorAll('*') : [];
+
         for (var i = 0; i < elements.length; i++) {
             var el = elements[i];
             if (shouldSkipElement(el)) continue;
+
             for (var j = 0; j < ATTRIBUTE_LIST.length; j++) {
                 var attr = ATTRIBUTE_LIST[j];
                 if (!el.hasAttribute(attr)) continue;
                 var val = el.getAttribute(attr);
-                if (shouldTranslateText(val)) {
-                    entries.push({ type: 'attr', el: el, attr: attr, source: val });
+                if (shouldTranslateText(val, force)) {
+                    entries.push({ type: 'attr', el: el, attr: attr, source: val, force: !!force });
                 }
             }
+
             if ((el.tagName === 'INPUT' || el.tagName === 'BUTTON') && el.hasAttribute('value')) {
                 var value = el.getAttribute('value');
-                if (shouldTranslateText(value)) {
-                    entries.push({ type: 'attr', el: el, attr: 'value', source: value });
+                if (shouldTranslateText(value, force)) {
+                    entries.push({ type: 'attr', el: el, attr: 'value', source: value, force: !!force });
                 }
             }
         }
+        return entries;
+    }
+
+    function collectSelectorEntries() {
+        var entries = [];
+        if (!includeSelectors.length) return entries;
+
+        for (var s = 0; s < includeSelectors.length; s++) {
+            var selector = includeSelectors[s];
+            if (!selector) continue;
+
+            var nodes;
+            try {
+                nodes = document.querySelectorAll(selector);
+            } catch (e) {
+                log('Invalid selector skipped:', selector);
+                continue;
+            }
+
+            for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                if (shouldSkipElement(node)) continue;
+                entries = entries
+                    .concat(collectTextEntries(node, true))
+                    .concat(collectAttributeEntries(node, true));
+            }
+        }
+
         return entries;
     }
 
@@ -155,20 +212,23 @@
             });
     }
 
-    function applyEntries(entries) {
+    function applyEntriesWithSource(entries, overrideSourceLang) {
         if (!entries.length) return;
+
         var texts = [];
         for (var i = 0; i < entries.length; i++) {
-            if (!sessionCache[entries[i].source]) texts.push(entries[i].source);
+            if (!sessionCache[entries[i].source]) {
+                texts.push(entries[i].source);
+            }
         }
 
-        var sourceOverride = shouldNormalizeMixed ? 'EN-US' : null;
-        requestTranslate(texts, sourceOverride, function (map) {
+        requestTranslate(texts, overrideSourceLang, function (map) {
             var changed = 0;
             for (var j = 0; j < entries.length; j++) {
                 var e = entries[j];
                 var translated = map[e.source];
                 if (!translated || translated === e.source) continue;
+
                 if (e.type === 'text') {
                     e.node.nodeValue = translated;
                     changed++;
@@ -183,18 +243,45 @@
                 document.documentElement.classList.add('mont-deepl-translated');
                 applied = true;
             }
-            log('Applied entries:', changed);
+            log('Applied entries:', changed, overrideSourceLang || cfg.sourceLang);
         });
+    }
+
+    function applyEntries(entries) {
+        var regular = [];
+        var englishSource = [];
+
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].force && shouldNormalizeMixed) {
+                englishSource.push(entries[i]);
+            } else {
+                regular.push(entries[i]);
+            }
+        }
+
+        if (regular.length) {
+            applyEntriesWithSource(regular, null);
+        }
+        if (englishSource.length) {
+            applyEntriesWithSource(englishSource, 'EN-US');
+        }
     }
 
     function translatePage() {
         if (!document.body) return;
-        var entries = collectTextEntries(document.body).concat(collectAttributeEntries(document.body));
+
+        var entries = dedupeEntries(
+            collectTextEntries(document.body, false)
+                .concat(collectAttributeEntries(document.body, false))
+                .concat(collectSelectorEntries())
+        );
+
         if (!entries.length) {
             log('No entries');
             return;
         }
-        log('Translatable entries:', entries.length);
+
+        log('Translatable entries:', entries.length, 'selectors:', includeSelectors.length);
         var size = cfg.batchSize || 60;
         for (var i = 0; i < entries.length; i += size) {
             applyEntries(entries.slice(i, i + size));
@@ -214,6 +301,7 @@
 
     window.addEventListener('load', function () {
         setTimeout(translatePage, 700);
+        setTimeout(translatePage, 2000);
     });
 
     if (typeof MutationObserver !== 'undefined') {

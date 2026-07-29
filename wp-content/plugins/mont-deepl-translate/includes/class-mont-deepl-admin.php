@@ -83,6 +83,9 @@ class Mont_DeepL_Admin {
         $out['monthly_limit']  = max(1000, (int) (isset($input['monthly_limit']) ? $input['monthly_limit'] : 500000));
         $out['disable_google'] = !empty($input['disable_google']) ? 1 : 0;
         $out['normalize_mixed_to_source'] = !empty($input['normalize_mixed_to_source']) ? 1 : 0;
+        $out['include_selectors'] = isset($input['include_selectors'])
+            ? (string) wp_unslash($input['include_selectors'])
+            : $existing['include_selectors'];
 
         $new_key = isset($input['api_key']) ? trim(sanitize_text_field($input['api_key'])) : '';
         if ($new_key !== '') {
@@ -240,6 +243,27 @@ class Mont_DeepL_Admin {
                                 <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[normalize_mixed_to_source]" value="1" <?php checked(!empty($settings['normalize_mixed_to_source'])); ?> />
                                 <?php esc_html_e('When target equals source (ex: Norway/NB), still translate likely English leftovers to source language', 'mont-deepl'); ?>
                             </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="mont_deepl_include_selectors"><?php esc_html_e('Extra CSS selectors', 'mont-deepl'); ?></label></th>
+                        <td>
+                            <textarea id="mont_deepl_include_selectors" class="large-text code" rows="8" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[include_selectors]" placeholder=".my-block a&#10;.custom-widget .title"><?php echo esc_textarea($settings['include_selectors']); ?></textarea>
+                            <p class="description">
+                                <?php esc_html_e('One CSS selector per line. These are merged with built-in selectors for header, menu, WooCommerce, Elementor, and B2B blocks.', 'mont-deepl'); ?>
+                            </p>
+                            <details style="margin-top:8px;">
+                                <summary><?php esc_html_e('Show built-in selectors', 'mont-deepl'); ?></summary>
+                                <pre style="white-space:pre-wrap;background:#f6f7f7;padding:10px;border:1px solid #dcdcde;margin-top:8px;"><?php echo esc_html(implode("\n", Mont_DeepL_Plugin::default_include_selectors())); ?></pre>
+                            </details>
+                            <p class="description">
+                                <?php
+                                printf(
+                                    esc_html__('Active selectors on frontend: %d', 'mont-deepl'),
+                                    count(Mont_DeepL_Plugin::get_include_selectors())
+                                );
+                                ?>
+                            </p>
                         </td>
                     </tr>
                 </table>

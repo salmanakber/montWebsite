@@ -51,7 +51,76 @@ class Mont_DeepL_Plugin {
             'monthly_limit'  => 500000,
             'disable_google' => 1,
             'normalize_mixed_to_source' => 1,
+            'include_selectors' => '',
         );
+    }
+
+    /**
+     * Built-in selectors for Monte storefront (always merged with custom list).
+     *
+     * @return string[]
+     */
+    public static function default_include_selectors() {
+        return array(
+            '.mont_header_menu a',
+            '.mont_header_menu_mobile a',
+            '.mont_header_mobile_footer__link',
+            '.mont_header_nav-right a',
+            '.category-slider a',
+            '.mont-cat-tabs a',
+            '.mont-cat-tabs button',
+            '#b2bmenu button',
+            '.product-name-b2b',
+            '.woocommerce ul.products li.product',
+            '.woocommerce div.product',
+            '.woocommerce-tabs',
+            '.woocommerce-breadcrumb',
+            '.woocommerce-message',
+            '.woocommerce-info',
+            '.woocommerce-error',
+            '.elementor-widget-heading',
+            '.elementor-widget-text-editor',
+            '.elementor-button',
+            'footer a',
+            'footer p',
+            'footer span',
+            'footer li',
+        );
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function parse_selector_lines($raw) {
+        if (!is_string($raw) || trim($raw) === '') {
+            return array();
+        }
+
+        $selectors = array();
+        $lines     = preg_split('/\r\n|\r|\n/', $raw);
+
+        foreach ($lines as $line) {
+            $line = trim(wp_strip_all_tags($line));
+            if ($line === '') {
+                continue;
+            }
+            // Allow common CSS selector characters only.
+            if (!preg_match('/^[#.\w\[\]:\s>+~*="\',()-]+$/u', $line)) {
+                continue;
+            }
+            $selectors[] = $line;
+        }
+
+        return array_values(array_unique($selectors));
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function get_include_selectors() {
+        $settings = self::settings();
+        $custom   = self::parse_selector_lines(isset($settings['include_selectors']) ? $settings['include_selectors'] : '');
+        return array_values(array_unique(array_merge(self::default_include_selectors(), $custom)));
     }
 
     public static function settings() {
@@ -166,6 +235,7 @@ class Mont_DeepL_Plugin {
             'targetLang'      => $diag['target_lang'],
             'shouldTranslate' => (bool) $diag['should_translate'],
             'normalizeMixedToSource' => (bool) $diag['normalize_mixed_to_source'],
+            'includeSelectors' => self::get_include_selectors(),
             'batchSize'       => 60,
         ));
     }
