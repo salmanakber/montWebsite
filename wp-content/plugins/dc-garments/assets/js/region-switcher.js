@@ -1,6 +1,10 @@
 (function ($) {
     'use strict';
 
+    function deeplHandlesTranslation() {
+        return !!(window.montDeepL && window.montDeepL.disableGoogle);
+    }
+
     /**
      * Map region language codes to Google Translate codes.
      * Google uses "no" for Norwegian (not "nb").
@@ -68,15 +72,19 @@
     }
 
     /**
-     * Prefer GTranslate's doGTranslate when available; otherwise cookie + GT widget.
+     * Prefer DeepL when configured; otherwise GTranslate / Google cookie.
      */
     function applySiteLanguage(lang) {
+        if (deeplHandlesTranslation()) {
+            clearGoogTransCookie();
+            return;
+        }
+
         var target = toGoogleLang(lang);
 
         setGoogTransCookie(target);
 
         if (typeof window.doGTranslate === 'function') {
-            // GTranslate only uses the target side of the pair for the combo.
             window.doGTranslate('auto|' + target);
             return;
         }
@@ -87,6 +95,11 @@
     }
 
     function syncLanguageForCurrentRegion() {
+        if (deeplHandlesTranslation()) {
+            clearGoogTransCookie();
+            return;
+        }
+
         if (typeof dc_region === 'undefined' || !dc_region.currentRegion || !dc_region.regions) {
             return;
         }
@@ -213,7 +226,6 @@
         }
     });
 
-    // Close desktop dropdown when clicking outside.
     $(document).on('click', function (e) {
         if ($(e.target).closest('.dc-region-switcher').length) {
             return;
@@ -224,7 +236,6 @@
     });
 
     $(function () {
-        // Delay slightly so GTranslate can define doGTranslate first when present.
         setTimeout(syncLanguageForCurrentRegion, 400);
     });
 

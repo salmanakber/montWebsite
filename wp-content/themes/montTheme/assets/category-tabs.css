@@ -1,11 +1,11 @@
 /**
  * Category tabs — shop archive (.category-slider) + B2B (#b2bmenu)
- * Active underline: blue, animated 0 → 100% on hover/active
+ * Active state: soft gray (site palette) — no underline
  */
 
 :root {
-	--mont-tab-primary: #2f6ff2;
-	--mont-tab-primary-soft: rgba(47, 111, 242, 0.08);
+	--mont-tab-primary: #8a8a8a;
+	--mont-tab-primary-soft: rgba(0, 0, 0, 0.06);
 	--mont-tab-border: #ececec;
 	--mont-tab-text: #6b6b6b;
 	--mont-tab-text-active: #2b2b2b;
@@ -19,7 +19,7 @@
 	width: min(var(--mont-tab-max), calc(100% - 32px)) !important;
 	max-width: 100% !important;
 	margin: 70px auto 28px !important;
-	padding: 4px 2px 14px !important; /* room so shadow is not clipped */
+	padding: 4px 2px 14px !important;
 	overflow: visible !important;
 	background: transparent !important;
 	border: none !important;
@@ -87,30 +87,16 @@ a.category-item {
 	border-right: 0 !important;
 }
 
-/* Animated underline — grows from 0 to 100% on hover/active */
+/* No underline — remove any leftover ::after bars */
 .category-slider a.category-item::after,
 a.category-item::after {
-	content: "";
-	position: absolute;
-	left: 18%;
-	right: 18%;
-	bottom: 0;
-	height: 3px;
-	border-radius: 3px 3px 0 0;
-	background: var(--mont-tab-primary);
-	transform: scaleX(0);
-	transform-origin: center;
-	transition: transform 0.3s ease;
+	content: none !important;
+	display: none !important;
 }
 
 .category-slider a.category-item:hover {
-	background: #fafafa !important;
+	background: #f7f7f7 !important;
 	color: var(--mont-tab-text-active) !important;
-}
-
-.category-slider a.category-item:hover::after,
-a.category-item:hover::after {
-	transform: scaleX(1);
 }
 
 .category-slider a.category-item.category-active,
@@ -119,11 +105,6 @@ a.category-item.category-active {
 	background: var(--mont-tab-primary-soft) !important;
 	color: var(--mont-tab-text-active) !important;
 	font-weight: 600 !important;
-}
-
-.category-slider a.category-item.category-active::after,
-a.category-item.category-active::after {
-	transform: scaleX(1);
 }
 
 /* ---------- B2B + archive mont-cat-tabs ---------- */
@@ -136,7 +117,6 @@ a.category-item.category-active::after {
 	box-sizing: border-box;
 }
 
-/* B2B listing page — keep tabs below sticky header */
 .b2b-listing-page .mont-cat-tabs,
 .b2b-listing-page .category-slider-container.mont-cat-tabs {
 	margin-top: 8px;
@@ -226,31 +206,16 @@ a.mont-cat-tabs__link {
 	position: relative;
 }
 
-/* Animated underline — grows from 0 to 100% on hover/active */
 button.nav-link-monte-b2b::after,
 a.mont-cat-tabs__link::after {
-	content: "";
-	position: absolute;
-	left: 18%;
-	right: 18%;
-	bottom: 0;
-	height: 3px;
-	border-radius: 3px 3px 0 0;
-	background: var(--mont-tab-primary) !important;
-	transform: scaleX(0);
-	transform-origin: center;
-	transition: transform 0.3s ease;
+	content: none !important;
+	display: none !important;
 }
 
 button.nav-link-monte-b2b:hover,
 a.mont-cat-tabs__link:hover {
-	background: #fafafa !important;
+	background: #f7f7f7 !important;
 	color: var(--mont-tab-text-active) !important;
-}
-
-button.nav-link-monte-b2b:hover::after,
-a.mont-cat-tabs__link:hover::after {
-	transform: scaleX(1);
 }
 
 button.nav-link-monte-b2b.active,
@@ -262,14 +227,6 @@ a.mont-cat-tabs__link.is-active {
 	font-weight: 600 !important;
 }
 
-button.nav-link-monte-b2b.active::after,
-li.is-active button.nav-link-monte-b2b::after,
-li.active-li button.nav-link-monte-b2b::after,
-a.mont-cat-tabs__link.is-active::after {
-	transform: scaleX(1);
-}
-
-/* Override old pill tabs */
 li.nav-item-b2b,
 .mont-cat-item {
 	border-radius: 0 !important;
@@ -289,42 +246,48 @@ li.nav-item-b2b,
 	align-items: center;
 	justify-content: center;
 	position: absolute;
-	top: 0;
-	bottom: 0;
-	z-index: 5;
-	width: 28px;
-	height: auto;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 6;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
 	padding: 0;
 	margin: 0;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
+	border: 1px solid #e6e6e6;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 	color: #1a1a1a;
 	cursor: pointer;
 	line-height: 0;
 	-webkit-tap-highlight-color: transparent;
-	transition: opacity 0.2s ease;
+	transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.slider-arrow:active {
+	background: #f3f3f3;
 }
 
 .slider-arrow svg {
-	width: 18px;
-	height: 18px;
+	width: 22px;
+	height: 22px;
 	display: block;
 	pointer-events: none;
-	stroke-width: 1.5;
+	stroke-width: 2;
 }
 
 .slider-arrow.prev-arrow {
-	left: 0;
+	left: 6px;
 }
 
 .slider-arrow.next-arrow {
-	right: 0;
+	right: 6px;
 }
 
 .slider-arrow.is-disabled {
-	opacity: 0.25;
+	opacity: 0.35;
 	pointer-events: none;
 	cursor: default;
 }
@@ -348,7 +311,6 @@ li.nav-item-b2b,
 		max-width: 100% !important;
 	}
 
-	/* Only the inner strip scrolls — never the page */
 	.category-slider-container .category-slider,
 	.category-slider,
 	.mont-cat-tabs__scroller,
@@ -375,7 +337,6 @@ li.nav-item-b2b,
 		display: flex !important;
 	}
 
-	/* Soft fade behind chevrons so tabs don't clash with arrows */
 	.category-slider-container.has-tab-overflow::before,
 	.category-slider-container.has-tab-overflow::after,
 	.mont-cat-tabs.has-tab-overflow::before,
@@ -384,7 +345,7 @@ li.nav-item-b2b,
 		position: absolute;
 		top: 1px;
 		bottom: 9px;
-		width: 28px;
+		width: 52px;
 		z-index: 4;
 		pointer-events: none;
 	}
@@ -392,14 +353,14 @@ li.nav-item-b2b,
 	.category-slider-container.has-tab-overflow::before,
 	.mont-cat-tabs.has-tab-overflow::before {
 		left: 0;
-		background: linear-gradient(90deg, #fff 55%, rgba(255, 255, 255, 0));
+		background: linear-gradient(90deg, #fff 40%, rgba(255, 255, 255, 0));
 		border-radius: 12px 0 0 12px;
 	}
 
 	.category-slider-container.has-tab-overflow::after,
 	.mont-cat-tabs.has-tab-overflow::after {
 		right: 0;
-		background: linear-gradient(270deg, #fff 55%, rgba(255, 255, 255, 0));
+		background: linear-gradient(270deg, #fff 40%, rgba(255, 255, 255, 0));
 		border-radius: 0 12px 12px 0;
 	}
 
@@ -418,7 +379,6 @@ li.nav-item-b2b,
 		min-width: auto;
 	}
 
-	/* B2B list grows with tabs but stays inside the scroller */
 	ul#b2bmenu.mont-cat-tabs__list,
 	ul#b2bmenu.category-slider {
 		overflow: visible !important;
@@ -437,11 +397,23 @@ li.nav-item-b2b,
 	}
 
 	.slider-arrow {
-		width: 24px;
+		width: 48px;
+		height: 48px;
+		min-width: 48px;
+		min-height: 48px;
+	}
+
+	.slider-arrow.prev-arrow {
+		left: 4px;
+	}
+
+	.slider-arrow.next-arrow {
+		right: 4px;
 	}
 
 	.slider-arrow svg {
-		width: 16px;
-		height: 16px;
+		width: 24px;
+		height: 24px;
+		stroke-width: 2.25;
 	}
 }
