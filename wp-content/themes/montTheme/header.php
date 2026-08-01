@@ -45,15 +45,9 @@
     height: 21px;
 }
 /* Current page */
-.mont_header_menu .current-menu-item > a {
-    font-weight: bold;
-}
-
-/* Parent of current page (for dropdowns) */
-.mont_header_menu .current-menu-parent > a,
-.mont_header_menu .current-menu-ancestor > a,
-.mont_header_menu .current_page_item > a {
-    font-weight: bold;
+.current_page_item a {
+    font-weight: 500;
+    color: black;
 }
 
 	</style>
