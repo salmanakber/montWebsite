@@ -46,8 +46,8 @@
 }
 /* Current page */
 .current_page_item a {
-    font-weight: 500;
-    color: black;
+    font-weight: 500 !important;
+    color: black !important;
 }
 
 	</style>
