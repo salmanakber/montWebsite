@@ -121,4 +121,39 @@ jQuery(document).ready(function($) {
                     });
                 }
             );
+            
+    // B2C size guide drawer
+    function openMonteSizeGuide() {
+        var $drawer = $('#monte-size-guide');
+        if (!$drawer.length) return;
+        $drawer.addClass('is-open').attr('aria-hidden', 'false');
+        $('body').addClass('monte-size-drawer-open');
+    }
+
+    function closeMonteSizeGuide() {
+        $('#monte-size-guide').removeClass('is-open').attr('aria-hidden', 'true');
+        $('body').removeClass('monte-size-drawer-open');
+    }
+
+    $(document).on('click', '[data-monte-size-guide], .mont_size-guide-btn', function(e) {
+        e.preventDefault();
+        openMonteSizeGuide();
+    });
+
+    $(document).on('click', '.monte-size-drawer__close', function(e) {
+        e.preventDefault();
+        closeMonteSizeGuide();
+    });
+
+    $(document).on('click', '.monte-size-drawer.is-open', function(e) {
+        if (e.target === this) {
+            closeMonteSizeGuide();
+        }
+    });
+
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeMonteSizeGuide();
+        }
+    });
 });

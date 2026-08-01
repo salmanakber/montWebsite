@@ -539,7 +539,21 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 				</div>
 			</div>
 			<div class="mont_straight_line">
-				Vennligst fyll ut
+				<span class="mont_straight_line__label">Vennligst fyll ut</span>
+				<button type="button" class="mont_size-guide-btn" data-monte-size-guide aria-haspopup="dialog">
+					<svg class="mont_size-guide-btn__icon" viewBox="0 0 18 18" width="14" height="14" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<rect x="1.5" y="1.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="7" y="1.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="12.5" y="1.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="1.5" y="7" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="7" y="7" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="12.5" y="7" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="1.5" y="12.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="7" y="12.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+						<rect x="12.5" y="12.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
+					</svg>
+					<span>Size Guide</span>
+				</button>
 			</div>
 			<div class="mont_custom_options">
 				<div class="mont_custom_option_list_loop">
@@ -884,3 +898,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 </script>
+<?php
+get_template_part( 'woocommerce/size-guide', 'drawer' );
+?>

@@ -117,18 +117,10 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Size guide tabs
+    // Size guide drawer
     $(document).on('click', '.b2b-size-guide', function(e) {
         e.preventDefault();
         openB2bModal($('#monte-b2b-size'));
-    });
-
-    $(document).on('click', '.b2b-size-tab', function() {
-        var fit = $(this).data('fit');
-        $('.b2b-size-tab').removeClass('is-active').attr('aria-selected', 'false');
-        $(this).addClass('is-active').attr('aria-selected', 'true');
-        $('.b2b-size-pane').removeClass('is-active').attr('hidden', true);
-        $('.b2b-size-pane[data-fit="' + fit + '"]').addClass('is-active').removeAttr('hidden');
     });
 
   $(document).on('click', '.b2b-check-to-go-collar', function(e) {
