@@ -388,24 +388,66 @@ body.monte-size-drawer-open {
 }
 .mont_loading {
     position: relative;
-    background: #00000008;
-    filter: opacity(.5);
+    pointer-events: none;
 }
 
+.mont_loading::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.72);
+    border-radius: 6px;
+}
 
 .mont_loading::after {
     content: "";
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 18px;
-    height: 18px;
-    border: 1px solid #c9c3c3;
-    border-top: 1px solid #00000000;
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+    border: 2px solid #d8d8d8;
+    border-top-color: #333;
     border-radius: 50%;
-    animation: spin 0.8slinear infinite;
-    transform: translate(-50%, -50%);
+    animation: mont-spin 0.7s linear infinite;
+    z-index: 21;
+}
 
+.mont_loading-label {
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 28px);
+    transform: translateX(-50%);
+    z-index: 22;
+    background: #111;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+}
+
+.mont_loading .mont_loading-label,
+.mont_loading > .mont_loading-label {
+    display: block;
+}
+
+/* Ensure skreddersydd / variation blocks can host the overlay */
+.mont_variation-group.mont_loading,
+.mont_variation-selector.mont_loading,
+.skreddersydd.mont_loading {
+    min-height: 72px;
+}
+
+@keyframes mont-spin {
+    to { transform: rotate(360deg); }
 }
 
 @keyframes spin {

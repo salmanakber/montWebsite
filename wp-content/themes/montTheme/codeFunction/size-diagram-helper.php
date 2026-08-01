@@ -60,19 +60,28 @@ class Mont_Size_Diagram_Helper {
 	 * Find Size/{Fit}/{SizeFolder} absolute path for a fit+size combo.
 	 */
 	public static function find_size_folder( $fit_slug, $size_slug ) {
+		static $cache = array();
+		$cache_key = strtolower( (string) $fit_slug ) . '|' . strtolower( (string) $size_slug );
+		if ( isset( $cache[ $cache_key ] ) ) {
+			return $cache[ $cache_key ];
+		}
+
 		$fit_folder = self::normalize_fit_folder( $fit_slug );
 		$code       = self::extract_size_code( $size_slug );
 		if ( ! $fit_folder || ! $code ) {
+			$cache[ $cache_key ] = '';
 			return '';
 		}
 
 		$base = self::size_root() . '/' . $fit_folder;
 		if ( ! is_dir( $base ) ) {
+			$cache[ $cache_key ] = '';
 			return '';
 		}
 
 		$dirs = scandir( $base );
 		if ( ! $dirs ) {
+			$cache[ $cache_key ] = '';
 			return '';
 		}
 
@@ -87,13 +96,13 @@ class Mont_Size_Diagram_Helper {
 			}
 			if ( 0 === strpos( $dir, $code ) ) {
 				$next = substr( $dir, strlen( $code ), 1 );
-				// Prefer code followed by a letter (40M) over accidental longer numbers (if any).
 				$score = ( $next && ! ctype_digit( $next ) ) ? 2 : 1;
 				$matches[] = array( 'path' => $path, 'score' => $score, 'len' => strlen( $dir ) );
 			}
 		}
 
 		if ( empty( $matches ) ) {
+			$cache[ $cache_key ] = '';
 			return '';
 		}
 
@@ -107,7 +116,8 @@ class Mont_Size_Diagram_Helper {
 			}
 		);
 
-		return $matches[0]['path'];
+		$cache[ $cache_key ] = $matches[0]['path'];
+		return $cache[ $cache_key ];
 	}
 
 	/**

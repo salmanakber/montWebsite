@@ -28,8 +28,24 @@ class CustomVariation {
 		add_action( 'wp_ajax_get_all_variation', array( $this, 'getAllvariation' ) );
 		add_action( 'wp_ajax_nopriv_get_all_variation', array( $this, 'getAllvariation' ) );
 		add_action( 'wp_ajax_mont_scan_size_images', array( $this, 'ajax_scan_size_images' ) );
-		add_action( 'after_setup_theme', array( $this, 'create_table' ) );
-		add_action( 'admin_init', array( $this, 'maybe_migrate_schema' ) );
+		// Schema only once (dbDelta on every request made the whole site slow).
+		add_action( 'admin_init', array( $this, 'maybe_install_schema' ) );
+	}
+
+	/**
+	 * Create/migrate variation table at most once per schema version.
+	 */
+	public function maybe_install_schema() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$version = '1.2.0';
+		if ( get_option( 'mont_variation_schema_version' ) === $version ) {
+			return;
+		}
+		$this->create_table();
+		$this->maybe_migrate_schema();
+		update_option( 'mont_variation_schema_version', $version, true );
 	}
 
 	public function customVariation( $product ) {
@@ -139,12 +155,13 @@ class CustomVariation {
 			$wpdb->query( "ALTER TABLE {$this->table_name} ADD diagram_images longtext NULL AFTER neck_collar" );
 		}
 
-		// Backfill body_fit / size_slug from attributes key.
-		$rows = $wpdb->get_results( "SELECT id, attributes, body_fit, size_slug FROM {$this->table_name}" );
+		// One-time backfill only for rows still missing fit/size columns.
+		$rows = $wpdb->get_results(
+			"SELECT id, attributes, body_fit, size_slug FROM {$this->table_name}
+			 WHERE (body_fit = '' OR body_fit IS NULL OR size_slug = '' OR size_slug IS NULL)
+			 LIMIT 500"
+		);
 		foreach ( $rows as $row ) {
-			if ( ! empty( $row->body_fit ) && ! empty( $row->size_slug ) ) {
-				continue;
-			}
 			$parts = explode( '___', (string) $row->attributes );
 			if ( count( $parts ) >= 2 ) {
 				$wpdb->update(
