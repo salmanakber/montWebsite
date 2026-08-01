@@ -109,6 +109,7 @@ class CustomVariation {
             half_bottom float NOT NULL DEFAULT 0,
             armhole float NOT NULL DEFAULT 0,
             neck_collar float NOT NULL DEFAULT 0,
+            diagram_images longtext NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             UNIQUE KEY attributes (attributes)
@@ -133,6 +134,9 @@ class CustomVariation {
 		}
 		if ( ! in_array( 'size_slug', $cols, true ) ) {
 			$wpdb->query( "ALTER TABLE {$this->table_name} ADD size_slug varchar(120) DEFAULT '' AFTER body_fit" );
+		}
+		if ( ! in_array( 'diagram_images', $cols, true ) ) {
+			$wpdb->query( "ALTER TABLE {$this->table_name} ADD diagram_images longtext NULL AFTER neck_collar" );
 		}
 
 		// Backfill body_fit / size_slug from attributes key.
@@ -175,6 +179,7 @@ class CustomVariation {
 		}
 		$theme_dir = get_template_directory();
 		$theme_uri = get_template_directory_uri();
+		wp_enqueue_media();
 		wp_enqueue_style(
 			'mont-variation-admin',
 			$theme_uri . '/assets/admin-variation-settings.css',
@@ -195,10 +200,17 @@ class CustomVariation {
 				'ajaxurl'  => admin_url( 'admin-ajax.php' ),
 				'nonce'    => wp_create_nonce( 'variation-settings-nonce' ),
 				'fields'   => array_keys( self::MEASUREMENT_FIELDS ),
+				'diagrams' => Mont_Size_Diagram_Helper::MEASUREMENT_FILES,
+				'labels'   => self::MEASUREMENT_FIELDS,
 				'i18n'     => array(
 					'saved'   => 'All changes saved.',
 					'error'   => 'Could not save. Please try again.',
 					'confirm' => 'Delete this size chart row?',
+					'upload'  => 'Upload / Replace',
+					'clear'   => 'Use auto',
+					'custom'  => 'Custom',
+					'auto'    => 'Auto',
+					'missing' => 'Missing',
 				),
 			)
 		);
@@ -264,7 +276,7 @@ class CustomVariation {
 			<div class="mont-vs-hero">
 				<div>
 					<h1>Size Chart Studio</h1>
-					<p>Manage body-fit × size measurements in bulk. Diagrams load automatically from <code>Size/</code> when a customer picks a fit and size.</p>
+					<p>Manage body-fit × size measurements in bulk. Diagrams auto-load from <code>Size/</code> — you can upload or replace any diagram per size.</p>
 				</div>
 				<div class="mont-vs-hero__actions">
 					<button type="button" class="button button-primary mont-vs-save-bulk" id="mont-vs-save-bulk">Save all changes</button>
@@ -342,13 +354,20 @@ class CustomVariation {
 										<?php foreach ( $sizes as $size ) :
 											$key = $fit->slug . '___' . $size->slug;
 											$row = isset( $rows[ $key ] ) ? $rows[ $key ] : null;
-											$imgs = Mont_Size_Diagram_Helper::get_images_for( $fit->slug, $size->slug );
+											$overrides = ( $row && ! empty( $row->diagram_images ) )
+												? Mont_Size_Diagram_Helper::parse_overrides( $row->diagram_images )
+												: array();
+											$auto_imgs = Mont_Size_Diagram_Helper::get_images_for( $fit->slug, $size->slug );
+											$imgs      = Mont_Size_Diagram_Helper::get_merged_images( $fit->slug, $size->slug, $overrides );
+											$custom_n  = count( array_filter( $overrides ) );
 											?>
 											<tr class="mont-vs-row"
 												data-id="<?php echo $row ? (int) $row->id : 0; ?>"
 												data-fit="<?php echo esc_attr( $fit->slug ); ?>"
 												data-size="<?php echo esc_attr( $size->slug ); ?>"
-												data-key="<?php echo esc_attr( $key ); ?>">
+												data-key="<?php echo esc_attr( $key ); ?>"
+												data-overrides="<?php echo esc_attr( wp_json_encode( $overrides ) ); ?>"
+												data-auto="<?php echo esc_attr( wp_json_encode( $auto_imgs ) ); ?>">
 												<td class="sticky-col">
 													<strong><?php echo esc_html( $size->name ); ?></strong>
 													<code><?php echo esc_html( $size->slug ); ?></code>
@@ -371,9 +390,15 @@ class CustomVariation {
 															<img src="<?php echo esc_url( $img_url ); ?>" alt="">
 														<?php endforeach; ?>
 														<span class="mont-vs-badge ok"><?php echo count( $imgs ); ?> linked</span>
+														<?php if ( $custom_n ) : ?>
+															<span class="mont-vs-badge custom"><?php echo (int) $custom_n; ?> custom</span>
+														<?php endif; ?>
 													<?php else : ?>
 														<span class="mont-vs-badge warn">No Size/ match</span>
 													<?php endif; ?>
+													<button type="button" class="button button-small mont-vs-edit-diagrams">
+														<?php echo $imgs ? 'Replace / Upload' : 'Upload diagrams'; ?>
+													</button>
 												</td>
 												<td>
 													<?php if ( $row ) : ?>
@@ -388,6 +413,25 @@ class CustomVariation {
 						</section>
 					<?php endforeach; ?>
 				</main>
+			</div>
+
+			<!-- Diagram manager modal -->
+			<div class="mont-vs-modal" id="mont-vs-diagram-modal" hidden>
+				<div class="mont-vs-modal__backdrop" data-close-diagrams></div>
+				<div class="mont-vs-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="mont-vs-diagram-title">
+					<header class="mont-vs-modal__head">
+						<div>
+							<h2 id="mont-vs-diagram-title">Diagrams</h2>
+							<p class="mont-vs-modal__sub" id="mont-vs-diagram-sub"></p>
+						</div>
+						<button type="button" class="mont-vs-modal__close" data-close-diagrams aria-label="Close">&times;</button>
+					</header>
+					<div class="mont-vs-modal__body" id="mont-vs-diagram-slots"></div>
+					<footer class="mont-vs-modal__foot">
+						<button type="button" class="button" data-close-diagrams>Cancel</button>
+						<button type="button" class="button button-primary" id="mont-vs-diagram-apply">Apply diagrams</button>
+					</footer>
+				</div>
 			</div>
 		</div>
 		<?php
@@ -465,14 +509,44 @@ class CustomVariation {
 				? floatval( $source[ $field ] )
 				: 0;
 		}
+
+		if ( array_key_exists( 'diagram_images', $source ) ) {
+			$raw = $source['diagram_images'];
+			if ( is_array( $raw ) ) {
+				$clean = array();
+				foreach ( $raw as $k => $url ) {
+					$url = esc_url_raw( (string) $url );
+					if ( $url ) {
+						$clean[ sanitize_key( $k ) ] = $url;
+					}
+				}
+				$data['diagram_images'] = wp_json_encode( $clean );
+			} elseif ( is_string( $raw ) ) {
+				$parsed = json_decode( $raw, true );
+				$data['diagram_images'] = is_array( $parsed ) ? wp_json_encode( $parsed ) : '{}';
+			} else {
+				$data['diagram_images'] = '{}';
+			}
+		}
+
 		return $data;
 	}
 
 	private function upsert_row( $data, $id = 0 ) {
 		global $wpdb;
-		$format = array( '%s', '%s', '%s', '%f', '%f', '%f', '%f', '%f', '%f', '%f', '%f' );
+
+		$has_diagrams = array_key_exists( 'diagram_images', $data );
+		$format       = array( '%s', '%s', '%s', '%f', '%f', '%f', '%f', '%f', '%f', '%f', '%f' );
+		if ( $has_diagrams ) {
+			$format[] = '%s';
+		}
 
 		if ( $id > 0 ) {
+			// When updating without diagram payload, don't wipe existing images.
+			if ( ! $has_diagrams ) {
+				unset( $data['diagram_images'] );
+				$format = array( '%s', '%s', '%s', '%f', '%f', '%f', '%f', '%f', '%f', '%f', '%f' );
+			}
 			$wpdb->update( $this->table_name, $data, array( 'id' => $id ), $format, array( '%d' ) );
 			return $id;
 		}
@@ -481,10 +555,18 @@ class CustomVariation {
 			$wpdb->prepare( "SELECT id FROM {$this->table_name} WHERE attributes = %s", $data['attributes'] )
 		);
 		if ( $existing ) {
+			if ( ! $has_diagrams ) {
+				unset( $data['diagram_images'] );
+				$format = array( '%s', '%s', '%s', '%f', '%f', '%f', '%f', '%f', '%f', '%f', '%f' );
+			}
 			$wpdb->update( $this->table_name, $data, array( 'id' => (int) $existing ), $format, array( '%d' ) );
 			return (int) $existing;
 		}
 
+		if ( ! $has_diagrams ) {
+			$data['diagram_images'] = '{}';
+			$format[] = '%s';
+		}
 		$wpdb->insert( $this->table_name, $data, $format );
 		return (int) $wpdb->insert_id;
 	}
@@ -528,7 +610,9 @@ class CustomVariation {
 			$fit  = ! empty( $row->body_fit ) ? $row->body_fit : ( explode( '___', $row->attributes )[0] ?? '' );
 			$size = ! empty( $row->size_slug ) ? $row->size_slug : ( explode( '___', $row->attributes )[1] ?? '' );
 			$item = (array) $row;
-			$item['images'] = Mont_Size_Diagram_Helper::get_images_for( $fit, $size );
+			$overrides = ! empty( $row->diagram_images ) ? $row->diagram_images : '{}';
+			$item['images'] = Mont_Size_Diagram_Helper::get_merged_images( $fit, $size, $overrides );
+			$item['image_overrides'] = Mont_Size_Diagram_Helper::parse_overrides( $overrides );
 			$out[] = $item;
 		}
 

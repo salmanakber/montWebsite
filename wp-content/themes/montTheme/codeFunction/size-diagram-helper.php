@@ -171,6 +171,46 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
+	 * Merge auto Size/ diagrams with custom URL overrides (custom wins).
+	 *
+	 * @param string $fit_slug
+	 * @param string $size_slug
+	 * @param array|string $overrides JSON string or assoc array of measurement => url
+	 * @return array
+	 */
+	public static function get_merged_images( $fit_slug, $size_slug, $overrides = array() ) {
+		$auto = self::get_images_for( $fit_slug, $size_slug );
+		if ( is_string( $overrides ) ) {
+			$decoded = json_decode( $overrides, true );
+			$overrides = is_array( $decoded ) ? $decoded : array();
+		}
+		if ( ! is_array( $overrides ) ) {
+			$overrides = array();
+		}
+		foreach ( $overrides as $key => $url ) {
+			$url = esc_url_raw( (string) $url );
+			if ( $url ) {
+				$auto[ $key ] = $url;
+			}
+		}
+		return $auto;
+	}
+
+	/**
+	 * Decode overrides JSON safely.
+	 */
+	public static function parse_overrides( $raw ) {
+		if ( is_array( $raw ) ) {
+			return $raw;
+		}
+		if ( ! is_string( $raw ) || $raw === '' ) {
+			return array();
+		}
+		$decoded = json_decode( $raw, true );
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
 	 * Scan Size/ tree for admin: fit => [ size_code => folder_name, images_count ]
 	 */
 	public static function scan_library() {
