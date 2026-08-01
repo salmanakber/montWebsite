@@ -94,11 +94,7 @@
             </li>
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_bottom">
-                <img src="<?php echo get_stylesheet_directory_uri().'/woocommerce/custom-sizes/images/half-bottom.jpg'; ?>
-
-
-
-                " alt="Half Bottom" class="mont_sizes-measurement-icon">
+                <img src="<?php echo get_stylesheet_directory_uri().'/woocommerce/custom-sizes/images/half-bottom.jpg'; ?>" alt="Half Bottom" class="mont_sizes-measurement-icon">
                 <div class="mont_sizes-measurement-row">
                     <div class="mont_sizes-measurement-details">
                         <h3 class="mont_sizes-measurement-name">Nederst kant</h3>

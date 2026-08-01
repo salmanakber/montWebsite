@@ -1,0 +1,334 @@
+/* Size Chart Studio — Variation Settings admin */
+.mont-vs-wrap {
+	max-width: 1400px;
+	margin: 20px 20px 40px 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.mont-vs-hero {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 20px;
+	padding: 22px 24px;
+	background: linear-gradient(135deg, #1f242c 0%, #3a414d 100%);
+	color: #fff;
+	border-radius: 14px;
+	margin-bottom: 18px;
+	box-shadow: 0 10px 30px rgba(20, 24, 32, 0.18);
+}
+
+.mont-vs-hero h1 {
+	margin: 0 0 6px;
+	color: #fff;
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.mont-vs-hero p {
+	margin: 0;
+	opacity: 0.82;
+	max-width: 640px;
+	line-height: 1.45;
+}
+
+.mont-vs-hero code {
+	background: rgba(255, 255, 255, 0.12);
+	padding: 1px 6px;
+	border-radius: 4px;
+}
+
+.mont-vs-hero__actions {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.mont-vs-hero__actions .button-primary {
+	background: #6aa6ff !important;
+	border-color: #6aa6ff !important;
+	color: #111 !important;
+	font-weight: 600;
+	text-shadow: none;
+	box-shadow: none;
+}
+
+.mont-vs-toast {
+	position: sticky;
+	top: 32px;
+	z-index: 20;
+	margin-bottom: 12px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	background: #e8f6ee;
+	border: 1px solid #b7e0c5;
+	color: #1d5c38;
+	font-weight: 600;
+}
+
+.mont-vs-toast.is-error {
+	background: #fdecea;
+	border-color: #f5c2c0;
+	color: #8a1f1b;
+}
+
+.mont-vs-layout {
+	display: grid;
+	grid-template-columns: 260px 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+.mont-vs-sidebar {
+	background: #fff;
+	border: 1px solid #e6e8ec;
+	border-radius: 12px;
+	padding: 14px;
+	position: sticky;
+	top: 46px;
+}
+
+.mont-vs-sidebar h3 {
+	margin: 0 0 10px;
+	font-size: 12px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #7a8190;
+}
+
+.mont-vs-fit-tabs {
+	list-style: none;
+	margin: 0 0 18px;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.mont-vs-fit-tab {
+	width: 100%;
+	text-align: left;
+	border: 1px solid #e6e8ec;
+	background: #fafbfc;
+	border-radius: 8px;
+	padding: 10px 12px;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	transition: 0.15s ease;
+}
+
+.mont-vs-fit-tab:hover {
+	border-color: #c9d3e0;
+}
+
+.mont-vs-fit-tab.is-active {
+	background: #eef4ff;
+	border-color: #9bb7e8;
+	box-shadow: inset 3px 0 0 #4d7fd6;
+	font-weight: 700;
+}
+
+.mont-vs-fit-tab__slug {
+	font-size: 11px;
+	color: #8a93a3;
+	font-weight: 400;
+}
+
+.mont-vs-library .description {
+	margin-top: 0;
+	color: #7a8190;
+}
+
+.mont-vs-lib-group {
+	border: 1px solid #eceff3;
+	border-radius: 8px;
+	margin-bottom: 8px;
+	padding: 8px 10px;
+	background: #fafbfc;
+}
+
+.mont-vs-lib-group summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.mont-vs-lib-group ul {
+	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mont-vs-lib-group li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	padding: 4px 0;
+	border-top: 1px solid #f0f2f5;
+	flex-wrap: wrap;
+}
+
+.mont-vs-badge {
+	display: inline-block;
+	font-size: 11px;
+	padding: 2px 7px;
+	border-radius: 999px;
+	background: #eef1f5;
+	color: #556070;
+	white-space: nowrap;
+}
+
+.mont-vs-badge.ok {
+	background: #e5f6ec;
+	color: #1f6b3f;
+}
+
+.mont-vs-badge.warn {
+	background: #fff4e5;
+	color: #8a5a12;
+}
+
+.mont-vs-main {
+	min-width: 0;
+}
+
+.mont-vs-panel {
+	display: none;
+	background: #fff;
+	border: 1px solid #e6e8ec;
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.mont-vs-panel.is-active {
+	display: block;
+}
+
+.mont-vs-panel__head {
+	padding: 16px 18px;
+	border-bottom: 1px solid #eef0f3;
+	background: #fafbfc;
+}
+
+.mont-vs-panel__head h2 {
+	margin: 0 0 4px;
+	font-size: 18px;
+}
+
+.mont-vs-panel__head p {
+	margin: 0;
+	color: #6b7380;
+}
+
+.mont-vs-table-wrap {
+	overflow: auto;
+	max-height: calc(100vh - 220px);
+}
+
+.mont-vs-matrix {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	min-width: 1100px;
+}
+
+.mont-vs-matrix th,
+.mont-vs-matrix td {
+	padding: 8px 8px;
+	border-bottom: 1px solid #eef0f3;
+	border-right: 1px solid #f3f5f7;
+	vertical-align: middle;
+	text-align: center;
+	font-size: 12px;
+}
+
+.mont-vs-matrix thead th {
+	position: sticky;
+	top: 0;
+	z-index: 3;
+	background: #f3f6fa;
+	font-weight: 700;
+	color: #2d3440;
+	white-space: nowrap;
+}
+
+.mont-vs-matrix .sticky-col {
+	position: sticky;
+	left: 0;
+	z-index: 2;
+	background: #fff;
+	text-align: left;
+	min-width: 120px;
+}
+
+.mont-vs-matrix thead .sticky-col {
+	z-index: 4;
+	background: #f3f6fa;
+}
+
+.mont-vs-matrix .sticky-col strong {
+	display: block;
+	font-size: 13px;
+	color: #1f2430;
+}
+
+.mont-vs-matrix .sticky-col code {
+	font-size: 10px;
+	color: #8a93a3;
+	background: transparent;
+}
+
+.mont-vs-input {
+	width: 72px !important;
+	max-width: 100%;
+	text-align: center;
+	border: 1px solid #d9dee7 !important;
+	border-radius: 6px !important;
+	padding: 6px 4px !important;
+	height: 34px !important;
+	box-shadow: none !important;
+	background: #fff;
+}
+
+.mont-vs-input:focus {
+	border-color: #6aa6ff !important;
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(106, 166, 255, 0.2) !important;
+}
+
+.mont-vs-row.is-dirty {
+	background: #fffbeb;
+}
+
+.mont-vs-row.is-dirty .sticky-col {
+	background: #fffbeb;
+}
+
+.mont-vs-thumbs {
+	white-space: nowrap;
+}
+
+.mont-vs-thumbs img {
+	width: 28px;
+	height: 28px;
+	object-fit: cover;
+	border-radius: 4px;
+	border: 1px solid #e5e8ee;
+	vertical-align: middle;
+	margin-right: 2px;
+}
+
+.mont-vs-delete {
+	color: #b32d2e !important;
+}
+
+@media (max-width: 1100px) {
+	.mont-vs-layout {
+		grid-template-columns: 1fr;
+	}
+	.mont-vs-sidebar {
+		position: static;
+	}
+}

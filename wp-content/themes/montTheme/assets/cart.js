@@ -71,6 +71,35 @@ jQuery(document).ready(function ($) {
         return formData;
     }
 
+    function getSelectedBodyFitSlug() {
+        var $checked = $('input.pa_body-fit-checkbox:checked');
+        if ($checked.length) {
+            return $checked.closest('.mont_option-item').data('slug') || $checked.val() || '';
+        }
+        return '';
+    }
+
+    function getSelectedSizeSlug() {
+        var $checked = $('input.pa_size-checkbox:checked');
+        if ($checked.length) {
+            return $checked.closest('.mont_option-item').data('slug') || '';
+        }
+        return '';
+    }
+
+    function getRawMontSizes() {
+        var sizes = {};
+        $('#customizationForm input[name^="mont_sizes["]').each(function () {
+            var name = $(this).attr('name') || '';
+            var match = name.match(/mont_sizes\[([^\]]+)\]/);
+            if (!match) return;
+            var val = $.trim($(this).val());
+            if (!val || val === '0') return;
+            sizes[match[1]] = val;
+        });
+        return sizes;
+    }
+
     $('.custom-add-to-cart').on('click', function (e) {
         e.preventDefault();
         var letThis = $(this);
@@ -78,9 +107,12 @@ jQuery(document).ready(function ($) {
         var product_id = $(this).data('product_id');
         var body_fit = getSelectedBodyFit();
         var size = getSelectedSize();
+        var body_fit_slug = getSelectedBodyFitSlug();
+        var size_slug = getSelectedSizeSlug();
         var collar_type = getSelectedCollar();
         var cuff_type = getSelectedCuff();
         var formData = getCustomSizingData();
+        var mont_sizes = getRawMontSizes();
 
         var isValid = true;
 
@@ -110,9 +142,12 @@ jQuery(document).ready(function ($) {
                 product_id: product_id,
                 body_fit: body_fit,
                 size: size,
+                body_fit_slug: body_fit_slug,
+                size_slug: size_slug,
                 collar_type: collar_type,
                 cuff_type: cuff_type,
                 form_data: formData,
+                mont_sizes: mont_sizes,
                 added_price: $('#added-price').val() || 0
             },
             success: function (response) {

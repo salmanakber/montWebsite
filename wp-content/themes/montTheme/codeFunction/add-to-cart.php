@@ -82,21 +82,83 @@ class Custom_Add_To_Cart {
             $custom_data['custom_price'] = $custom_price;
         }
 
+        $body_fit_slug = isset($_POST['body_fit_slug']) ? sanitize_title(wp_unslash($_POST['body_fit_slug'])) : '';
+        $size_slug     = isset($_POST['size_slug']) ? sanitize_title(wp_unslash($_POST['size_slug'])) : '';
+
+        if ($body_fit_slug) {
+            $custom_data['_body_fit_slug'] = $body_fit_slug;
+        }
+        if ($size_slug) {
+            $custom_data['_size_slug'] = $size_slug;
+        }
+
+        // Keep raw measurement keys for reliable order processing.
+        if (!empty($_POST['mont_sizes']) && is_array($_POST['mont_sizes'])) {
+            foreach ($_POST['mont_sizes'] as $mkey => $mval) {
+                $mkey = sanitize_key($mkey);
+                $mval = sanitize_text_field(wp_unslash($mval));
+                if ($mval === '' || $mval === '0') {
+                    continue;
+                }
+                $custom_data['_mont_' . $mkey] = is_numeric($mval) ? ($mval . ' cm') : $mval;
+            }
+        }
+
+        $variation_id = $this->resolve_variation_id($product_id, $body_fit_slug, $size_slug);
+        $variation_attrs = array();
+        if ($variation_id && $body_fit_slug) {
+            $variation_attrs['attribute_pa_body-fit'] = $body_fit_slug;
+        }
+        if ($variation_id && $size_slug) {
+            $variation_attrs['attribute_pa_size'] = $size_slug;
+        }
+
         $cart_item_data = array(
             'custom_data' => $custom_data,
             'unique_key'  => md5(wp_json_encode($custom_data) . microtime()),
         );
 
-        $cart_item_key = WC()->cart->add_to_cart($product_id, 1, 0, array(), $cart_item_data);
+        $cart_item_key = WC()->cart->add_to_cart($product_id, 1, $variation_id, $variation_attrs, $cart_item_data);
+
+        if (!$cart_item_key) {
+            // Fallback: parent product if variation match fails.
+            $cart_item_key = WC()->cart->add_to_cart($product_id, 1, 0, array(), $cart_item_data);
+        }
 
         if (!$cart_item_key) {
             wp_send_json_error(array('message' => 'Could not add product to cart.'));
         }
 
         wp_send_json_success(array(
-            'cart_count' => WC()->cart->get_cart_contents_count(),
-            'cart_key'   => $cart_item_key,
+            'cart_count'    => WC()->cart->get_cart_contents_count(),
+            'cart_key'      => $cart_item_key,
+            'variation_id'  => $variation_id,
         ));
+    }
+
+    /**
+     * Resolve WC variation from body-fit + size slugs.
+     */
+    private function resolve_variation_id($product_id, $body_fit_slug, $size_slug) {
+        if (!$product_id || (!$body_fit_slug && !$size_slug)) {
+            return 0;
+        }
+        $product = wc_get_product($product_id);
+        if (!$product || !$product->is_type('variable')) {
+            return 0;
+        }
+
+        $attributes = array();
+        if ($body_fit_slug) {
+            $attributes['attribute_pa_body-fit'] = $body_fit_slug;
+        }
+        if ($size_slug) {
+            $attributes['attribute_pa_size'] = $size_slug;
+        }
+
+        $data_store = WC_Data_Store::load('product');
+        $variation_id = $data_store->find_matching_product_variation($product, $attributes);
+        return $variation_id ? (int) $variation_id : 0;
     }
 
     /**
@@ -190,6 +252,10 @@ class Custom_Add_To_Cart {
             if ($key === 'custom_price' || $value === '' || $value === null) {
                 continue;
             }
+            // Hide internal machine keys from cart UI (still saved on order).
+            if (is_string($key) && strpos($key, '_') === 0) {
+                continue;
+            }
             $cart_data[] = array(
                 'key'   => $key,
                 'name'  => $key,
@@ -218,11 +284,14 @@ class Custom_Add_To_Cart {
     }
 
     /**
-     * Keep order meta readable in admin (hide internal keys if any).
+     * Keep order meta readable in admin (hide internal keys from formatted display).
      */
     public function format_order_item_meta($formatted_meta, $item) {
         foreach ($formatted_meta as $meta_id => $meta) {
-            if (isset($meta->key) && $meta->key === 'custom_price') {
+            if (!isset($meta->key)) {
+                continue;
+            }
+            if ($meta->key === 'custom_price' || strpos($meta->key, '_') === 0) {
                 unset($formatted_meta[$meta_id]);
             }
         }

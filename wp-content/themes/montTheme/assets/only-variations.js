@@ -1,114 +1,145 @@
-jQuery(document).ready(function($) {
-    // Show popup
-    $('#add-new-variation').on('click', function() {
-        $('#variation-popup').show();
-        $('#variation-form')[0].reset();
+jQuery(document).ready(function ($) {
+    function toast(msg, isError) {
+        var $t = $('#mont-vs-toast');
+        $t.text(msg).prop('hidden', false).toggleClass('is-error', !!isError);
+        clearTimeout(window._montVsToast);
+        window._montVsToast = setTimeout(function () {
+            $t.prop('hidden', true);
+        }, 3200);
+    }
+
+    // Fit tabs
+    $(document).on('click', '.mont-vs-fit-tab', function () {
+        var fit = $(this).data('fit');
+        $('.mont-vs-fit-tab').removeClass('is-active');
+        $(this).addClass('is-active');
+        $('.mont-vs-panel').removeClass('is-active');
+        $('.mont-vs-panel[data-fit-panel="' + fit + '"]').addClass('is-active');
     });
 
-    // Close popup
-    $('.close-popup, .cancel-popup').on('click', function() {
-        $('#variation-popup').hide();
+    // Mark dirty on edit
+    $(document).on('input change', '.mont-vs-input', function () {
+        $(this).closest('.mont-vs-row').addClass('is-dirty');
     });
 
-    // Handle plus/minus buttons
-    $('.number-input .minus').on('click', function() {
-        var input = $(this).siblings('input');
-        var value = parseFloat(input.val()) || 0;
-        input.val((value - 0.1).toFixed(1));
-    });
+    function collectDirtyRows() {
+        var rows = [];
+        $('.mont-vs-row.is-dirty').each(function () {
+            var $row = $(this);
+            var item = {
+                id: parseInt($row.data('id'), 10) || 0,
+                body_fit: $row.data('fit'),
+                size_slug: $row.data('size')
+            };
+            $row.find('.mont-vs-input').each(function () {
+                item[$(this).data('field')] = $(this).val();
+            });
+            rows.push(item);
+        });
+        return rows;
+    }
 
-    $('.number-input .plus').on('click', function() {
-        var input = $(this).siblings('input');
-        var value = parseFloat(input.val()) || 0;
-        input.val((value + 0.1).toFixed(1));
-    });
-
-    // Handle form submission
-    $('#variation-form').on('submit', function(e) {
-        e.preventDefault();
-
-        var formData = new FormData(this);
-        formData.append('action', 'save_variation');
-        formData.append('nonce', variationSettings.nonce);
-
-        // Combine selected attributes into a unique key
-        var attributeKey = [];
-        $(this).find('select[name^="attributes"]').each(function() {
-            if ($(this).val()) {
-                attributeKey.push($(this).val());
+    function collectAllFilledRows() {
+        var rows = [];
+        $('.mont-vs-row').each(function () {
+            var $row = $(this);
+            var hasValue = false;
+            var item = {
+                id: parseInt($row.data('id'), 10) || 0,
+                body_fit: $row.data('fit'),
+                size_slug: $row.data('size')
+            };
+            $row.find('.mont-vs-input').each(function () {
+                var v = $(this).val();
+                item[$(this).data('field')] = v;
+                if (v !== '' && v !== null) hasValue = true;
+            });
+            if (hasValue || item.id) {
+                rows.push(item);
             }
         });
-        formData.append('attribute_key', attributeKey.join('___'));  //3 time underscore
+        return rows;
+    }
 
-        $.ajax({
-            url: variationSettings.ajaxurl,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                console.log(response);
-                if (response.success) {
-                    // location.reload();
-                }
-            }
-        });
-    });
-
-    // Handle delete
-    $('.delete-variation').on('click', function() {
-        if (!confirm('Are you sure you want to delete this variation?')) {
+    $('#mont-vs-save-bulk').on('click', function () {
+        var $btn = $(this);
+        var rows = collectDirtyRows();
+        if (!rows.length) {
+            // Save all panels that have any values (first-time fill)
+            rows = collectAllFilledRows();
+        }
+        if (!rows.length) {
+            toast('Nothing to save.', true);
             return;
         }
 
-        var id = $(this).data('id');
-
+        $btn.prop('disabled', true).text('Saving…');
         $.ajax({
             url: variationSettings.ajaxurl,
             type: 'POST',
             data: {
-                action: 'delete_variation',
-                id: id,
-                nonce: variationSettings.nonce
+                action: 'save_variation_bulk',
+                nonce: variationSettings.nonce,
+                rows: JSON.stringify(rows)
             },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
+            success: function (res) {
+                $btn.prop('disabled', false).text('Save all changes');
+                if (res && res.success) {
+                    $('.mont-vs-row.is-dirty').removeClass('is-dirty');
+                    toast((variationSettings.i18n && variationSettings.i18n.saved) || 'Saved.');
+                    setTimeout(function () { location.reload(); }, 700);
+                } else {
+                    toast((variationSettings.i18n && variationSettings.i18n.error) || 'Error', true);
                 }
+            },
+            error: function () {
+                $btn.prop('disabled', false).text('Save all changes');
+                toast((variationSettings.i18n && variationSettings.i18n.error) || 'Error', true);
             }
         });
     });
 
-    // Handle edit
-    $('.edit-variation').on('click', function() {
-        var row = $(this).closest('tr');
+    $(document).on('click', '.mont-vs-delete', function () {
+        if (!confirm((variationSettings.i18n && variationSettings.i18n.confirm) || 'Delete?')) return;
         var id = $(this).data('id');
-
-        // Populate form with existing values
-        $('#variation-form').find('input[type="number"]').each(function() {
-            var fieldName = $(this).attr('name');
-            var value = row.find('td').eq(getColumnIndex(fieldName)).text();
-            $(this).val(value);
+        var $row = $(this).closest('.mont-vs-row');
+        $.post(variationSettings.ajaxurl, {
+            action: 'delete_variation',
+            id: id,
+            nonce: variationSettings.nonce
+        }, function (res) {
+            if (res && res.success) {
+                $row.fadeOut(200, function () { $(this).remove(); });
+                toast('Row deleted.');
+            }
         });
-
-        // Add ID to form for update
-        $('#variation-form').append('<input type="hidden" name="id" value="' + id + '">');
-        
-        $('#variation-popup').show();
     });
 
-    function getColumnIndex(fieldName) {
-        var columns = {
-            'shirt_length': 1,
-            'sleeve_length': 2,
-            'shoulder': 3,
-            'half_chest': 4,
-            'half_waist': 5,
-            'half_bottom': 6,
-            'armhole': 7,
-            'neck_collar': 8
-        };
-        return columns[fieldName] || 0;
-    }
+    $('#mont-vs-scan-images').on('click', function () {
+        var $btn = $(this);
+        $btn.prop('disabled', true).text('Scanning…');
+        $.post(variationSettings.ajaxurl, {
+            action: 'mont_scan_size_images',
+            nonce: variationSettings.nonce
+        }, function (res) {
+            $btn.prop('disabled', false).text('Refresh image library');
+            if (res && res.success) {
+                toast('Image library refreshed.');
+                setTimeout(function () { location.reload(); }, 500);
+            } else {
+                toast('Scan failed', true);
+            }
+        }).fail(function () {
+            $btn.prop('disabled', false).text('Refresh image library');
+            toast('Scan failed', true);
+        });
+    });
 
+    // Keyboard shortcut: Cmd/Ctrl+S
+    $(document).on('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+            e.preventDefault();
+            $('#mont-vs-save-bulk').trigger('click');
+        }
+    });
 });

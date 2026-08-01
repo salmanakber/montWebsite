@@ -164,7 +164,7 @@ if (response.success) {
 
                 // Loop through the response data and update the UI
                 for (var key in measurementMap) {
-                    if (data[key] !== undefined) {
+                    if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
                         var value = data[key] + " cm"; // Append 'cm'
 
                         var $item = $('.mont_sizes-measurement-item[data-mont-size="' + key + '"]');
@@ -178,12 +178,31 @@ if (response.success) {
                 }
 
                 // Special handling for Sleeve Length (left and right)
-                if (data.sleeve_length !== undefined) {
+                if (data.sleeve_length !== undefined && data.sleeve_length !== null && data.sleeve_length !== '') {
                    var number =  'Left: ' +data.sleeve_length+ ' cm, Right: ' + data.sleeve_length +  ' cm';
                      $('.mont_sizes-measurement-item[data-mont-size="sleeve_length"]').find(".mont_sizes-measurement-value").text(number);
                      $('input[name="mont_sizes[sleeve_length_left]"]').val(data.sleeve_length).attr('data-value', data.sleeve_length);
                      $('input[name="mont_sizes[sleeve_length_right]"]').val(data.sleeve_length).attr('data-value', data.sleeve_length);
                      $('.mont_sizes-measurement-item[data-mont-size="sleeve_length"]').find('.mont_sizes-control-value').text(data.sleeve_length + ' cm');
+                }
+
+                // Swap measurement icons from Size/{Fit}/{Size} when available
+                if (data.images && typeof data.images === 'object') {
+                    var imageMap = {
+                        shirt_length: data.images.shirt_length,
+                        sleeve_length: data.images.sleeve_length,
+                        half_waist: data.images.half_waist,
+                        half_chest: data.images.half_chest,
+                        half_bottom: data.images.half_bottom,
+                        shoulder: data.images.shoulder
+                    };
+                    Object.keys(imageMap).forEach(function (montKey) {
+                        if (!imageMap[montKey]) return;
+                        var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
+                        if ($img.length) {
+                            $img.attr('src', imageMap[montKey]);
+                        }
+                    });
                 }
             }
         },
