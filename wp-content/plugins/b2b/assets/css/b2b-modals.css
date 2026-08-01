@@ -314,8 +314,8 @@ body.b2b-modal-open {
 .guide-table-data th:first-child,
 .guide-table-data td:first-child {
 	text-align: left;
-	color: #666;
-	font-weight: 400;
+	color: #1a1a1a;
+	font-weight: 700;
 	padding-left: 12px;
 }
 
@@ -327,11 +327,11 @@ body.b2b-modal-open {
 }
 
 .guide-table-data tbody tr:nth-child(even) {
-	background: #fff;
+	background: #f7fafc;
 }
 
 .guide-table-data tbody tr:hover {
-	background: #f7fafc;
+	background: #eef5fa;
 }
 
 /* Cart modal — professional layout */
@@ -636,22 +636,73 @@ body.b2b-modal-open {
 	}
 
 	.monte-b2b-modal.b2b-size-drawer {
-		align-items: stretch !important;
-		justify-content: flex-end !important;
+		align-items: flex-end !important;
+		justify-content: stretch !important;
 	}
 
 	.monte-b2b-modal.b2b-size-drawer .b2b-size-drawer__panel,
 	.b2b-size-modal__dialog.b2b-size-drawer__panel {
-		width: min(92vw, 420px) !important;
+		width: 100% !important;
 		min-width: 0;
 		max-width: 100% !important;
-		height: 100% !important;
-		max-height: 100% !important;
-		border-radius: 0 !important;
+		height: min(92vh, 100%) !important;
+		max-height: 92vh !important;
+		border-radius: 18px 18px 0 0 !important;
+		box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18) !important;
+		animation: b2b-sheet-in 0.32s ease;
+	}
+
+	@keyframes b2b-sheet-in {
+		from { transform: translateY(100%); }
+		to { transform: translateY(0); }
 	}
 
 	.b2b-size-drawer__scroll {
-		padding: 24px 16px 32px;
+		padding: 20px 14px 28px;
+	}
+
+	.b2b-size-chart__badge {
+		display: block;
+		width: fit-content;
+		font-size: 14px;
+		padding: 9px 14px;
+	}
+
+	.b2b-size-chart__subtitle {
+		font-size: 13px;
+	}
+
+	.guide-table-data table {
+		min-width: 0;
+		width: max-content;
+		min-width: 100%;
+	}
+
+	.guide-table-data th,
+	.guide-table-data td {
+		padding: 10px 8px;
+		font-size: 11px;
+	}
+
+	.guide-table-data th:first-child,
+	.guide-table-data td:first-child {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		background: #fff;
+		min-width: 108px;
+		padding-left: 8px;
+		padding-right: 10px;
+		box-shadow: 4px 0 8px rgba(0, 0, 0, 0.04);
+	}
+
+	.guide-table-data thead th:first-child {
+		background: #c5d9e8;
+		z-index: 2;
+	}
+
+	.guide-table-data tbody tr:nth-child(even) td:first-child {
+		background: #f7fafc;
 	}
 
 	.b2b-cart-modal .modal-body-b2b {
