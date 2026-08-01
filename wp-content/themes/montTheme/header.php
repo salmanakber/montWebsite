@@ -88,7 +88,7 @@
                         wp_nav_menu([
                         'menu'        => $menu->term_id,
                         'container'   => false,
-                        'items_wrap'  => '<ul class="mont_header_menu">%3$s</ul>',
+                        'items_wrap'  => '<ul class="mont_header_menu ascf">%3$s</ul>',
                         'depth'       => 2,
                         ]);
                     } else {
