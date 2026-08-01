@@ -44,11 +44,6 @@
     flex-direction: column;
     height: 21px;
 }
-/* Current page */
-.current_page_item a {
-    font-weight: 500 !important;
-    color: black !important;
-}
 
 	</style>
 <!-- <div class="top-bar">
@@ -78,6 +73,12 @@
                     <img src="<?php echo get_template_directory_uri(); ?>/assets/images/logo.png" alt="Logo">
                 </a>
             </div>
+            <style>
+                .current_page_item a {
+                    font-weight: 500 !important;
+                    color: black !important;
+                }
+            </style>
             <div class="mont_header_nav-right">
 
                  <?php
