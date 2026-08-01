@@ -124,91 +124,119 @@ if (response.success) {
 
 
  $(document).on("click", ".pa_size-option", function () {
-
+    var $sizeItem = $(this);
+    var sizeSlug = $sizeItem.data("slug");
     var bodyCheck = "";
-    var sizes = $(this).data("slug");
-    $('.pa_size .dpName').html('<b>' + $(this).find('.tobeSelected').text() + '</b>');
-    $(".pa_body-fit-checkbox").each(function () {
-        if ($(this).is(":checked")) {
-            bodyCheck = $(this).val();
-        }
-    });
 
-    var josinBoth = bodyCheck + "___" + sizes;
-	 var letThis = $(this);
-			     $('.velg-snipp').find(".mont_option-list").addClass('mont_open');
-	  $('.velg-snipp').find(".mont_variation-group").addClass('mont_open');
-                    letThis.parents('.mont_option-list').removeClass('mont_open');
+    $('.pa_size .dpName').html('<b>' + $sizeItem.find('.tobeSelected').text() + '</b>');
+
+    // Prefer selected option data-slug (checkbox value can be empty in markup)
+    var $fitChecked = $('.pa_body-fit-option').has('input.pa_body-fit-checkbox:checked').first();
+    if ($fitChecked.length) {
+        bodyCheck = $fitChecked.data('slug') || $fitChecked.find('input.pa_body-fit-checkbox').val() || '';
+    }
+    if (!bodyCheck) {
+        $(".pa_body-fit-checkbox").each(function () {
+            if ($(this).is(":checked")) {
+                bodyCheck = $(this).closest('.pa_body-fit-option').data('slug') || $(this).val() || '';
+            }
+        });
+    }
+
+    if (!bodyCheck || !sizeSlug) {
+        console.warn('Mont size chart: missing body fit or size', bodyCheck, sizeSlug);
+        return;
+    }
+
+    var chartKey = bodyCheck + "___" + sizeSlug;
+
+    // Open collar first, then tailor section after chart loads
+    $('.velg-snipp').find(".mont_option-list").addClass('mont_open');
+    $('.velg-snipp').find(".mont_variation-group").addClass('mont_open');
+    $sizeItem.parents('.mont_option-list').removeClass('mont_open');
+
+    $('.skreddersydd').addClass('mont_loading');
+
     $.ajax({
-        url: ajaxurl.url, // WordPress AJAX URL
+        url: ajaxurl.url,
         type: "POST",
+        dataType: "json",
         data: {
             action: "get_all_variation",
-            key: josinBoth,
+            key: chartKey,
         },
         success: function (response) {
+            $('.skreddersydd').removeClass('mont_loading');
 
-
-            if (response.length > 0) {
-                var data = response[0];
-
-                // Mapping JSON keys to correct measurement names in the UI
-                var measurementMap = {
-                    "shirt_length": "Shirt Length",
-                    "sleeve_length": "Sleeve Length",
-                    "shoulder": "Shoulder",
-                    "half_chest": "chest",
-                    "half_waist": "waist",
-                    "half_bottom": "Half Bottom"
-                };
-
-                // Loop through the response data and update the UI
-                for (var key in measurementMap) {
-                    if (data[key] !== undefined && data[key] !== null && data[key] !== '') {
-                        var value = data[key] + " cm"; // Append 'cm'
-
-                        var $item = $('.mont_sizes-measurement-item[data-mont-size="' + key + '"]');
-                        if ($item.length) {
-                            $item.find(".mont_sizes-measurement-value").text(value);
-                            $item.find(".mont_sizes-control-value").text(value);
-                            $item.find(".mont_sizes-hidden-input").val(data[key]);
-							 $item.find(".mont_sizes-hidden-input").attr('data-value',data[key]);
-                        }
-                    }
-                }
-
-                // Special handling for Sleeve Length (left and right)
-                if (data.sleeve_length !== undefined && data.sleeve_length !== null && data.sleeve_length !== '') {
-                   var number =  'Left: ' +data.sleeve_length+ ' cm, Right: ' + data.sleeve_length +  ' cm';
-                     $('.mont_sizes-measurement-item[data-mont-size="sleeve_length"]').find(".mont_sizes-measurement-value").text(number);
-                     $('input[name="mont_sizes[sleeve_length_left]"]').val(data.sleeve_length).attr('data-value', data.sleeve_length);
-                     $('input[name="mont_sizes[sleeve_length_right]"]').val(data.sleeve_length).attr('data-value', data.sleeve_length);
-                     $('.mont_sizes-measurement-item[data-mont-size="sleeve_length"]').find('.mont_sizes-control-value').text(data.sleeve_length + ' cm');
-                }
-
-                // Swap measurement icons from Size/{Fit}/{Size} when available
-                if (data.images && typeof data.images === 'object') {
-                    var imageMap = {
-                        shirt_length: data.images.shirt_length,
-                        sleeve_length: data.images.sleeve_length,
-                        half_waist: data.images.half_waist,
-                        half_chest: data.images.half_chest,
-                        half_bottom: data.images.half_bottom,
-                        shoulder: data.images.shoulder
-                    };
-                    Object.keys(imageMap).forEach(function (montKey) {
-                        if (!imageMap[montKey]) return;
-                        var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
-                        if ($img.length) {
-                            $img.attr('src', imageMap[montKey]);
-                        }
-                    });
-                }
+            if (!response || !response.length) {
+                return;
             }
+
+            var data = response[0];
+            applyMontCustomSizeChart(data);
+
+            // Reveal Skreddersydd with fresh values/images
+            $('.skreddersydd').find(".mont_option-list").addClass('mont_open');
+            $('.skreddersydd').find(".mont_variation-group").addClass('mont_open');
         },
+        error: function () {
+            $('.skreddersydd').removeClass('mont_loading');
+        }
     });
 });
 
+function applyMontCustomSizeChart(data) {
+    if (!data) return;
+
+    var measurementKeys = [
+        "shirt_length",
+        "sleeve_length",
+        "shoulder",
+        "half_chest",
+        "half_waist",
+        "half_bottom"
+    ];
+
+    measurementKeys.forEach(function (key) {
+        if (data[key] === undefined || data[key] === null || data[key] === '') return;
+
+        var $item = $('.mont_sizes-measurement-item[data-mont-size="' + key + '"]');
+        if (!$item.length) return;
+
+        var num = data[key];
+        var value = num + " cm";
+
+        if (key === "sleeve_length") {
+            $item.find(".mont_sizes-measurement-value").text("Left: " + num + " cm, Right: " + num + " cm");
+            $item.find('.mont_sizes-control-value').text(num + " cm");
+            $('input[name="mont_sizes[sleeve_length_left]"]').val(num).attr("data-value", num).attr("clicked", "false");
+            $('input[name="mont_sizes[sleeve_length_right]"]').val(num).attr("data-value", num).attr("clicked", "false");
+        } else {
+            $item.find(".mont_sizes-measurement-value").text(value);
+            $item.find(".mont_sizes-control-value").text(value);
+            $item.find(".mont_sizes-hidden-input").val(num).attr("data-value", num).attr("clicked", "false");
+        }
+    });
+
+    // Dynamic Size/ diagrams for selected fit + size
+    if (data.images && typeof data.images === "object") {
+        var imageMap = {
+            shirt_length: data.images.shirt_length,
+            sleeve_length: data.images.sleeve_length,
+            half_waist: data.images.half_waist,
+            half_chest: data.images.half_chest,
+            half_bottom: data.images.half_bottom,
+            shoulder: data.images.shoulder
+        };
+        Object.keys(imageMap).forEach(function (montKey) {
+            if (!imageMap[montKey]) return;
+            var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
+            if ($img.length) {
+                $img.attr("src", imageMap[montKey]).attr("data-dynamic", "1");
+            }
+        });
+    }
+}
 
         $(document).on('click', '.mont_option-list li', function(){
         if($(this).hasClass('pa_body-fit-option'))

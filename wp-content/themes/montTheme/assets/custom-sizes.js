@@ -1,5 +1,5 @@
 jQuery(document).ready(function($) {
-            // Toggle additional measurements
+    // Toggle additional measurements
     $('.mont_sizes-toggle-more').click(function(e) {
         e.preventDefault();
         $('.mont_sizes-additional-measurements').toggleClass('mont_sizes-hidden');
@@ -7,7 +7,7 @@ jQuery(document).ready(function($) {
         $(this).text(isHidden ? $(this).data('show-text') : $(this).data('hide-text'));
     });
 
-            // Handle change button click
+    // Handle change button click
     $('.mont_sizes-change-btn, .mont_sizes-close-btn').click(function(e) {
         e.preventDefault();
         const item = $(this).closest('.mont_sizes-measurement-item');
@@ -17,17 +17,14 @@ jQuery(document).ready(function($) {
             item.removeClass('mont_sizes-active');
             controls.removeClass('active');
         } else {
-                    // Close other open controls
             $('.mont_sizes-measurement-item').not(item).removeClass('mont_sizes-active');
             $('.mont_sizes-controls').not(controls).removeClass('active');
-
-                    // Toggle current controls
             item.addClass('mont_sizes-active');
             controls.addClass('active');
         }
     });
 
-            // Handle plus/minus buttons
+    // Handle plus/minus buttons
     $('.mont_sizes-control-btn').click(function() {
         const isPlus = $(this).hasClass('mont_sizes-plus');
         const measurementItem = $(this).closest('.mont_sizes-measurement-item');
@@ -47,7 +44,6 @@ jQuery(document).ready(function($) {
             const rightValue = $('.mont_sizes-control-value[data-side="right"]').text();
             measurementValue.text(`Left: ${leftValue}, Right: ${rightValue}`);
 
-                    // Update hidden inputs for sleeve length
             measurementItem.find('.mont_sizes-hidden-input[name="mont_sizes[sleeve_length_left]"]').val(parseInt(leftValue));
             measurementItem.find('.mont_sizes-hidden-input[name="mont_sizes[sleeve_length_right]"]').val(parseInt(rightValue));
         } else {
@@ -57,18 +53,14 @@ jQuery(document).ready(function($) {
 
             valueSpan.text(newValue + ' cm');
             measurementValue.text(`${newValue} cm`);
-
-                    // Update hidden input
             hiddenInput.val(newValue);
         }
     });
 
     $(".mont_show_hide_desc_text").click(function() {
-        // Toggle visibility of preview and full description
         $(".desc_preview").toggle();
         $(".desc_full").toggle();
 
-        // Change button text based on the visibility of the full description
         if ($(".desc_full").is(":visible")) {
             $(".mont_show_hide_desc_text").text("Skjul tekst");
         } else {
@@ -76,7 +68,28 @@ jQuery(document).ready(function($) {
         }
     });
 
+    // Enlarge measurement diagram: hover via CSS, click opens lightbox
+    if (!$('.mont-size-img-lightbox').length) {
+        $('body').append('<div class="mont-size-img-lightbox" aria-hidden="true"><img src="" alt="Size diagram"></div>');
+    }
 
+    $(document).on('click', '.mont_sizes-measurement-icon', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var src = $(this).attr('src');
+        if (!src) return;
+        var $box = $('.mont-size-img-lightbox');
+        $box.find('img').attr('src', src);
+        $box.addClass('is-open').attr('aria-hidden', 'false');
+    });
 
+    $(document).on('click', '.mont-size-img-lightbox', function () {
+        $(this).removeClass('is-open').attr('aria-hidden', 'true');
+    });
 
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape') {
+            $('.mont-size-img-lightbox').removeClass('is-open').attr('aria-hidden', 'true');
+        }
+    });
 });

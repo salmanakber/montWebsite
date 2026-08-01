@@ -42,7 +42,7 @@ class ajaxHooks
     wp_enqueue_script('mont-product-gallery-slider', $theme_uri . '/assets/product-gallery-slider.js', array(), filemtime($theme_dir . '/assets/product-gallery-slider.js'), true);
     wp_enqueue_script('mont-header-js', $theme_uri . '/assets/header.js', array('jquery'), filemtime($theme_dir . '/assets/header.js'), true);
     wp_enqueue_script('mont-discount-js', $theme_uri . '/assets/discount.js', array('jquery'), null, true);
-    wp_enqueue_script('mont-gallery-size-js', $theme_uri . '/assets/custom-sizes.js', array('jquery'), null, true);
+    wp_enqueue_script('mont-gallery-size-js', $theme_uri . '/assets/custom-sizes.js', array('jquery'), filemtime($theme_dir . '/assets/custom-sizes.js'), true);
     wp_enqueue_script('mont-gallery-size-javascript', $theme_uri . '/assets/custom-sizes-javascript.js', array('jquery'), null, true);
     wp_enqueue_script('mont-custom-jquery', $theme_uri . '/assets/custom.js', array('jquery'), filemtime($theme_dir . '/assets/custom.js'), true);
     wp_enqueue_script('mont-cart-js', $theme_uri . '/assets/cart.js', array('jquery'), filemtime($theme_dir . '/assets/cart.js'), true);
