@@ -313,9 +313,12 @@ public function bubble_b2b_cart_button(){
 
 public function enqueue_scripts_and_styles() {
         // Enqueue scripts and styles if needed
-    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), '1.9');
-    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), '2.0');
-    wp_enqueue_style('b2b-modals', $this->url . 'assets/css/b2b-modals.css', array('b2b-style'), '1.5');
+    $b2b_style_ver = @filemtime( $this->path . 'assets/css/style.css' ) ?: '2.1';
+    $b2b_pdp_ver   = @filemtime( $this->path . 'assets/css/b2b-pdp.css' ) ?: '2.1';
+    $b2b_modals_ver = @filemtime( $this->path . 'assets/css/b2b-modals.css' ) ?: '1.5';
+    wp_enqueue_style('b2b-style', $this->url . 'assets/css/style.css', array(), (string) $b2b_style_ver);
+    wp_enqueue_style('b2b-pdp', $this->url . 'assets/css/b2b-pdp.css', array('b2b-style'), (string) $b2b_pdp_ver);
+    wp_enqueue_style('b2b-modals', $this->url . 'assets/css/b2b-modals.css', array('b2b-style'), (string) $b2b_modals_ver);
     wp_enqueue_style('b2b-notify', $this->url . 'assets/css/notify.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-css-min', $this->url . 'assets/css/owl.carousel.min.css', array(), '1.0');
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');

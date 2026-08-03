@@ -148,6 +148,7 @@ jQuery(document).ready(function ($) {
     var draftOverrides = {};
     var draftAuto = {};
     var mediaFrame = null;
+    var mediaTargetKey = '';
 
     function diagramKeys() {
         return Object.keys(variationSettings.diagrams || {
@@ -214,8 +215,54 @@ jQuery(document).ready(function ($) {
         $('#mont-vs-diagram-slots').html(html);
     }
 
+    function openMediaPicker(key) {
+        mediaTargetKey = key;
+
+        if (typeof wp === 'undefined' || !wp.media) {
+            toast((variationSettings.i18n && variationSettings.i18n.noMedia) || 'Media library unavailable', true);
+            return;
+        }
+
+        // Keep WP media above our custom modal.
+        $('#mont-vs-diagram-modal').addClass('is-picking-media');
+
+        if (mediaFrame) {
+            mediaFrame.open();
+            return;
+        }
+
+        mediaFrame = wp.media({
+            title: 'Select diagram image',
+            button: { text: 'Use this image' },
+            multiple: false,
+            library: { type: 'image' }
+        });
+
+        mediaFrame.on('select', function () {
+            var selection = mediaFrame.state().get('selection');
+            if (!selection || !selection.first()) return;
+            var attachment = selection.first().toJSON();
+            if (attachment && attachment.url && mediaTargetKey) {
+                draftOverrides[mediaTargetKey] = attachment.url;
+                renderDiagramSlots();
+            }
+            $('#mont-vs-diagram-modal').removeClass('is-picking-media');
+        });
+
+        mediaFrame.on('close', function () {
+            $('#mont-vs-diagram-modal').removeClass('is-picking-media');
+        });
+
+        mediaFrame.on('escape', function () {
+            $('#mont-vs-diagram-modal').removeClass('is-picking-media');
+        });
+
+        mediaFrame.open();
+    }
+
     $(document).on('click', '.mont-vs-edit-diagrams', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         openDiagramModal($(this).closest('.mont-vs-row'));
     });
 
@@ -223,35 +270,25 @@ jQuery(document).ready(function ($) {
         closeDiagramModal();
     });
 
-    $(document).on('click', '.mont-vs-slot-upload', function () {
+    $(document).on('click', '.mont-vs-slot-upload', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var key = $(this).closest('.mont-vs-slot').data('key');
-        if (typeof wp === 'undefined' || !wp.media) {
-            toast('Media library unavailable', true);
-            return;
-        }
-        if (mediaFrame) {
-            mediaFrame.off('select');
-        }
-        mediaFrame = wp.media({
-            title: 'Select diagram image',
-            button: { text: 'Use this image' },
-            multiple: false,
-            library: { type: 'image' }
-        });
-        mediaFrame.on('select', function () {
-            var attachment = mediaFrame.state().get('selection').first().toJSON();
-            if (attachment && attachment.url) {
-                draftOverrides[key] = attachment.url;
-                renderDiagramSlots();
-            }
-        });
-        mediaFrame.open();
+        openMediaPicker(key);
     });
 
-    $(document).on('click', '.mont-vs-slot-clear', function () {
+    $(document).on('click', '.mont-vs-slot-clear', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
         var key = $(this).closest('.mont-vs-slot').data('key');
         delete draftOverrides[key];
         renderDiagramSlots();
+    });
+
+    // Stop backdrop clicks while media library is open.
+    $(document).on('click', '#mont-vs-diagram-modal.is-picking-media .mont-vs-modal__backdrop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     $('#mont-vs-diagram-apply').on('click', function () {
@@ -297,7 +334,7 @@ jQuery(document).ready(function ($) {
             e.preventDefault();
             $('#mont-vs-save-bulk').trigger('click');
         }
-        if (e.key === 'Escape' && !$('#mont-vs-diagram-modal').prop('hidden')) {
+        if (e.key === 'Escape' && !$('#mont-vs-diagram-modal').prop('hidden') && !$('#mont-vs-diagram-modal').hasClass('is-picking-media')) {
             closeDiagramModal();
         }
     });

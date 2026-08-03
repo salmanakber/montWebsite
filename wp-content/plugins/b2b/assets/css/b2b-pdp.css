@@ -337,13 +337,17 @@
 .b2b-pdp .collardiv,
 .b2b-pdp .b2b-option-row,
 .b2b-pdp .collar-type-b2b .collardiv,
-.b2b-pdp .cuff-type-b2b .collardiv {
+.b2b-pdp .cuff-type-b2b .collardiv,
+.b2b-contents .collardiv,
+.b2b-contents .b2b-option-row,
+.mont_single_product_container .collardiv {
 	display: grid !important;
 	grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 	gap: 12px !important;
 	align-items: stretch;
 	overflow: visible !important;
 	flex-wrap: unset !important;
+	flex-direction: unset !important;
 	padding: 2px 0 8px !important;
 	width: 100% !important;
 	margin: 0 !important;
@@ -353,11 +357,14 @@
 .b2b-pdp label.b2b-check-to-go-cuff,
 .b2b-pdp .b2b-option-tile,
 .b2b-pdp .collar-type-b2b label,
-.b2b-pdp .cuff-type-b2b label {
-	flex: none !important;
+.b2b-pdp .cuff-type-b2b label,
+.b2b-contents .collar-type-b2b label,
+.b2b-contents .cuff-type-b2b label {
+	flex: 0 0 auto !important;
+	flex-basis: auto !important;
 	width: 100% !important;
 	min-width: 0 !important;
-	max-width: none !important;
+	max-width: 100% !important;
 	margin: 0 !important;
 	padding: 10px 10px 12px !important;
 	border: 1px solid var(--b2b-line) !important;

@@ -365,6 +365,17 @@ body.mont-vs-modal-open {
 	padding: 20px;
 }
 
+/* Let WordPress media modal sit above our diagram manager */
+.mont-vs-modal.is-picking-media {
+	z-index: 100050;
+	pointer-events: none;
+}
+
+.mont-vs-modal.is-picking-media .mont-vs-modal__dialog {
+	pointer-events: none;
+	opacity: 0.35;
+}
+
 .mont-vs-modal__backdrop {
 	position: absolute;
 	inset: 0;

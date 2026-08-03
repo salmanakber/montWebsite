@@ -196,7 +196,12 @@ class CustomVariation {
 		}
 		$theme_dir = get_template_directory();
 		$theme_uri = get_template_directory_uri();
+
 		wp_enqueue_media();
+		wp_enqueue_style( 'thickbox' );
+		wp_enqueue_script( 'media-upload' );
+		wp_enqueue_script( 'thickbox' );
+
 		wp_enqueue_style(
 			'mont-variation-admin',
 			$theme_uri . '/assets/admin-variation-settings.css',
@@ -206,7 +211,7 @@ class CustomVariation {
 		wp_enqueue_script(
 			'variation-settings-script',
 			$theme_uri . '/assets/only-variations.js',
-			array( 'jquery' ),
+			array( 'jquery', 'jquery-ui-core', 'media-upload', 'media-views', 'wp-util' ),
 			filemtime( $theme_dir . '/assets/only-variations.js' ),
 			true
 		);
@@ -228,6 +233,7 @@ class CustomVariation {
 					'custom'  => 'Custom',
 					'auto'    => 'Auto',
 					'missing' => 'Missing',
+					'noMedia' => 'Media library could not open. Hard-refresh this page and try again.',
 				),
 			)
 		);

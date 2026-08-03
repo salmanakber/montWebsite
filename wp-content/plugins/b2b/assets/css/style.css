@@ -181,7 +181,10 @@ ul.b2b-ul-list li {
 }
 
 .collar-type-b2b label, .cuff-type-b2b label {
-    width: auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     cursor: pointer;
 }
 
@@ -316,10 +319,14 @@ p.text-block-b2b {
     font-family: "Rubik", sans-serif;
 }
 
-.collardiv {
-    display: flex;
+.collardiv,
+.b2b-option-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 12px;
     padding-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .comment-box-b2b {

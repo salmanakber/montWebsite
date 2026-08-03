@@ -110,15 +110,19 @@ add_shortcode('custom_elementor_template', 'custom_elementor_template_shortcode'
 function custom_admin_assets($hook) {
 	if (!is_admin()) return;
 
+	// Do not override the Variation Settings media uploader script.
+	if ($hook === 'toplevel_page_variation-settings') {
+		return;
+	}
 
-
-	wp_enqueue_script('variation-settings-script', plugin_dir_url(__FILE__) . 'assets/custom-sizes.js', ['jquery'], '1.0', true);
-
-	$script_data = array(
-		'ajaxurl' => admin_url('admin-ajax.php'),
-		'nonce'   => wp_create_nonce('variation-settings-nonce')
+	// Legacy admin helper (different handle so it never clashes).
+	wp_enqueue_script(
+		'mont-admin-custom-sizes',
+		get_template_directory_uri() . '/assets/custom-sizes.js',
+		array('jquery'),
+		filemtime(get_template_directory() . '/assets/custom-sizes.js'),
+		true
 	);
-	wp_localize_script('variation-settings-script', 'variationSettings', $script_data);
 }
 add_action('admin_enqueue_scripts', 'custom_admin_assets', 99);
 
