@@ -555,8 +555,23 @@ class CustomVariation {
 		return $data;
 	}
 
+	private function bust_chart_cache( $key, $fit = '', $size = '' ) {
+		if ( $key ) {
+			delete_transient( 'mont_chart_' . md5( $key ) );
+		}
+		if ( $fit && $size ) {
+			delete_transient( 'mont_szimg_' . md5( strtolower( $fit ) . '|' . strtolower( $size ) ) );
+			delete_transient( 'mont_chart_' . md5( $fit . '___' . $size ) );
+		}
+	}
+
 	private function upsert_row( $data, $id = 0 ) {
 		global $wpdb;
+		$this->bust_chart_cache(
+			isset( $data['attributes'] ) ? $data['attributes'] : '',
+			isset( $data['body_fit'] ) ? $data['body_fit'] : '',
+			isset( $data['size_slug'] ) ? $data['size_slug'] : ''
+		);
 
 		$has_diagrams = array_key_exists( 'diagram_images', $data );
 		$format       = array( '%s', '%s', '%s', '%f', '%f', '%f', '%f', '%f', '%f', '%f', '%f' );
@@ -612,16 +627,23 @@ class CustomVariation {
 			wp_send_json( array() );
 		}
 
+		$transient_key = 'mont_chart_' . md5( $key );
+		$cached        = get_transient( $transient_key );
+		if ( is_array( $cached ) ) {
+			wp_send_json( $cached );
+		}
+
+		$select = 'attributes, body_fit, size_slug, shirt_length, sleeve_length, shoulder, half_chest, half_waist, half_bottom, neck_collar, diagram_images';
 		$variations = $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$this->table_name} WHERE attributes = %s", $key )
+			$wpdb->prepare( "SELECT {$select} FROM {$this->table_name} WHERE attributes = %s LIMIT 1", $key )
 		);
 
 		// Fallback: body_fit + size_slug columns.
 		if ( empty( $variations ) && false !== strpos( $key, '___' ) ) {
-			$parts = explode( '___', $key );
+			$parts = explode( '___', $key, 2 );
 			$variations = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$this->table_name} WHERE body_fit = %s AND size_slug = %s",
+					"SELECT {$select} FROM {$this->table_name} WHERE body_fit = %s AND size_slug = %s LIMIT 1",
 					$parts[0],
 					$parts[1]
 				)
@@ -632,16 +654,25 @@ class CustomVariation {
 		foreach ( $variations as $row ) {
 			$fit  = ! empty( $row->body_fit ) ? $row->body_fit : ( explode( '___', $row->attributes )[0] ?? '' );
 			$size = ! empty( $row->size_slug ) ? $row->size_slug : ( explode( '___', $row->attributes )[1] ?? '' );
-			$item = (array) $row;
 			$overrides = ! empty( $row->diagram_images ) ? $row->diagram_images : '{}';
-			$item['images'] = Mont_Size_Diagram_Helper::get_merged_images( $fit, $size, $overrides );
-			$item['image_overrides'] = Mont_Size_Diagram_Helper::parse_overrides( $overrides );
-			$out[] = $item;
+			$out[] = array(
+				'attributes'   => $row->attributes,
+				'body_fit'     => $fit,
+				'size_slug'    => $size,
+				'shirt_length' => $row->shirt_length,
+				'sleeve_length'=> $row->sleeve_length,
+				'shoulder'     => $row->shoulder,
+				'half_chest'   => $row->half_chest,
+				'half_waist'   => $row->half_waist,
+				'half_bottom'  => $row->half_bottom,
+				'neck_collar'  => $row->neck_collar,
+				'images'       => Mont_Size_Diagram_Helper::get_merged_images( $fit, $size, $overrides ),
+			);
 		}
 
 		// Even without chart numbers, return diagram URLs so the PDP can update icons.
 		if ( empty( $out ) && false !== strpos( $key, '___' ) ) {
-			$parts = explode( '___', $key );
+			$parts = explode( '___', $key, 2 );
 			$out[] = array(
 				'attributes' => $key,
 				'body_fit'   => $parts[0],
@@ -650,6 +681,7 @@ class CustomVariation {
 			);
 		}
 
+		set_transient( $transient_key, $out, 6 * HOUR_IN_SECONDS );
 		wp_send_json( $out );
 	}
 

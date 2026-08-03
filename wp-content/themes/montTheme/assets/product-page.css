@@ -415,28 +415,18 @@ body.monte-size-drawer-open {
     z-index: 21;
 }
 
+/* Keep label in DOM for accessibility text, but hide visually —
+   the ::after spinner is the single visible loader. */
 .mont_loading-label {
-    display: none;
-    position: absolute;
-    left: 50%;
-    top: calc(50% + 28px);
-    transform: translateX(-50%);
-    z-index: 22;
-    background: #111;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    padding: 6px 12px;
-    border-radius: 999px;
-    white-space: nowrap;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-    pointer-events: none;
-}
-
-.mont_loading .mont_loading-label,
-.mont_loading > .mont_loading-label {
-    display: block;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
 }
 
 /* Ensure skreddersydd / variation blocks can host the overlay */

@@ -62,29 +62,56 @@ public function custom_theme_setup() {
 
 
 public function get_variation_details_by_attributes() {
-    
-	$product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-    $attribute = isset($_POST['attributes']) ? sanitize_text_field($_POST['attributes']) : '';
-    $value = isset($_POST['slugValue']) ? sanitize_text_field($_POST['slugValue']) : '';
+	$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
+	$attribute  = isset( $_POST['attributes'] ) ? sanitize_text_field( wp_unslash( $_POST['attributes'] ) ) : '';
+	$value      = isset( $_POST['slugValue'] ) ? sanitize_text_field( wp_unslash( $_POST['slugValue'] ) ) : '';
 
-    $product = wc_get_product($_POST['product_id']);
+	$product = wc_get_product( $product_id );
 
-    if (!$product || !$product->is_type('variable')) {
-        wp_send_json_error('Invalid product');
-    }
+	if ( ! $product || ! $product->is_type( 'variable' ) ) {
+		wp_send_json_error( 'Invalid product' );
+	}
 
-    $variations = $product->get_available_variations();
-    $filtered_variations = array();
+	// Lean lookup: only size slugs for the selected fit (skip get_available_variations payload).
+	$attr_key  = 'attribute_' . $attribute;
+	$filtered  = array();
+	$seen_sizes = array();
 
-    foreach ($variations as $variation) {
-        if (isset($variation['attributes']["attribute_$attribute"]) && $variation['attributes']["attribute_$attribute"] === $value) {
-            $filtered_variations[] = $variation;
-        }
-    }
+	foreach ( $product->get_children() as $child_id ) {
+		$variation = wc_get_product( $child_id );
+		if ( ! $variation || ! $variation->exists() || ! $variation->variation_is_visible() ) {
+			continue;
+		}
 
-    wp_send_json_success($filtered_variations);
+		$attrs = $variation->get_variation_attributes();
+		$fit   = isset( $attrs[ $attr_key ] ) ? $attrs[ $attr_key ] : '';
+		if ( $fit === '' ) {
+			$plain = $variation->get_attributes();
+			$fit   = isset( $plain[ $attribute ] ) ? $plain[ $attribute ] : '';
+		}
+		if ( (string) $fit !== (string) $value ) {
+			continue;
+		}
 
-    }
+		$size = isset( $attrs['attribute_pa_size'] ) ? $attrs['attribute_pa_size'] : '';
+		if ( $size === '' ) {
+			$plain = isset( $plain ) ? $plain : $variation->get_attributes();
+			$size  = isset( $plain['pa_size'] ) ? $plain['pa_size'] : '';
+		}
+		if ( $size === '' || isset( $seen_sizes[ $size ] ) ) {
+			continue;
+		}
+
+		$seen_sizes[ $size ] = true;
+		$filtered[] = array(
+			'attributes' => array(
+				'attribute_pa_size' => $size,
+			),
+		);
+	}
+
+	wp_send_json_success( $filtered );
+}
 
 public function update_cart_count() {
     wp_send_json_success(["count" => WC()->cart->get_cart_contents_count()]);

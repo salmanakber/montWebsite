@@ -121,24 +121,42 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Resolve one diagram URL inside a size folder.
+	 * Build lowercase filename => real filename map once per folder.
 	 */
-	public static function resolve_file_url( $folder_path, array $candidates ) {
+	private static function folder_file_map( $folder_path ) {
+		static $maps = array();
+		if ( isset( $maps[ $folder_path ] ) ) {
+			return $maps[ $folder_path ];
+		}
+		$maps[ $folder_path ] = array();
 		if ( ! $folder_path || ! is_dir( $folder_path ) ) {
-			return '';
+			return $maps[ $folder_path ];
 		}
-
-		$files = scandir( $folder_path );
+		$files = @scandir( $folder_path );
 		if ( ! $files ) {
-			return '';
+			return $maps[ $folder_path ];
 		}
-
-		$lower_map = array();
 		foreach ( $files as $file ) {
 			if ( '.' === $file || '..' === $file ) {
 				continue;
 			}
-			$lower_map[ strtolower( $file ) ] = $file;
+			$maps[ $folder_path ][ strtolower( $file ) ] = $file;
+		}
+		return $maps[ $folder_path ];
+	}
+
+	/**
+	 * Resolve one diagram URL inside a size folder (reuses cached scandir map).
+	 */
+	public static function resolve_file_url( $folder_path, array $candidates, $lower_map = null ) {
+		if ( ! $folder_path ) {
+			return '';
+		}
+		if ( null === $lower_map ) {
+			$lower_map = self::folder_file_map( $folder_path );
+		}
+		if ( empty( $lower_map ) ) {
+			return '';
 		}
 
 		foreach ( $candidates as $candidate ) {
@@ -167,16 +185,28 @@ class Mont_Size_Diagram_Helper {
 
 	/**
 	 * Return measurement_key => image URL map for fit+size.
+	 * Cached in a transient (12h) so PDP AJAX does not rescan Size/ every click.
 	 */
 	public static function get_images_for( $fit_slug, $size_slug ) {
+		$cache_key = 'mont_szimg_' . md5( strtolower( (string) $fit_slug ) . '|' . strtolower( (string) $size_slug ) );
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
 		$folder = self::find_size_folder( $fit_slug, $size_slug );
 		$out    = array();
-		foreach ( self::MEASUREMENT_FILES as $key => $candidates ) {
-			$url = self::resolve_file_url( $folder, $candidates );
-			if ( $url ) {
-				$out[ $key ] = $url;
+		if ( $folder ) {
+			$lower_map = self::folder_file_map( $folder );
+			foreach ( self::MEASUREMENT_FILES as $key => $candidates ) {
+				$url = self::resolve_file_url( $folder, $candidates, $lower_map );
+				if ( $url ) {
+					$out[ $key ] = $url;
+				}
 			}
 		}
+
+		set_transient( $cache_key, $out, 12 * HOUR_IN_SECONDS );
 		return $out;
 	}
 
@@ -189,7 +219,6 @@ class Mont_Size_Diagram_Helper {
 	 * @return array
 	 */
 	public static function get_merged_images( $fit_slug, $size_slug, $overrides = array() ) {
-		$auto = self::get_images_for( $fit_slug, $size_slug );
 		if ( is_string( $overrides ) ) {
 			$decoded = json_decode( $overrides, true );
 			$overrides = is_array( $decoded ) ? $decoded : array();
@@ -197,11 +226,31 @@ class Mont_Size_Diagram_Helper {
 		if ( ! is_array( $overrides ) ) {
 			$overrides = array();
 		}
+
+		$clean = array();
 		foreach ( $overrides as $key => $url ) {
 			$url = esc_url_raw( (string) $url );
 			if ( $url ) {
-				$auto[ $key ] = $url;
+				$clean[ $key ] = $url;
 			}
+		}
+
+		// Frontend only needs these six keys; skip filesystem if overrides cover them all.
+		$needed = array( 'shirt_length', 'sleeve_length', 'half_waist', 'half_chest', 'half_bottom', 'shoulder' );
+		$covered = true;
+		foreach ( $needed as $key ) {
+			if ( empty( $clean[ $key ] ) ) {
+				$covered = false;
+				break;
+			}
+		}
+		if ( $covered ) {
+			return $clean;
+		}
+
+		$auto = self::get_images_for( $fit_slug, $size_slug );
+		foreach ( $clean as $key => $url ) {
+			$auto[ $key ] = $url;
 		}
 		return $auto;
 	}

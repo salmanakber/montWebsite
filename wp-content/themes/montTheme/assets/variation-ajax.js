@@ -1,7 +1,19 @@
 jQuery(document).ready(function ($) {
 
+    var montActiveRequest = null;
+    var montChartCache = {};
+    var montSizeListCache = {};
+
+    function montClearLoaders() {
+        $('.mont_loading').each(function () {
+            $(this).removeClass('mont_loading');
+            $(this).children('.mont_loading-label').remove();
+        });
+    }
+
     function montShowLoader($el, message) {
         if (!$el || !$el.length) return;
+        montClearLoaders();
         $el.addClass('mont_loading');
         if (!$el.children('.mont_loading-label').length) {
             $el.append('<span class="mont_loading-label"></span>');
@@ -10,9 +22,19 @@ jQuery(document).ready(function ($) {
     }
 
     function montHideLoader($el) {
-        if (!$el || !$el.length) return;
-        $el.removeClass('mont_loading');
-        $el.children('.mont_loading-label').remove();
+        if ($el && $el.length) {
+            $el.removeClass('mont_loading');
+            $el.children('.mont_loading-label').remove();
+            return;
+        }
+        montClearLoaders();
+    }
+
+    function montAbortActive() {
+        if (montActiveRequest && montActiveRequest.readyState !== 4) {
+            montActiveRequest.abort();
+        }
+        montActiveRequest = null;
     }
 
     $(".pa_body-fit-option").on("click", function () {
@@ -21,78 +43,93 @@ jQuery(document).ready(function ($) {
         var attributes = $(this).parents('.mont_variation-group').find('.mont_variation-header').data('attribute-key');
         var pid = $(this).data('id');
         var letThis = $(this);
-        var $fitGroup = letThis.parents('.mont_variation-group');
-        var $sizeGroup = $('.pa_size');
+        var $sizeGroup = $('.pa_size').first();
+        var cacheKey = String(pid) + '|' + String(attributes) + '|' + String(slug);
 
         $('.pa_body-fit-option').find('.mont_checkbox_select').attr('checked', false);
         $('.pa_body-fit-option').find('.mont_checkbox_select').val('');
         letThis.find('.mont_checkbox_select').val(slug);
         $('.pa_body-fit .dpName').html('<b>' + letThis.find('.tobeSelected').text() + '</b>');
 
-        montShowLoader($fitGroup, 'Laster størrelser…');
-        montShowLoader($sizeGroup, 'Oppdaterer størrelser…');
+        if (!attributes) {
+            $("#variation_details").html("");
+            return;
+        }
 
-        if (attributes) {
-            $.ajax({
-                url: ajaxurl.url,
-                type: "POST",
-                data: {
-                    action: "get_variation_details",
-                    attributes: attributes,
-                    product_id: pid,
-                    selected: selectedValue,
-                    slugValue: slug
-                },
-                success: function (response) {
-                    if (response.success) {
-                        var validSizes = response.data.map(function (item) {
-                            return item.attributes.attribute_pa_size.toString();
-                        });
-                        var $items = $('.pa_size .mont_option-item');
+        function applyValidSizes(validSizes) {
+            var $items = $('.pa_size .mont_option-item');
 
-                        $items.each(function () {
-                            var listSlug = $(this).data("slug").toString();
-                            if (!validSizes.includes(listSlug)) {
-                                $(this).hide();
-                            } else {
-                                $(this).show();
-                            }
-                        });
-
-                        var sortedItems = $items.filter(':visible').sort(function (a, b) {
-                            var aSlug = $(a).data("slug");
-                            var bSlug = $(b).data("slug");
-                            var numA = parseFloat(aSlug);
-                            var numB = parseFloat(bSlug);
-
-                            if (!isNaN(numA) && !isNaN(numB)) {
-                                return numA - numB;
-                            }
-                            if (!isNaN(numA)) return -1;
-                            if (!isNaN(numB)) return 1;
-                            return aSlug.localeCompare(bSlug);
-                        });
-
-                        $('.to-be-open-pa_size').find('.mont_option-list').append(sortedItems);
-                    }
-
-                    montHideLoader($fitGroup);
-                    montHideLoader($sizeGroup);
-                    letThis.parents('.pa_body-fit').find('.mont_option-list').removeClass('mont_open');
-                    letThis.parents('.pa_body-fit').removeClass('mont_open');
-                    $('.pa_size').find('.mont_option-list').addClass('mont_open');
-                    $('.pa_size').addClass('mont_open');
-                },
-                error: function () {
-                    montHideLoader($fitGroup);
-                    montHideLoader($sizeGroup);
+            $items.each(function () {
+                var listSlug = $(this).data("slug").toString();
+                if (!validSizes.includes(listSlug)) {
+                    $(this).hide();
+                } else {
+                    $(this).show();
                 }
             });
-        } else {
-            montHideLoader($fitGroup);
-            montHideLoader($sizeGroup);
-            $("#variation_details").html("");
+
+            var sortedItems = $items.filter(':visible').sort(function (a, b) {
+                var aSlug = $(a).data("slug");
+                var bSlug = $(b).data("slug");
+                var numA = parseFloat(aSlug);
+                var numB = parseFloat(bSlug);
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                if (!isNaN(numA)) return -1;
+                if (!isNaN(numB)) return 1;
+                return String(aSlug).localeCompare(String(bSlug));
+            });
+
+            $('.to-be-open-pa_size').find('.mont_option-list').append(sortedItems);
+            letThis.parents('.pa_body-fit').find('.mont_option-list').removeClass('mont_open');
+            letThis.parents('.pa_body-fit').removeClass('mont_open');
+            $('.pa_size').find('.mont_option-list').addClass('mont_open');
+            $('.pa_size').addClass('mont_open');
         }
+
+        if (montSizeListCache[cacheKey]) {
+            applyValidSizes(montSizeListCache[cacheKey]);
+            return;
+        }
+
+        montAbortActive();
+        montShowLoader($sizeGroup, 'Oppdaterer størrelser…');
+
+        montActiveRequest = $.ajax({
+            url: ajaxurl.url,
+            type: "POST",
+            data: {
+                action: "get_variation_details",
+                attributes: attributes,
+                product_id: pid,
+                selected: selectedValue,
+                slugValue: slug
+            },
+            success: function (response) {
+                montHideLoader($sizeGroup);
+                if (response.success) {
+                    var validSizes = (response.data || []).map(function (item) {
+                        if (typeof item === 'string') return item.toString();
+                        if (item && item.attributes && item.attributes.attribute_pa_size != null) {
+                            return item.attributes.attribute_pa_size.toString();
+                        }
+                        return '';
+                    }).filter(Boolean);
+                    montSizeListCache[cacheKey] = validSizes;
+                    applyValidSizes(validSizes);
+                }
+            },
+            error: function (xhr, status) {
+                if (status !== 'abort') {
+                    montHideLoader($sizeGroup);
+                }
+            },
+            complete: function () {
+                montActiveRequest = null;
+            }
+        });
     });
 
     $('.collar-option input[type="radio"]').each(function () {
@@ -131,8 +168,10 @@ jQuery(document).ready(function ($) {
         var $sizeItem = $(this);
         var sizeSlug = $sizeItem.data("slug");
         var bodyCheck = "";
-        var $sizeGroup = $sizeItem.parents('.mont_variation-group');
-        var $tailor = $('.skreddersydd');
+        var $tailorGroup = $('.skreddersydd .mont_variation-group').first();
+        if (!$tailorGroup.length) {
+            $tailorGroup = $('.skreddersydd').first();
+        }
 
         $('.pa_size .dpName').html('<b>' + $sizeItem.find('.tobeSelected').text() + '</b>');
 
@@ -159,10 +198,23 @@ jQuery(document).ready(function ($) {
         $('.velg-snipp').find(".mont_variation-group").addClass('mont_open');
         $sizeItem.parents('.mont_option-list').removeClass('mont_open');
 
-        montShowLoader($sizeGroup, 'Laster mål…');
-        montShowLoader($tailor, 'Laster skreddersøm…');
+        function finishWithData(data) {
+            applyMontCustomSizeChart(data);
+            $tailorGroup.find(".mont_option-list").addClass('mont_open');
+            $tailorGroup.addClass('mont_open');
+            $('.skreddersydd').find(".mont_option-list").addClass('mont_open');
+            $('.skreddersydd').find(".mont_variation-group").addClass('mont_open');
+        }
 
-        $.ajax({
+        if (montChartCache[chartKey]) {
+            finishWithData(montChartCache[chartKey]);
+            return;
+        }
+
+        montAbortActive();
+        montShowLoader($tailorGroup, 'Laster skreddersøm…');
+
+        montActiveRequest = $.ajax({
             url: ajaxurl.url,
             type: "POST",
             dataType: "json",
@@ -171,21 +223,22 @@ jQuery(document).ready(function ($) {
                 key: chartKey
             },
             success: function (response) {
-                montHideLoader($sizeGroup);
-                montHideLoader($tailor);
+                montHideLoader($tailorGroup);
 
                 if (!response || !response.length) {
                     return;
                 }
 
-                applyMontCustomSizeChart(response[0]);
-
-                $tailor.find(".mont_option-list").addClass('mont_open');
-                $tailor.find(".mont_variation-group").addClass('mont_open');
+                montChartCache[chartKey] = response[0];
+                finishWithData(response[0]);
             },
-            error: function () {
-                montHideLoader($sizeGroup);
-                montHideLoader($tailor);
+            error: function (xhr, status) {
+                if (status !== 'abort') {
+                    montHideLoader($tailorGroup);
+                }
+            },
+            complete: function () {
+                montActiveRequest = null;
             }
         });
     });
