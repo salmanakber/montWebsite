@@ -409,8 +409,10 @@ class CustomVariation {
 												<?php endforeach; ?>
 												<td class="mont-vs-thumbs">
 													<?php if ( $imgs ) : ?>
-														<?php foreach ( array_slice( $imgs, 0, 4 ) as $img_url ) : ?>
-															<img src="<?php echo esc_url( $img_url ); ?>" alt="">
+														<?php foreach ( array_slice( $imgs, 0, 4 ) as $img_url ) :
+															$thumb_url = Mont_Size_Diagram_Helper::ensure_thumb_url( $img_url );
+															?>
+															<img src="<?php echo esc_url( $thumb_url ); ?>" alt="" loading="lazy">
 														<?php endforeach; ?>
 														<span class="mont-vs-badge ok"><?php echo count( $imgs ); ?> linked</span>
 														<?php if ( $custom_n ) : ?>
@@ -558,10 +560,16 @@ class CustomVariation {
 	private function bust_chart_cache( $key, $fit = '', $size = '' ) {
 		if ( $key ) {
 			delete_transient( 'mont_chart_' . md5( $key ) );
+			delete_transient( 'mont_chart_v2_' . md5( $key ) );
 		}
 		if ( $fit && $size ) {
-			delete_transient( 'mont_szimg_' . md5( strtolower( $fit ) . '|' . strtolower( $size ) ) );
+			$fit_l  = strtolower( $fit );
+			$size_l = strtolower( $size );
+			delete_transient( 'mont_szimg_' . md5( $fit_l . '|' . $size_l ) );
 			delete_transient( 'mont_chart_' . md5( $fit . '___' . $size ) );
+			delete_transient( 'mont_chart_v2_' . md5( $fit . '___' . $size ) );
+			// Frontend thumb pairs use a content-hash key; bump generation so new uploads show immediately.
+			set_transient( 'mont_szfront_gen', (string) time(), WEEK_IN_SECONDS );
 		}
 	}
 
@@ -627,7 +635,7 @@ class CustomVariation {
 			wp_send_json( array() );
 		}
 
-		$transient_key = 'mont_chart_' . md5( $key );
+		$transient_key = 'mont_chart_v2_' . md5( $key );
 		$cached        = get_transient( $transient_key );
 		if ( is_array( $cached ) ) {
 			wp_send_json( $cached );
@@ -666,7 +674,7 @@ class CustomVariation {
 				'half_waist'   => $row->half_waist,
 				'half_bottom'  => $row->half_bottom,
 				'neck_collar'  => $row->neck_collar,
-				'images'       => Mont_Size_Diagram_Helper::get_merged_images( $fit, $size, $overrides ),
+				'images'       => Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides ),
 			);
 		}
 
@@ -677,7 +685,7 @@ class CustomVariation {
 				'attributes' => $key,
 				'body_fit'   => $parts[0],
 				'size_slug'  => $parts[1],
-				'images'     => Mont_Size_Diagram_Helper::get_images_for( $parts[0], $parts[1] ),
+				'images'     => Mont_Size_Diagram_Helper::get_frontend_images( $parts[0], $parts[1], array() ),
 			);
 		}
 

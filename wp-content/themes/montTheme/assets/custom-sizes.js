@@ -76,7 +76,8 @@ jQuery(document).ready(function($) {
     $(document).on('click', '.mont_sizes-measurement-icon', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        var src = $(this).attr('src');
+        var $img = $(this);
+        var src = $img.attr('data-full') || $img.attr('src');
         if (!src) return;
         var $box = $('.mont-size-img-lightbox');
         $box.find('img').attr('src', src);

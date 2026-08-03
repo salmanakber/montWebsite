@@ -26,6 +26,9 @@ class Mont_Size_Diagram_Helper {
 		'loose'        => 'Modern',
 	);
 
+	/** PDP list thumbnail max width (px). Lightbox uses the original full URL. */
+	const THUMB_WIDTH = 120;
+
 	public static function size_root() {
 		return trailingslashit( get_template_directory() ) . 'Size';
 	}
@@ -184,7 +187,181 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Return measurement_key => image URL map for fit+size.
+	 * Map a diagram URL back to a local filesystem path when possible.
+	 */
+	public static function url_to_local_path( $url ) {
+		$url = strtok( (string) $url, '?' );
+		if ( ! $url ) {
+			return '';
+		}
+
+		$size_uri = untrailingslashit( self::size_uri() );
+		if ( 0 === strpos( $url, $size_uri ) ) {
+			$rel  = rawurldecode( ltrim( substr( $url, strlen( $size_uri ) ), '/' ) );
+			$path = trailingslashit( self::size_root() ) . $rel;
+			return file_exists( $path ) ? $path : '';
+		}
+
+		$uploads = wp_upload_dir();
+		if ( empty( $uploads['error'] ) && ! empty( $uploads['baseurl'] ) ) {
+			$base = untrailingslashit( $uploads['baseurl'] );
+			if ( 0 === strpos( $url, $base ) ) {
+				$rel  = rawurldecode( ltrim( substr( $url, strlen( $base ) ), '/' ) );
+				$path = trailingslashit( $uploads['basedir'] ) . $rel;
+				return file_exists( $path ) ? $path : '';
+			}
+		}
+
+		$theme_uri = untrailingslashit( get_template_directory_uri() );
+		if ( 0 === strpos( $url, $theme_uri ) ) {
+			$rel  = rawurldecode( ltrim( substr( $url, strlen( $theme_uri ) ), '/' ) );
+			$path = trailingslashit( get_template_directory() ) . $rel;
+			return file_exists( $path ) ? $path : '';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Create/cached ~120px thumbnail for a local image; returns public URL.
+	 */
+	public static function make_cached_thumb( $source_path ) {
+		if ( ! $source_path || ! file_exists( $source_path ) || ! function_exists( 'wp_get_image_editor' ) ) {
+			return '';
+		}
+
+		$mtime   = (string) @filemtime( $source_path );
+		$hash    = md5( $source_path . '|' . $mtime . '|' . self::THUMB_WIDTH . '|jpg82' );
+		$uploads = wp_upload_dir();
+		if ( ! empty( $uploads['error'] ) ) {
+			return '';
+		}
+
+		$dir = trailingslashit( $uploads['basedir'] ) . 'mont-size-thumbs';
+		if ( ! wp_mkdir_p( $dir ) ) {
+			return '';
+		}
+
+		$dest     = $dir . '/' . $hash . '.jpg';
+		$dest_url = trailingslashit( $uploads['baseurl'] ) . 'mont-size-thumbs/' . $hash . '.jpg';
+
+		if ( file_exists( $dest ) && filesize( $dest ) > 0 ) {
+			return $dest_url;
+		}
+
+		$editor = wp_get_image_editor( $source_path );
+		if ( is_wp_error( $editor ) ) {
+			return '';
+		}
+
+		$editor->resize( self::THUMB_WIDTH, self::THUMB_WIDTH, false );
+		if ( is_callable( array( $editor, 'set_quality' ) ) ) {
+			$editor->set_quality( 82 );
+		}
+		$saved = $editor->save( $dest, 'image/jpeg' );
+		if ( is_wp_error( $saved ) ) {
+			return '';
+		}
+
+		return $dest_url;
+	}
+
+	/**
+	 * Return a small thumbnail URL for list display; falls back to full URL.
+	 * Works for Size/ files and media-library (admin upload) URLs.
+	 */
+	public static function ensure_thumb_url( $full_url ) {
+		$full_url = esc_url_raw( (string) $full_url );
+		if ( ! $full_url ) {
+			return '';
+		}
+
+		// Admin uploads living in the media library.
+		$att_id = attachment_url_to_postid( $full_url );
+		if ( $att_id ) {
+			$thumb = wp_get_attachment_image_url( $att_id, 'mont_diagram_thumb' );
+			if ( $thumb ) {
+				return $thumb;
+			}
+			$thumb = wp_get_attachment_image_url( $att_id, 'thumbnail' );
+			if ( $thumb ) {
+				return $thumb;
+			}
+			$path = get_attached_file( $att_id );
+			if ( $path ) {
+				$generated = self::make_cached_thumb( $path );
+				if ( $generated ) {
+					return $generated;
+				}
+			}
+			return $full_url;
+		}
+
+		// Theme Size/ folder or other local uploads URL.
+		$path = self::url_to_local_path( $full_url );
+		if ( $path ) {
+			$generated = self::make_cached_thumb( $path );
+			if ( $generated ) {
+				return $generated;
+			}
+		}
+
+		return $full_url;
+	}
+
+	/**
+	 * Convert full URL map to { thumb, full } pairs for the product page.
+	 */
+	public static function with_thumbs( array $url_map ) {
+		$out = array();
+		foreach ( $url_map as $key => $url ) {
+			if ( is_array( $url ) ) {
+				$full = ! empty( $url['full'] ) ? $url['full'] : ( ! empty( $url['thumb'] ) ? $url['thumb'] : '' );
+			} else {
+				$full = (string) $url;
+			}
+			$full = esc_url_raw( $full );
+			if ( ! $full ) {
+				continue;
+			}
+			$out[ $key ] = array(
+				'thumb' => self::ensure_thumb_url( $full ),
+				'full'  => $full,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Frontend image map (thumb for tiles, full for lightbox).
+	 * Merges Size/ auto diagrams with admin custom uploads.
+	 */
+	public static function get_frontend_images( $fit_slug, $size_slug, $overrides = array() ) {
+		if ( is_array( $overrides ) ) {
+			$override_token = wp_json_encode( $overrides );
+		} else {
+			$override_token = (string) $overrides;
+		}
+		$gen = (string) get_transient( 'mont_szfront_gen' );
+		$cache_key = 'mont_szfront_' . md5(
+			strtolower( (string) $fit_slug ) . '|' .
+			strtolower( (string) $size_slug ) . '|' .
+			md5( $override_token ) . '|' .
+			$gen
+		);
+		$cached = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$merged = self::get_merged_images( $fit_slug, $size_slug, $overrides );
+		$out    = self::with_thumbs( $merged );
+		set_transient( $cache_key, $out, 12 * HOUR_IN_SECONDS );
+		return $out;
+	}
+
+	/**
+	 * Return measurement_key => full image URL map for fit+size.
 	 * Cached in a transient (12h) so PDP AJAX does not rescan Size/ every click.
 	 */
 	public static function get_images_for( $fit_slug, $size_slug ) {
@@ -212,6 +389,7 @@ class Mont_Size_Diagram_Helper {
 
 	/**
 	 * Merge auto Size/ diagrams with custom URL overrides (custom wins).
+	 * Returns full-size URL strings (admin + internal use).
 	 *
 	 * @param string $fit_slug
 	 * @param string $size_slug

@@ -286,10 +286,23 @@ jQuery(document).ready(function ($) {
                 shoulder: data.images.shoulder
             };
             Object.keys(imageMap).forEach(function (montKey) {
-                if (!imageMap[montKey]) return;
+                var entry = imageMap[montKey];
+                if (!entry) return;
+                var thumb = '';
+                var full = '';
+                if (typeof entry === 'string') {
+                    thumb = entry;
+                    full = entry;
+                } else {
+                    thumb = entry.thumb || entry.full || '';
+                    full = entry.full || entry.thumb || '';
+                }
+                if (!thumb && !full) return;
                 var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
                 if ($img.length) {
-                    $img.attr("src", imageMap[montKey]).attr("data-dynamic", "1");
+                    $img.attr('src', thumb || full)
+                        .attr('data-full', full || thumb)
+                        .attr('data-dynamic', '1');
                 }
             });
         }

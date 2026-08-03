@@ -7,6 +7,11 @@ require_once get_template_directory(). '/codeFunction/product-helper.php';
 require_once get_template_directory(). '/codeFunction/load-more-scroll-class.php';
 require_once get_template_directory(). '/codeFunction/discount.php';
 
+add_action( 'after_setup_theme', function () {
+	// Soft-proportional ~120px wide thumbs for custom-size measurement tiles.
+	add_image_size( 'mont_diagram_thumb', 120, 120, false );
+} );
+
 function mont_theme_register_acf_options_page() {
     if (!function_exists('acf_add_options_page')) {
         return;
