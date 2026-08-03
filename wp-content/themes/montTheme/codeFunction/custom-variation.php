@@ -678,6 +678,8 @@ class CustomVariation {
 				'taxonomy'   => 'product_cat',
 				'hide_empty' => false,
 				'parent'     => 44,
+				'orderby'    => 'menu_order',
+				'order'      => 'ASC',
 			)
 		);
 

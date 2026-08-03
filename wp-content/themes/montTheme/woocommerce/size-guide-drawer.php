@@ -23,9 +23,9 @@
 						</thead>
 						<tbody>
 							<tr><td>Neck/Collar</td><td>38</td><td>40</td><td>42</td><td>44</td><td>46</td><td>48</td></tr>
-							<tr><td>Chest Width</td><td>53</td><td>56.5</td><td>61</td><td>65</td><td>67</td><td>73</td></tr>
-							<tr><td>Waist Width</td><td>47.5</td><td>51.5</td><td>55.5</td><td>59.5</td><td>62.5</td><td>68</td></tr>
-							<tr><td>Bottom Width</td><td>51.5</td><td>55.5</td><td>59.5</td><td>63.5</td><td>66.5</td><td>73</td></tr>
+							<tr><td>Chest Width</td><td>106</td><td>113</td><td>122</td><td>130</td><td>134</td><td>146</td></tr>
+							<tr><td>Waist Width</td><td>95</td><td>103</td><td>111</td><td>119</td><td>125</td><td>136</td></tr>
+							<tr><td>Bottom Width</td><td>103</td><td>111</td><td>119</td><td>127</td><td>133</td><td>146</td></tr>
 							<tr><td>Shoulder Across</td><td>44.5</td><td>46.5</td><td>49</td><td>52</td><td>55</td><td>58</td></tr>
 							<tr><td>Sleeve Length</td><td>64.5</td><td>66.5</td><td>68.5</td><td>70.5</td><td>71.5</td><td>74.5</td></tr>
 							<tr><td>Back Length</td><td>76.5</td><td>77.5</td><td>79</td><td>81</td><td>82.5</td><td>85</td></tr>

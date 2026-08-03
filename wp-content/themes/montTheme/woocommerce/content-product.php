@@ -32,7 +32,7 @@ if ( ! isset( $category_slider_displayed ) || true !== $category_slider_displaye
 				'taxonomy'   => 'product_cat',
 				'hide_empty' => false,
 				'parent'     => $top_level_id,
-				'orderby'    => 'name',
+				'orderby'    => 'menu_order',
 				'order'      => 'ASC',
 			)
 		);
@@ -44,7 +44,7 @@ if ( ! isset( $category_slider_displayed ) || true !== $category_slider_displaye
 					'taxonomy'   => 'product_cat',
 					'hide_empty' => false,
 					'parent'     => 0,
-					'orderby'    => 'name',
+					'orderby'    => 'menu_order',
 					'order'      => 'ASC',
 					'number'     => 12,
 				)

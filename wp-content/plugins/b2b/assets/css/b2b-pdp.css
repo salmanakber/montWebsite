@@ -339,7 +339,7 @@
 .b2b-pdp .collar-type-b2b .collardiv,
 .b2b-pdp .cuff-type-b2b .collardiv {
 	display: grid !important;
-	grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)) !important;
+	grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 	gap: 12px !important;
 	align-items: stretch;
 	overflow: visible !important;
@@ -807,7 +807,7 @@
 
 	.b2b-pdp .collardiv,
 	.b2b-pdp .b2b-option-row {
-		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 		gap: 10px !important;
 	}
 
