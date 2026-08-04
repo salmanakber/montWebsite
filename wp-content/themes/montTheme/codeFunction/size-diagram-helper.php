@@ -223,30 +223,47 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Create/cached ~120px thumbnail for a local image; returns public URL.
+	 * Deterministic cached thumb path/url for a local file (no image processing).
+	 *
+	 * @return array{path:string,url:string,dir:string}|null
 	 */
-	public static function make_cached_thumb( $source_path ) {
-		if ( ! $source_path || ! file_exists( $source_path ) || ! function_exists( 'wp_get_image_editor' ) ) {
-			return '';
+	public static function thumb_cache_targets( $source_path ) {
+		$source_path = (string) $source_path;
+		if ( ! $source_path || ! file_exists( $source_path ) ) {
+			return null;
 		}
-
 		$mtime   = (string) @filemtime( $source_path );
 		$hash    = md5( $source_path . '|' . $mtime . '|' . self::THUMB_WIDTH . '|jpg82' );
 		$uploads = wp_upload_dir();
 		if ( ! empty( $uploads['error'] ) ) {
-			return '';
+			return null;
 		}
-
 		$dir = trailingslashit( $uploads['basedir'] ) . 'mont-size-thumbs';
-		if ( ! wp_mkdir_p( $dir ) ) {
+		return array(
+			'path' => $dir . '/' . $hash . '.jpg',
+			'url'  => trailingslashit( $uploads['baseurl'] ) . 'mont-size-thumbs/' . $hash . '.jpg',
+			'dir'  => $dir,
+		);
+	}
+
+	/**
+	 * Create/cached ~120px thumbnail for a local image; returns public URL.
+	 */
+	public static function make_cached_thumb( $source_path ) {
+		$targets = self::thumb_cache_targets( $source_path );
+		if ( ! $targets ) {
 			return '';
 		}
 
-		$dest     = $dir . '/' . $hash . '.jpg';
-		$dest_url = trailingslashit( $uploads['baseurl'] ) . 'mont-size-thumbs/' . $hash . '.jpg';
+		if ( file_exists( $targets['path'] ) && filesize( $targets['path'] ) > 0 ) {
+			return $targets['url'];
+		}
 
-		if ( file_exists( $dest ) && filesize( $dest ) > 0 ) {
-			return $dest_url;
+		if ( ! function_exists( 'wp_get_image_editor' ) ) {
+			return '';
+		}
+		if ( ! wp_mkdir_p( $targets['dir'] ) ) {
+			return '';
 		}
 
 		$editor = wp_get_image_editor( $source_path );
@@ -258,25 +275,46 @@ class Mont_Size_Diagram_Helper {
 		if ( is_callable( array( $editor, 'set_quality' ) ) ) {
 			$editor->set_quality( 82 );
 		}
-		$saved = $editor->save( $dest, 'image/jpeg' );
+		$saved = $editor->save( $targets['path'], 'image/jpeg' );
 		if ( is_wp_error( $saved ) ) {
 			return '';
 		}
 
-		return $dest_url;
+		return $targets['url'];
 	}
 
 	/**
 	 * Return a small thumbnail URL for list display; falls back to full URL.
-	 * Works for Size/ files and media-library (admin upload) URLs.
+	 *
+	 * @param string $full_url
+	 * @param bool   $allow_generate When false (storefront AJAX), never resize / never call attachment_url_to_postid.
 	 */
-	public static function ensure_thumb_url( $full_url ) {
+	public static function ensure_thumb_url( $full_url, $allow_generate = true ) {
 		$full_url = esc_url_raw( (string) $full_url );
 		if ( ! $full_url ) {
 			return '';
 		}
 
-		// Admin uploads living in the media library.
+		// Local Size/ or uploads path first (fast). Avoid attachment_url_to_postid on hot path.
+		$path = self::url_to_local_path( $full_url );
+		if ( $path ) {
+			$targets = self::thumb_cache_targets( $path );
+			if ( $targets && file_exists( $targets['path'] ) && filesize( $targets['path'] ) > 0 ) {
+				return $targets['url'];
+			}
+			if ( $allow_generate ) {
+				$generated = self::make_cached_thumb( $path );
+				if ( $generated ) {
+					return $generated;
+				}
+			}
+			return $full_url;
+		}
+
+		if ( ! $allow_generate ) {
+			return $full_url;
+		}
+
 		$att_id = attachment_url_to_postid( $full_url );
 		if ( $att_id ) {
 			$thumb = wp_get_attachment_image_url( $att_id, 'mont_diagram_thumb' );
@@ -294,16 +332,6 @@ class Mont_Size_Diagram_Helper {
 					return $generated;
 				}
 			}
-			return $full_url;
-		}
-
-		// Theme Size/ folder or other local uploads URL.
-		$path = self::url_to_local_path( $full_url );
-		if ( $path ) {
-			$generated = self::make_cached_thumb( $path );
-			if ( $generated ) {
-				return $generated;
-			}
 		}
 
 		return $full_url;
@@ -311,8 +339,11 @@ class Mont_Size_Diagram_Helper {
 
 	/**
 	 * Convert full URL map to { thumb, full } pairs for the product page.
+	 *
+	 * @param array $url_map
+	 * @param bool  $allow_generate
 	 */
-	public static function with_thumbs( array $url_map ) {
+	public static function with_thumbs( array $url_map, $allow_generate = true ) {
 		$out = array();
 		foreach ( $url_map as $key => $url ) {
 			if ( is_array( $url ) ) {
@@ -325,7 +356,7 @@ class Mont_Size_Diagram_Helper {
 				continue;
 			}
 			$out[ $key ] = array(
-				'thumb' => self::ensure_thumb_url( $full ),
+				'thumb' => self::ensure_thumb_url( $full, $allow_generate ),
 				'full'  => $full,
 			);
 		}
@@ -334,20 +365,21 @@ class Mont_Size_Diagram_Helper {
 
 	/**
 	 * Frontend image map (thumb for tiles, full for lightbox).
-	 * Merges Size/ auto diagrams with admin custom uploads.
+	 * Storefront AJAX passes $allow_generate=false so requests never block on image resize.
 	 */
-	public static function get_frontend_images( $fit_slug, $size_slug, $overrides = array() ) {
+	public static function get_frontend_images( $fit_slug, $size_slug, $overrides = array(), $allow_generate = false ) {
 		if ( is_array( $overrides ) ) {
 			$override_token = wp_json_encode( $overrides );
 		} else {
 			$override_token = (string) $overrides;
 		}
 		$gen = (string) get_transient( 'mont_szfront_gen' );
-		$cache_key = 'mont_szfront_' . md5(
+		$cache_key = 'mont_szfront_v2_' . md5(
 			strtolower( (string) $fit_slug ) . '|' .
 			strtolower( (string) $size_slug ) . '|' .
 			md5( $override_token ) . '|' .
-			$gen
+			$gen . '|' .
+			( $allow_generate ? '1' : '0' )
 		);
 		$cached = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
@@ -355,7 +387,7 @@ class Mont_Size_Diagram_Helper {
 		}
 
 		$merged = self::get_merged_images( $fit_slug, $size_slug, $overrides );
-		$out    = self::with_thumbs( $merged );
+		$out    = self::with_thumbs( $merged, $allow_generate );
 		set_transient( $cache_key, $out, 12 * HOUR_IN_SECONDS );
 		return $out;
 	}

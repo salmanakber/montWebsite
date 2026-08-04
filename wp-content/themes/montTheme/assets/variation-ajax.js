@@ -89,8 +89,31 @@ jQuery(document).ready(function ($) {
             $('.pa_size').addClass('mont_open');
         }
 
+        function sizesFromLocalMap(fitSlug) {
+            var map = (typeof ajaxurl !== 'undefined' && ajaxurl.fitSizes) ? ajaxurl.fitSizes : null;
+            if (!map || typeof map !== 'object') return null;
+            if (Array.isArray(map[fitSlug])) return map[fitSlug].map(String);
+            // Case-insensitive key match
+            var needle = String(fitSlug).toLowerCase();
+            var keys = Object.keys(map);
+            for (var i = 0; i < keys.length; i++) {
+                if (String(keys[i]).toLowerCase() === needle && Array.isArray(map[keys[i]])) {
+                    return map[keys[i]].map(String);
+                }
+            }
+            return null;
+        }
+
         if (montSizeListCache[cacheKey]) {
             applyValidSizes(montSizeListCache[cacheKey]);
+            return;
+        }
+
+        // Instant path: fit→size map embedded on the product page (no AJAX / no WP bootstrap).
+        var localSizes = sizesFromLocalMap(slug);
+        if (localSizes && localSizes.length) {
+            montSizeListCache[cacheKey] = localSizes;
+            applyValidSizes(localSizes);
             return;
         }
 

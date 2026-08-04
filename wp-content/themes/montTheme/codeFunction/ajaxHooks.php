@@ -14,8 +14,93 @@ class ajaxHooks
 	add_action("wp_ajax_custom_ajax_add_to_cart", array($this,'custom_ajax_add_to_cart'));
 	add_action("wp_ajax_nopriv_custom_ajax_add_to_cart", array($this,'custom_ajax_add_to_cart')); // For non-logged users
 	add_action('after_setup_theme', array($this,'custom_theme_setup'));
+	add_action('woocommerce_update_product', array($this, 'bust_fit_size_cache'));
+	add_action('woocommerce_save_product_variation', array($this, 'bust_fit_size_cache_from_variation'), 10, 1);
+	}
 
-	
+	/**
+	 * Drop cached fit→size maps when variations change.
+	 */
+	public function bust_fit_size_cache( $product_id ) {
+		$product_id = (int) $product_id;
+		if ( $product_id > 0 ) {
+			delete_transient( 'mont_fitsizes_v1_' . $product_id );
+		}
+	}
+
+	public function bust_fit_size_cache_from_variation( $variation_id ) {
+		$parent = wp_get_post_parent_id( (int) $variation_id );
+		if ( $parent ) {
+			$this->bust_fit_size_cache( $parent );
+		}
+	}
+
+	/**
+	 * Fast fit_slug => [ size_slug, ... ] map via one SQL query (no wc_get_product loop).
+	 *
+	 * @param int $product_id
+	 * @return array
+	 */
+	public static function get_fit_size_map( $product_id ) {
+		$product_id = (int) $product_id;
+		if ( $product_id <= 0 ) {
+			return array();
+		}
+
+		$cache_key = 'mont_fitsizes_v1_' . $product_id;
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		global $wpdb;
+		$children = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts}
+				 WHERE post_parent = %d
+				   AND post_type = 'product_variation'
+				   AND post_status IN ('publish','private')",
+				$product_id
+			)
+		);
+
+		if ( empty( $children ) ) {
+			set_transient( $cache_key, array(), 12 * HOUR_IN_SECONDS );
+			return array();
+		}
+
+		$ids_sql = implode( ',', array_map( 'intval', $children ) );
+		$rows    = $wpdb->get_results(
+			"SELECT post_id, meta_key, meta_value
+			 FROM {$wpdb->postmeta}
+			 WHERE post_id IN ({$ids_sql})
+			   AND meta_key IN ('attribute_pa_body-fit', 'attribute_pa_size')"
+		);
+
+		$by_var = array();
+		foreach ( (array) $rows as $row ) {
+			$by_var[ (int) $row->post_id ][ $row->meta_key ] = $row->meta_value;
+		}
+
+		$map = array();
+		foreach ( $by_var as $meta ) {
+			$fit  = isset( $meta['attribute_pa_body-fit'] ) ? (string) $meta['attribute_pa_body-fit'] : '';
+			$size = isset( $meta['attribute_pa_size'] ) ? (string) $meta['attribute_pa_size'] : '';
+			if ( $fit === '' || $size === '' ) {
+				continue;
+			}
+			if ( ! isset( $map[ $fit ] ) ) {
+				$map[ $fit ] = array();
+			}
+			$map[ $fit ][ $size ] = true;
+		}
+
+		foreach ( $map as $fit => $sizes ) {
+			$map[ $fit ] = array_keys( $sizes );
+		}
+
+		set_transient( $cache_key, $map, 12 * HOUR_IN_SECONDS );
+		return $map;
 	}
 
 	public function addingToCart()
@@ -49,7 +134,18 @@ class ajaxHooks
     wp_enqueue_script('lucide-icon', 'https://unpkg.com/lucide@latest');
 
     wp_enqueue_script('mont-variation-ajax', $theme_uri . '/assets/variation-ajax.js', array('jquery'), filemtime($theme_dir . '/assets/variation-ajax.js'), true);
-    wp_localize_script('mont-variation-ajax', 'ajaxurl', array('url' => admin_url('admin-ajax.php')));
+    $localize = array(
+        'url'      => admin_url('admin-ajax.php'),
+        'fitSizes' => new stdClass(),
+    );
+    if ( ! is_admin() && function_exists( 'is_product' ) && is_product() ) {
+        $pid = get_queried_object_id();
+        if ( $pid ) {
+            $localize['productId'] = (int) $pid;
+            $localize['fitSizes']  = self::get_fit_size_map( $pid );
+        }
+    }
+    wp_localize_script('mont-variation-ajax', 'ajaxurl', $localize);
 
 }
 
@@ -63,49 +159,31 @@ public function custom_theme_setup() {
 
 public function get_variation_details_by_attributes() {
 	$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
-	$attribute  = isset( $_POST['attributes'] ) ? sanitize_text_field( wp_unslash( $_POST['attributes'] ) ) : '';
 	$value      = isset( $_POST['slugValue'] ) ? sanitize_text_field( wp_unslash( $_POST['slugValue'] ) ) : '';
 
-	$product = wc_get_product( $product_id );
-
-	if ( ! $product || ! $product->is_type( 'variable' ) ) {
+	if ( ! $product_id || $value === '' ) {
 		wp_send_json_error( 'Invalid product' );
 	}
 
-	// Lean lookup: only size slugs for the selected fit (skip get_available_variations payload).
-	$attr_key  = 'attribute_' . $attribute;
-	$filtered  = array();
-	$seen_sizes = array();
+	$map   = self::get_fit_size_map( $product_id );
+	$sizes = isset( $map[ $value ] ) ? $map[ $value ] : array();
 
-	foreach ( $product->get_children() as $child_id ) {
-		$variation = wc_get_product( $child_id );
-		if ( ! $variation || ! $variation->exists() || ! $variation->variation_is_visible() ) {
-			continue;
+	// Fallback: some stores pass display name; try case-insensitive slug match.
+	if ( empty( $sizes ) ) {
+		$needle = strtolower( $value );
+		foreach ( $map as $fit => $fit_sizes ) {
+			if ( strtolower( (string) $fit ) === $needle ) {
+				$sizes = $fit_sizes;
+				break;
+			}
 		}
+	}
 
-		$attrs = $variation->get_variation_attributes();
-		$fit   = isset( $attrs[ $attr_key ] ) ? $attrs[ $attr_key ] : '';
-		if ( $fit === '' ) {
-			$plain = $variation->get_attributes();
-			$fit   = isset( $plain[ $attribute ] ) ? $plain[ $attribute ] : '';
-		}
-		if ( (string) $fit !== (string) $value ) {
-			continue;
-		}
-
-		$size = isset( $attrs['attribute_pa_size'] ) ? $attrs['attribute_pa_size'] : '';
-		if ( $size === '' ) {
-			$plain = isset( $plain ) ? $plain : $variation->get_attributes();
-			$size  = isset( $plain['pa_size'] ) ? $plain['pa_size'] : '';
-		}
-		if ( $size === '' || isset( $seen_sizes[ $size ] ) ) {
-			continue;
-		}
-
-		$seen_sizes[ $size ] = true;
+	$filtered = array();
+	foreach ( (array) $sizes as $size ) {
 		$filtered[] = array(
 			'attributes' => array(
-				'attribute_pa_size' => $size,
+				'attribute_pa_size' => (string) $size,
 			),
 		);
 	}

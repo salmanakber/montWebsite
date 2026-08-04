@@ -561,6 +561,7 @@ class CustomVariation {
 		if ( $key ) {
 			delete_transient( 'mont_chart_' . md5( $key ) );
 			delete_transient( 'mont_chart_v2_' . md5( $key ) );
+			delete_transient( 'mont_chart_v3_' . md5( $key ) );
 		}
 		if ( $fit && $size ) {
 			$fit_l  = strtolower( $fit );
@@ -568,6 +569,7 @@ class CustomVariation {
 			delete_transient( 'mont_szimg_' . md5( $fit_l . '|' . $size_l ) );
 			delete_transient( 'mont_chart_' . md5( $fit . '___' . $size ) );
 			delete_transient( 'mont_chart_v2_' . md5( $fit . '___' . $size ) );
+			delete_transient( 'mont_chart_v3_' . md5( $fit . '___' . $size ) );
 			// Frontend thumb pairs use a content-hash key; bump generation so new uploads show immediately.
 			set_transient( 'mont_szfront_gen', (string) time(), WEEK_IN_SECONDS );
 		}
@@ -635,7 +637,7 @@ class CustomVariation {
 			wp_send_json( array() );
 		}
 
-		$transient_key = 'mont_chart_v2_' . md5( $key );
+		$transient_key = 'mont_chart_v3_' . md5( $key );
 		$cached        = get_transient( $transient_key );
 		if ( is_array( $cached ) ) {
 			wp_send_json( $cached );
@@ -659,10 +661,18 @@ class CustomVariation {
 		}
 
 		$out = array();
+		$warm_urls = array();
 		foreach ( $variations as $row ) {
 			$fit  = ! empty( $row->body_fit ) ? $row->body_fit : ( explode( '___', $row->attributes )[0] ?? '' );
 			$size = ! empty( $row->size_slug ) ? $row->size_slug : ( explode( '___', $row->attributes )[1] ?? '' );
 			$overrides = ! empty( $row->diagram_images ) ? $row->diagram_images : '{}';
+			// Never resize images during this AJAX — that was causing 10–20s waits.
+			$images = Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides, false );
+			foreach ( $images as $img ) {
+				if ( ! empty( $img['full'] ) && ( empty( $img['thumb'] ) || $img['thumb'] === $img['full'] ) ) {
+					$warm_urls[] = $img['full'];
+				}
+			}
 			$out[] = array(
 				'attributes'   => $row->attributes,
 				'body_fit'     => $fit,
@@ -674,23 +684,59 @@ class CustomVariation {
 				'half_waist'   => $row->half_waist,
 				'half_bottom'  => $row->half_bottom,
 				'neck_collar'  => $row->neck_collar,
-				'images'       => Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides ),
+				'images'       => $images,
 			);
 		}
 
 		// Even without chart numbers, return diagram URLs so the PDP can update icons.
 		if ( empty( $out ) && false !== strpos( $key, '___' ) ) {
 			$parts = explode( '___', $key, 2 );
+			$images = Mont_Size_Diagram_Helper::get_frontend_images( $parts[0], $parts[1], array(), false );
+			foreach ( $images as $img ) {
+				if ( ! empty( $img['full'] ) && ( empty( $img['thumb'] ) || $img['thumb'] === $img['full'] ) ) {
+					$warm_urls[] = $img['full'];
+				}
+			}
 			$out[] = array(
 				'attributes' => $key,
 				'body_fit'   => $parts[0],
 				'size_slug'  => $parts[1],
-				'images'     => Mont_Size_Diagram_Helper::get_frontend_images( $parts[0], $parts[1], array() ),
+				'images'     => $images,
 			);
 		}
 
 		set_transient( $transient_key, $out, 6 * HOUR_IN_SECONDS );
-		wp_send_json( $out );
+
+		// Flush JSON to the browser first, then warm thumbs in the background.
+		if ( ! headers_sent() ) {
+			nocache_headers();
+			header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+			header( 'X-Content-Type-Options: nosniff' );
+		}
+		echo wp_json_encode( $out );
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			@fastcgi_finish_request();
+		} else {
+			if ( function_exists( 'session_write_close' ) ) {
+				@session_write_close();
+			}
+			while ( ob_get_level() > 0 ) {
+				@ob_end_flush();
+			}
+			@flush();
+		}
+
+		if ( $warm_urls ) {
+			foreach ( array_values( array_unique( $warm_urls ) ) as $url ) {
+				$path = Mont_Size_Diagram_Helper::url_to_local_path( $url );
+				if ( $path ) {
+					Mont_Size_Diagram_Helper::make_cached_thumb( $path );
+				}
+			}
+			delete_transient( 'mont_chart_v3_' . md5( $key ) );
+			set_transient( 'mont_szfront_gen', (string) time(), WEEK_IN_SECONDS );
+		}
+		exit;
 	}
 
 	public function ajax_scan_size_images() {
