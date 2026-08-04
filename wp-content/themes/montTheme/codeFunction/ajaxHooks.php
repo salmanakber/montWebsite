@@ -103,6 +103,62 @@ class ajaxHooks
 		return $map;
 	}
 
+	/**
+	 * Global fit___size → measurement numbers (no images). Small payload, cached.
+	 *
+	 * @return array
+	 */
+	public static function get_size_chart_map() {
+		$cache_key = 'mont_all_charts_meas_v1';
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'variation_settings';
+		// Table may not exist on fresh installs.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( $exists !== $table ) {
+			set_transient( $cache_key, array(), HOUR_IN_SECONDS );
+			return array();
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results(
+			"SELECT attributes, body_fit, size_slug, shirt_length, sleeve_length, shoulder, half_chest, half_waist, half_bottom, neck_collar
+			 FROM {$table}"
+		);
+
+		$map = array();
+		foreach ( (array) $rows as $row ) {
+			$key = ! empty( $row->attributes ) ? $row->attributes : '';
+			if ( ! $key && ! empty( $row->body_fit ) && ! empty( $row->size_slug ) ) {
+				$key = $row->body_fit . '___' . $row->size_slug;
+			}
+			if ( ! $key ) {
+				continue;
+			}
+			$map[ $key ] = array(
+				'attributes'    => $key,
+				'body_fit'      => $row->body_fit,
+				'size_slug'     => $row->size_slug,
+				'shirt_length'  => $row->shirt_length,
+				'sleeve_length' => $row->sleeve_length,
+				'shoulder'      => $row->shoulder,
+				'half_chest'    => $row->half_chest,
+				'half_waist'    => $row->half_waist,
+				'half_bottom'   => $row->half_bottom,
+				'neck_collar'   => $row->neck_collar,
+				'images'        => new stdClass(),
+			);
+		}
+
+		set_transient( $cache_key, $map, 12 * HOUR_IN_SECONDS );
+		return $map;
+	}
+
 	public function addingToCart()
 	{
 
@@ -137,12 +193,14 @@ class ajaxHooks
     $localize = array(
         'url'      => admin_url('admin-ajax.php'),
         'fitSizes' => new stdClass(),
+        'charts'   => new stdClass(),
     );
     if ( ! is_admin() && function_exists( 'is_product' ) && is_product() ) {
         $pid = get_queried_object_id();
         if ( $pid ) {
             $localize['productId'] = (int) $pid;
             $localize['fitSizes']  = self::get_fit_size_map( $pid );
+            $localize['charts']    = self::get_size_chart_map();
         }
     }
     wp_localize_script('mont-variation-ajax', 'ajaxurl', $localize);

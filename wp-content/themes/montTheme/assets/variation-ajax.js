@@ -221,16 +221,60 @@ jQuery(document).ready(function ($) {
         $('.velg-snipp').find(".mont_variation-group").addClass('mont_open');
         $sizeItem.parents('.mont_option-list').removeClass('mont_open');
 
-        function finishWithData(data) {
-            applyMontCustomSizeChart(data);
+        function openTailor() {
             $tailorGroup.find(".mont_option-list").addClass('mont_open');
             $tailorGroup.addClass('mont_open');
             $('.skreddersydd').find(".mont_option-list").addClass('mont_open');
             $('.skreddersydd').find(".mont_variation-group").addClass('mont_open');
         }
 
+        function finishWithData(data) {
+            applyMontCustomSizeChart(data);
+            openTailor();
+        }
+
+        function chartFromPage(key) {
+            var charts = (typeof ajaxurl !== 'undefined' && ajaxurl.charts) ? ajaxurl.charts : null;
+            if (!charts || typeof charts !== 'object') return null;
+            if (charts[key]) return charts[key];
+            return null;
+        }
+
+        function loadDiagramsAsync(key) {
+            // No loader — measurements already shown. Diagrams fill in when ready.
+            $.ajax({
+                url: ajaxurl.url,
+                type: "POST",
+                dataType: "json",
+                data: {
+                    action: "mont_get_size_diagrams",
+                    key: key
+                },
+                success: function (res) {
+                    var images = res && res.success && res.data ? res.data.images : null;
+                    if (!images) return;
+                    if (montChartCache[key]) {
+                        montChartCache[key].images = images;
+                    }
+                    applyMontCustomSizeChart({ images: images });
+                }
+            });
+        }
+
+        // Instant path: measurement chart embedded on the product page.
+        var localChart = chartFromPage(chartKey);
+        if (localChart) {
+            montChartCache[chartKey] = localChart;
+            finishWithData(localChart);
+            loadDiagramsAsync(chartKey);
+            return;
+        }
+
         if (montChartCache[chartKey]) {
             finishWithData(montChartCache[chartKey]);
+            if (!montChartCache[chartKey].images || !Object.keys(montChartCache[chartKey].images).length) {
+                loadDiagramsAsync(chartKey);
+            }
             return;
         }
 
@@ -254,6 +298,8 @@ jQuery(document).ready(function ($) {
 
                 montChartCache[chartKey] = response[0];
                 finishWithData(response[0]);
+                // Diagrams load after measurements so the user never waits on image I/O.
+                loadDiagramsAsync(chartKey);
             },
             error: function (xhr, status) {
                 if (status !== 'abort') {
