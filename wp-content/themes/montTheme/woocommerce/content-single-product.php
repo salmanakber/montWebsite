@@ -266,9 +266,18 @@ div#mont_backButton { z-index: 999; }
     /* Critical mobile slider — inline so cache of old CSS cannot keep 2-col grid */
     .mont_gallery_wrapper-unified {
         position: relative !important;
-        width: 100% !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: calc(50% - 50vw) !important;
+        margin-right: calc(50% - 50vw) !important;
         overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    .mont_layout_sixty {
+        width: 100% !important;
+        padding: 0 !important;
         max-width: 100% !important;
+        overflow: hidden !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_grid_wrapper,
     #mont_gallery_track {
@@ -276,7 +285,7 @@ div#mont_backButton { z-index: 999; }
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         gap: 0 !important;
-        overflow: visible !important;
+        overflow: hidden !important;
         grid-template-columns: none !important;
         grid-template-rows: none !important;
     }
@@ -293,6 +302,8 @@ div#mont_backButton { z-index: 999; }
         aspect-ratio: 3 / 4 !important;
         position: relative !important;
         overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_item video,
     .mont_gallery_wrapper-unified .mont_gallery_item img,
@@ -306,6 +317,9 @@ div#mont_backButton { z-index: 999; }
         min-width: 0 !important;
         object-fit: cover !important;
         display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_item video {
         pointer-events: none;
@@ -327,12 +341,13 @@ div#mont_backButton { z-index: 999; }
         justify-content: space-between !important;
         pointer-events: none !important;
         z-index: 10 !important;
-        padding: 0 6px !important;
+        padding: 0 10px !important;
+        box-sizing: border-box !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn {
         pointer-events: auto !important;
-        width: 28px !important;
-        height: 48px !important;
+        width: 44px !important;
+        height: 56px !important;
         border-radius: 0 !important;
         border: none !important;
         background: transparent !important;
@@ -343,15 +358,16 @@ div#mont_backButton { z-index: 999; }
         box-shadow: none !important;
         cursor: pointer !important;
         padding: 0 !important;
-        opacity: 0.85;
+        opacity: 0.92;
     }
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn:disabled {
         opacity: 0.25 !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn svg {
-        width: 22px !important;
-        height: 22px !important;
+        width: 34px !important;
+        height: 34px !important;
         stroke: currentColor !important;
+        stroke-width: 2.25 !important;
         fill: none !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_dots {

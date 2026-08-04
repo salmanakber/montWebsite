@@ -565,7 +565,9 @@ class CustomVariation {
 			delete_transient( 'mont_chart_v2_' . md5( $key ) );
 			delete_transient( 'mont_chart_v3_' . md5( $key ) );
 			delete_transient( 'mont_chart_meas_v1_' . md5( $key ) );
+			delete_transient( 'mont_chart_meas_v2_' . md5( $key ) );
 			delete_transient( 'mont_diag_v1_' . md5( $key ) );
+			delete_transient( 'mont_diag_v2_' . md5( $key ) );
 		}
 		if ( $fit && $size ) {
 			$fit_l  = strtolower( $fit );
@@ -576,8 +578,11 @@ class CustomVariation {
 			delete_transient( 'mont_chart_v2_' . md5( $combo ) );
 			delete_transient( 'mont_chart_v3_' . md5( $combo ) );
 			delete_transient( 'mont_chart_meas_v1_' . md5( $combo ) );
+			delete_transient( 'mont_chart_meas_v2_' . md5( $combo ) );
 			delete_transient( 'mont_diag_v1_' . md5( $combo ) );
+			delete_transient( 'mont_diag_v2_' . md5( $combo ) );
 			delete_transient( 'mont_all_charts_meas_v1' );
+			delete_transient( 'mont_all_charts_meas_v2' );
 			// Frontend thumb pairs use a content-hash key; bump generation so new uploads show immediately.
 			set_transient( 'mont_szfront_gen', (string) time(), WEEK_IN_SECONDS );
 		}
@@ -649,59 +654,85 @@ class CustomVariation {
 			wp_send_json( array() );
 		}
 
-		$transient_key = 'mont_chart_meas_v1_' . md5( $key );
+		$transient_key = 'mont_chart_meas_v2_' . md5( $key );
 		$cached        = get_transient( $transient_key );
 		if ( is_array( $cached ) ) {
 			wp_send_json( $cached );
 		}
 
-		$select = 'attributes, body_fit, size_slug, shirt_length, sleeve_length, shoulder, half_chest, half_waist, half_bottom, neck_collar';
-		$variations = $wpdb->get_results(
-			$wpdb->prepare( "SELECT {$select} FROM {$this->table_name} WHERE attributes = %s LIMIT 1", $key )
-		);
-
-		if ( empty( $variations ) && false !== strpos( $key, '___' ) ) {
-			$parts = explode( '___', $key, 2 );
-			$variations = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT {$select} FROM {$this->table_name} WHERE body_fit = %s AND size_slug = %s LIMIT 1",
-					$parts[0],
-					$parts[1]
-				)
-			);
-		}
-
+		$row = $this->find_chart_row( $key );
 		$out = array();
-		foreach ( $variations as $row ) {
-			$fit  = ! empty( $row->body_fit ) ? $row->body_fit : ( explode( '___', $row->attributes )[0] ?? '' );
-			$size = ! empty( $row->size_slug ) ? $row->size_slug : ( explode( '___', $row->attributes )[1] ?? '' );
+
+		if ( $row ) {
+			$fit  = ! empty( $row->body_fit ) ? $row->body_fit : ( explode( '___', (string) $row->attributes )[0] ?? '' );
+			$size = ! empty( $row->size_slug ) ? $row->size_slug : ( explode( '___', (string) $row->attributes )[1] ?? '' );
 			$out[] = array(
-				'attributes'    => $row->attributes,
+				'attributes'    => ! empty( $row->attributes ) ? $row->attributes : $key,
 				'body_fit'      => $fit,
 				'size_slug'     => $size,
-				'shirt_length'  => $row->shirt_length,
-				'sleeve_length' => $row->sleeve_length,
-				'shoulder'      => $row->shoulder,
-				'half_chest'    => $row->half_chest,
-				'half_waist'    => $row->half_waist,
-				'half_bottom'   => $row->half_bottom,
-				'neck_collar'   => $row->neck_collar,
-				'images'        => new stdClass(), // filled by mont_get_size_diagrams
+				'shirt_length'  => isset( $row->shirt_length ) ? $row->shirt_length : '',
+				'sleeve_length' => isset( $row->sleeve_length ) ? $row->sleeve_length : '',
+				'shoulder'      => isset( $row->shoulder ) ? $row->shoulder : '',
+				'half_chest'    => isset( $row->half_chest ) ? $row->half_chest : '',
+				'half_waist'    => isset( $row->half_waist ) ? $row->half_waist : '',
+				'half_bottom'   => isset( $row->half_bottom ) ? $row->half_bottom : '',
+				'neck_collar'   => isset( $row->neck_collar ) ? $row->neck_collar : '',
+				'images'        => array(),
 			);
-		}
-
-		if ( empty( $out ) && false !== strpos( $key, '___' ) ) {
+		} elseif ( false !== strpos( $key, '___' ) ) {
 			$parts = explode( '___', $key, 2 );
 			$out[] = array(
 				'attributes' => $key,
 				'body_fit'   => $parts[0],
 				'size_slug'  => $parts[1],
-				'images'     => new stdClass(),
+				'images'     => array(),
 			);
 		}
 
 		set_transient( $transient_key, $out, 12 * HOUR_IN_SECONDS );
 		wp_send_json( $out );
+	}
+
+	/**
+	 * Resolve a chart row by attributes key or body_fit + size_slug (flexible).
+	 */
+	private function find_chart_row( $key ) {
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE attributes = %s LIMIT 1",
+				$key
+			)
+		);
+		if ( $row ) {
+			return $row;
+		}
+		if ( false === strpos( $key, '___' ) ) {
+			return null;
+		}
+		$parts = explode( '___', $key, 2 );
+		$fit   = $parts[0];
+		$size  = $parts[1];
+		$row   = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE body_fit = %s AND size_slug = %s LIMIT 1",
+				$fit,
+				$size
+			)
+		);
+		if ( $row ) {
+			return $row;
+		}
+		// Loose match — admin may store slightly different fit/size slugs.
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table_name}
+				 WHERE body_fit LIKE %s AND size_slug LIKE %s
+				 LIMIT 1",
+				'%' . $wpdb->esc_like( $fit ) . '%',
+				'%' . $wpdb->esc_like( $size ) . '%'
+			)
+		);
 	}
 
 	/**
@@ -711,41 +742,31 @@ class CustomVariation {
 	public function ajax_get_size_diagrams() {
 		$key = isset( $_POST['key'] ) ? sanitize_text_field( wp_unslash( $_POST['key'] ) ) : '';
 		if ( ! $key || false === strpos( $key, '___' ) ) {
-			wp_send_json_success( array( 'images' => new stdClass() ) );
+			wp_send_json_success( array( 'images' => array() ) );
 		}
 
 		$parts = explode( '___', $key, 2 );
 		$fit   = $parts[0];
 		$size  = $parts[1];
 
-		$cache_key = 'mont_diag_v1_' . md5( $key );
+		$cache_key = 'mont_diag_v2_' . md5( $key );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			wp_send_json_success( array( 'images' => $cached ) );
 		}
 
-		global $wpdb;
-		$overrides = '{}';
-		$row       = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT diagram_images FROM {$this->table_name} WHERE attributes = %s LIMIT 1",
-				$key
-			)
-		);
-		if ( ! $row ) {
-			$row = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT diagram_images FROM {$this->table_name} WHERE body_fit = %s AND size_slug = %s LIMIT 1",
-					$fit,
-					$size
-				)
-			);
+		$row = $this->find_chart_row( $key );
+		if ( $row ) {
+			if ( ! empty( $row->body_fit ) ) {
+				$fit = $row->body_fit;
+			}
+			if ( ! empty( $row->size_slug ) ) {
+				$size = $row->size_slug;
+			}
 		}
-		if ( $row && ! empty( $row->diagram_images ) ) {
-			$overrides = $row->diagram_images;
-		}
+		$overrides = ( $row && ! empty( $row->diagram_images ) ) ? $row->diagram_images : '{}';
 
-		// Full URLs only (+ existing thumbs if already on disk). No resize / no attachment_url_to_postid.
+		// Full URLs only (+ existing thumbs if already on disk). No resize during request.
 		$images = Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides, false );
 		set_transient( $cache_key, $images, 12 * HOUR_IN_SECONDS );
 		wp_send_json_success( array( 'images' => $images ) );

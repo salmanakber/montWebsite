@@ -49,7 +49,12 @@
         }
 
         function measure() {
-            slideW = Math.round(wrapper.getBoundingClientRect().width) || wrapper.offsetWidth || window.innerWidth;
+            // Prefer viewport width so parent padding cannot leave a white strip on the right.
+            var w = Math.round(wrapper.getBoundingClientRect().width);
+            if (!w || w < window.innerWidth - 2) {
+                w = Math.round(window.innerWidth);
+            }
+            slideW = w || wrapper.offsetWidth || window.innerWidth;
             return slideW;
         }
 

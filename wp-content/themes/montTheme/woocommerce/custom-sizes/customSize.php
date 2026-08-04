@@ -1,7 +1,10 @@
 <form id="customizationForm">
       <ul class="mont_sizes-measurement-list mont_option-list">
         <li class="mont_sizes-measurement-item" data-mont-size="shirt_length">
+            <span class="mont_sizes-measurement-icon-wrap">
             <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/length.jpg' ); ?>" alt="Shirt Length" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/length.jpg' ); ?>">
+            <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
+            </span>
             <div class="mont_sizes-measurement-row">
                 <div class="mont_sizes-measurement-details">
                     <h3 class="mont_sizes-measurement-name">Skjortelengde</h3>
@@ -22,7 +25,10 @@
         </li>
 
         <li class="mont_sizes-measurement-item" data-mont-size="sleeve_length">
+            <span class="mont_sizes-measurement-icon-wrap">
             <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/sleeve-length.jpg' ); ?>" alt="Sleeve Length" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/sleeve-length.jpg' ); ?>">
+            <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
+            </span>
             <div class="mont_sizes-measurement-row">
                 <div class="mont_sizes-measurement-details">
                     <h3 class="mont_sizes-measurement-name">Ermelengde</h3>
@@ -52,7 +58,10 @@
 
         <div class="mont_sizes-additional-measurements mont_sizes-hidden">
             <li class="mont_sizes-measurement-item" data-mont-size="half_waist">
+                <span class="mont_sizes-measurement-icon-wrap">
                 <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-waist.jpg' ); ?>" alt="Waist" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-waist.jpg' ); ?>">
+                <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
+                </span>
                 <div class="mont_sizes-measurement-row">
                     <div class="mont_sizes-measurement-details">
                         <h3 class="mont_sizes-measurement-name">Midje</h3>
@@ -73,7 +82,10 @@
             </li>
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_chest">
+                <span class="mont_sizes-measurement-icon-wrap">
                 <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half_chest.jpg' ); ?>" alt="Chest" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half_chest.jpg' ); ?>">
+                <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
+                </span>
                 <div class="mont_sizes-measurement-row">
                     <div class="mont_sizes-measurement-details">
                         <h3 class="mont_sizes-measurement-name">Bryststørrelse</h3>
@@ -94,7 +106,10 @@
             </li>
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_bottom">
+                <span class="mont_sizes-measurement-icon-wrap">
                 <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-bottom.jpg' ); ?>" alt="Half Bottom" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-bottom.jpg' ); ?>">
+                <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
+                </span>
                 <div class="mont_sizes-measurement-row">
                     <div class="mont_sizes-measurement-details">
                         <h3 class="mont_sizes-measurement-name">Nederst kant</h3>
@@ -115,7 +130,10 @@
             </li>
 
             <li class="mont_sizes-measurement-item" data-mont-size="shoulder">
+                <span class="mont_sizes-measurement-icon-wrap">
                 <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/Shoulder.jpg' ); ?>" alt="Shoulder" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/Shoulder.jpg' ); ?>">
+                <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
+                </span>
                 <div class="mont_sizes-measurement-row">
                     <div class="mont_sizes-measurement-details">
                         <h3 class="mont_sizes-measurement-name">Skulder</h3>

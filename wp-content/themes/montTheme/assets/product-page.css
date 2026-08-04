@@ -162,9 +162,9 @@ body.monte-size-drawer-open {
 }
 
 .monte-size-drawer__panel {
-    width: 40%;
-    min-width: 360px;
-    max-width: 560px;
+    width: 52%;
+    min-width: 420px;
+    max-width: 720px;
     height: 100%;
     background: #fff;
     box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
@@ -992,7 +992,19 @@ a.custom-add-to-cart {
     .mont_gallery_wrapper-unified,
     .mont_gallery_wrapper-unified.is-mobile-slider {
         position: relative !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: calc(50% - 50vw) !important;
+        margin-right: calc(50% - 50vw) !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    .mont_layout_sixty {
         width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
         overflow: hidden !important;
     }
 
@@ -1021,6 +1033,8 @@ a.custom-add-to-cart {
         aspect-ratio: 3 / 4 !important;
         position: relative !important;
         overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_item video,
@@ -1038,6 +1052,9 @@ a.custom-add-to-cart {
         object-fit: cover !important;
         display: block !important;
         transform: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_item video {
@@ -1063,13 +1080,14 @@ a.custom-add-to-cart {
         justify-content: space-between !important;
         pointer-events: none !important;
         z-index: 10 !important;
-        padding: 0 6px !important;
+        padding: 0 10px !important;
+        box-sizing: border-box !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn {
         pointer-events: auto !important;
-        width: 28px !important;
-        height: 48px !important;
+        width: 44px !important;
+        height: 56px !important;
         border-radius: 0 !important;
         border: none !important;
         background: transparent !important;
@@ -1080,7 +1098,7 @@ a.custom-add-to-cart {
         box-shadow: none !important;
         cursor: pointer !important;
         padding: 0 !important;
-        opacity: 0.85;
+        opacity: 0.92;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn:disabled {
@@ -1088,9 +1106,10 @@ a.custom-add-to-cart {
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_nav_btn svg {
-        width: 22px !important;
-        height: 22px !important;
+        width: 34px !important;
+        height: 34px !important;
         stroke: currentColor !important;
+        stroke-width: 2.25 !important;
         fill: none !important;
     }
 
@@ -1121,4 +1140,40 @@ a.custom-add-to-cart {
     .mont_gallery_wrapper-unified .mont_gallery_dots {
         display: none !important;
     }
+}
+
+/* Per-measurement image loading spinner for Skreddersydd */
+.mont_sizes-measurement-item {
+    position: relative;
+}
+.mont_sizes-measurement-icon-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    display: inline-block;
+}
+.mont_sizes-measurement-icon-wrap .mont_sizes-measurement-icon {
+    width: 64px;
+    height: 64px;
+}
+.mont_sizes-measurement-item.is-img-loading .mont_sizes-measurement-icon {
+    opacity: 0.35;
+}
+.mont_sizes-measurement-item.is-img-loading .mont_sizes-img-spinner {
+    display: block;
+}
+.mont_sizes-img-spinner {
+    display: none;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #d8d8d8;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: mont-spin 0.7s linear infinite;
+    z-index: 2;
+    pointer-events: none;
 }

@@ -233,15 +233,37 @@ jQuery(document).ready(function ($) {
             openTailor();
         }
 
+        function chartHasNumbers(data) {
+            if (!data) return false;
+            var keys = ['shirt_length', 'sleeve_length', 'shoulder', 'half_chest', 'half_waist', 'half_bottom'];
+            for (var i = 0; i < keys.length; i++) {
+                var v = data[keys[i]];
+                if (v !== undefined && v !== null && v !== '' && Number(v) !== 0) return true;
+            }
+            return false;
+        }
+
         function chartFromPage(key) {
             var charts = (typeof ajaxurl !== 'undefined' && ajaxurl.charts) ? ajaxurl.charts : null;
             if (!charts || typeof charts !== 'object') return null;
-            if (charts[key]) return charts[key];
+            if (charts[key] && chartHasNumbers(charts[key])) return charts[key];
+            // Case-insensitive key match
+            var keys = Object.keys(charts);
+            var needle = String(key).toLowerCase();
+            for (var i = 0; i < keys.length; i++) {
+                if (String(keys[i]).toLowerCase() === needle && chartHasNumbers(charts[keys[i]])) {
+                    return charts[keys[i]];
+                }
+            }
             return null;
         }
 
+        function setImageBoxLoaders(on) {
+            $('.mont_sizes-measurement-item[data-mont-size]').toggleClass('is-img-loading', !!on);
+        }
+
         function loadDiagramsAsync(key) {
-            // No loader — measurements already shown. Diagrams fill in when ready.
+            setImageBoxLoaders(true);
             $.ajax({
                 url: ajaxurl.url,
                 type: "POST",
@@ -252,16 +274,52 @@ jQuery(document).ready(function ($) {
                 },
                 success: function (res) {
                     var images = res && res.success && res.data ? res.data.images : null;
-                    if (!images) return;
-                    if (montChartCache[key]) {
-                        montChartCache[key].images = images;
+                    if (images && typeof images === 'object') {
+                        if (montChartCache[key]) {
+                            montChartCache[key].images = images;
+                        }
+                        applyMontCustomSizeChart({ images: images });
                     }
-                    applyMontCustomSizeChart({ images: images });
+                },
+                complete: function () {
+                    setImageBoxLoaders(false);
                 }
             });
         }
 
-        // Instant path: measurement chart embedded on the product page.
+        function fetchMeasurements(key, done) {
+            montAbortActive();
+            montShowLoader($tailorGroup, 'Laster skreddersøm…');
+            montActiveRequest = $.ajax({
+                url: ajaxurl.url,
+                type: "POST",
+                dataType: "json",
+                data: {
+                    action: "get_all_variation",
+                    key: key
+                },
+                success: function (response) {
+                    montHideLoader($tailorGroup);
+                    if (!response || !response.length) {
+                        done(null);
+                        return;
+                    }
+                    montChartCache[key] = response[0];
+                    done(response[0]);
+                },
+                error: function (xhr, status) {
+                    if (status !== 'abort') {
+                        montHideLoader($tailorGroup);
+                    }
+                    done(null);
+                },
+                complete: function () {
+                    montActiveRequest = null;
+                }
+            });
+        }
+
+        // Instant numbers if chart is embedded with real values; otherwise AJAX.
         var localChart = chartFromPage(chartKey);
         if (localChart) {
             montChartCache[chartKey] = localChart;
@@ -270,45 +328,16 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        if (montChartCache[chartKey]) {
+        if (montChartCache[chartKey] && chartHasNumbers(montChartCache[chartKey])) {
             finishWithData(montChartCache[chartKey]);
-            if (!montChartCache[chartKey].images || !Object.keys(montChartCache[chartKey].images).length) {
-                loadDiagramsAsync(chartKey);
-            }
+            loadDiagramsAsync(chartKey);
             return;
         }
 
-        montAbortActive();
-        montShowLoader($tailorGroup, 'Laster skreddersøm…');
-
-        montActiveRequest = $.ajax({
-            url: ajaxurl.url,
-            type: "POST",
-            dataType: "json",
-            data: {
-                action: "get_all_variation",
-                key: chartKey
-            },
-            success: function (response) {
-                montHideLoader($tailorGroup);
-
-                if (!response || !response.length) {
-                    return;
-                }
-
-                montChartCache[chartKey] = response[0];
-                finishWithData(response[0]);
-                // Diagrams load after measurements so the user never waits on image I/O.
-                loadDiagramsAsync(chartKey);
-            },
-            error: function (xhr, status) {
-                if (status !== 'abort') {
-                    montHideLoader($tailorGroup);
-                }
-            },
-            complete: function () {
-                montActiveRequest = null;
-            }
+        fetchMeasurements(chartKey, function (data) {
+            if (!data) return;
+            finishWithData(data);
+            loadDiagramsAsync(chartKey);
         });
     });
 

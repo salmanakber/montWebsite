@@ -109,7 +109,7 @@ class ajaxHooks
 	 * @return array
 	 */
 	public static function get_size_chart_map() {
-		$cache_key = 'mont_all_charts_meas_v1';
+		$cache_key = 'mont_all_charts_meas_v2';
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -127,7 +127,7 @@ class ajaxHooks
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = $wpdb->get_results(
-			"SELECT attributes, body_fit, size_slug, shirt_length, sleeve_length, shoulder, half_chest, half_waist, half_bottom, neck_collar
+			"SELECT attributes, body_fit, size_slug, shirt_length, sleeve_length, shoulder, half_chest, half_waist, half_bottom
 			 FROM {$table}"
 		);
 
@@ -150,9 +150,15 @@ class ajaxHooks
 				'half_chest'    => $row->half_chest,
 				'half_waist'    => $row->half_waist,
 				'half_bottom'   => $row->half_bottom,
-				'neck_collar'   => $row->neck_collar,
-				'images'        => new stdClass(),
+				'images'        => array(),
 			);
+			// Also index by body_fit___size_slug so JS keys always resolve.
+			$alt = ( ! empty( $row->body_fit ) && ! empty( $row->size_slug ) )
+				? $row->body_fit . '___' . $row->size_slug
+				: '';
+			if ( $alt && $alt !== $key ) {
+				$map[ $alt ] = $map[ $key ];
+			}
 		}
 
 		set_transient( $cache_key, $map, 12 * HOUR_IN_SECONDS );
