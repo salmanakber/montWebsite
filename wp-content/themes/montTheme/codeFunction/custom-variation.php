@@ -1,5 +1,6 @@
 <?php
 require_once get_template_directory() . '/codeFunction/size-diagram-helper.php';
+require_once get_template_directory() . '/codeFunction/size-media-seed.php';
 
 class CustomVariation {
 	protected static $slider_displayed = false;
@@ -30,6 +31,8 @@ class CustomVariation {
 		add_action( 'wp_ajax_mont_get_size_diagrams', array( $this, 'ajax_get_size_diagrams' ) );
 		add_action( 'wp_ajax_nopriv_mont_get_size_diagrams', array( $this, 'ajax_get_size_diagrams' ) );
 		add_action( 'wp_ajax_mont_scan_size_images', array( $this, 'ajax_scan_size_images' ) );
+		add_action( 'wp_ajax_mont_seed_size_media_batch', array( $this, 'ajax_seed_size_media_batch' ) );
+		add_action( 'wp_ajax_mont_seed_size_media_reset', array( $this, 'ajax_seed_size_media_reset' ) );
 		// Schema only once (dbDelta on every request made the whole site slow).
 		add_action( 'admin_init', array( $this, 'maybe_install_schema' ) );
 	}
@@ -226,6 +229,8 @@ class CustomVariation {
 				'fields'   => array_keys( self::MEASUREMENT_FIELDS ),
 				'diagrams' => Mont_Size_Diagram_Helper::MEASUREMENT_FILES,
 				'labels'   => self::MEASUREMENT_FIELDS,
+				'seedDone' => Mont_Size_Media_Seed::is_complete(),
+				'autoSeed' => ! Mont_Size_Media_Seed::is_complete(),
 				'i18n'     => array(
 					'saved'   => 'All changes saved.',
 					'error'   => 'Could not save. Please try again.',
@@ -236,6 +241,9 @@ class CustomVariation {
 					'auto'    => 'Auto',
 					'missing' => 'Missing',
 					'noMedia' => 'Media library could not open. Hard-refresh this page and try again.',
+					'seedRun' => 'Import Size folder → Media + seed DB',
+					'seeding' => 'Importing Size images…',
+					'seedOk'  => 'Size folder import complete.',
 				),
 			)
 		);
@@ -301,11 +309,21 @@ class CustomVariation {
 			<div class="mont-vs-hero">
 				<div>
 					<h1>Size Chart Studio</h1>
-					<p>Manage body-fit × size measurements in bulk. Diagrams auto-load from <code>Size/</code> — you can upload or replace any diagram per size.</p>
+					<p>Manage body-fit × size measurements in bulk. Import theme <code>Size/</code> diagrams into the Media Library for fast product-page loading, then edit any value here.</p>
 				</div>
 				<div class="mont-vs-hero__actions">
 					<button type="button" class="button button-primary mont-vs-save-bulk" id="mont-vs-save-bulk">Save all changes</button>
+					<button type="button" class="button button-secondary" id="mont-vs-seed-media"><?php echo Mont_Size_Media_Seed::is_complete() ? 'Re-import Size → Media + Seed' : 'Import Size folder → Media + Seed'; ?></button>
 					<button type="button" class="button mont-vs-scan-images" id="mont-vs-scan-images">Refresh image library</button>
+				</div>
+			</div>
+
+			<div class="mont-vs-seed-box" id="mont-vs-seed-box" <?php echo Mont_Size_Media_Seed::is_complete() ? 'hidden' : ''; ?>>
+				<strong>Size folder import</strong>
+				<p>Uploads every diagram from <code>theme/Size/</code> into WordPress Media (with thumbnails), then seeds cm values from the Size Guide tables into the database. Run this once for fast AJAX.</p>
+				<div class="mont-vs-seed-progress">
+					<div class="mont-vs-seed-bar"><span id="mont-vs-seed-bar"></span></div>
+					<p id="mont-vs-seed-status">Waiting to start…</p>
 				</div>
 			</div>
 
@@ -411,8 +429,18 @@ class CustomVariation {
 												<?php endforeach; ?>
 												<td class="mont-vs-thumbs">
 													<?php if ( $imgs ) : ?>
-														<?php foreach ( array_slice( $imgs, 0, 4 ) as $img_url ) :
-															$thumb_url = Mont_Size_Diagram_Helper::ensure_thumb_url( $img_url );
+														<?php foreach ( array_slice( $imgs, 0, 4, true ) as $img_entry ) :
+															if ( is_array( $img_entry ) ) {
+																$thumb_url = ! empty( $img_entry['thumb'] ) ? $img_entry['thumb'] : ( ! empty( $img_entry['full'] ) ? $img_entry['full'] : '' );
+																if ( ! $thumb_url && ! empty( $img_entry['id'] ) ) {
+																	$thumb_url = wp_get_attachment_image_url( (int) $img_entry['id'], 'thumbnail' );
+																}
+															} else {
+																$thumb_url = Mont_Size_Diagram_Helper::ensure_thumb_url( $img_entry );
+															}
+															if ( ! $thumb_url ) {
+																continue;
+															}
 															?>
 															<img src="<?php echo esc_url( $thumb_url ); ?>" alt="" loading="lazy">
 														<?php endforeach; ?>
@@ -542,9 +570,30 @@ class CustomVariation {
 			if ( is_array( $raw ) ) {
 				$clean = array();
 				foreach ( $raw as $k => $url ) {
+					$k = sanitize_key( $k );
+					if ( is_array( $url ) ) {
+						$entry = array();
+						if ( ! empty( $url['id'] ) ) {
+							$entry['id'] = (int) $url['id'];
+						}
+						if ( ! empty( $url['full'] ) ) {
+							$entry['full'] = esc_url_raw( (string) $url['full'] );
+						}
+						if ( ! empty( $url['thumb'] ) ) {
+							$entry['thumb'] = esc_url_raw( (string) $url['thumb'] );
+						}
+						if ( $entry ) {
+							$clean[ $k ] = $entry;
+						}
+						continue;
+					}
+					if ( is_numeric( $url ) ) {
+						$clean[ $k ] = array( 'id' => (int) $url );
+						continue;
+					}
 					$url = esc_url_raw( (string) $url );
 					if ( $url ) {
-						$clean[ sanitize_key( $k ) ] = $url;
+						$clean[ $k ] = $url;
 					}
 				}
 				$data['diagram_images'] = wp_json_encode( $clean );
@@ -778,6 +827,24 @@ class CustomVariation {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 		}
 		wp_send_json_success( array( 'library' => Mont_Size_Diagram_Helper::scan_library() ) );
+	}
+
+	public function ajax_seed_size_media_batch() {
+		check_ajax_referer( 'variation-settings-nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+		$batch = isset( $_POST['batch'] ) ? intval( $_POST['batch'] ) : Mont_Size_Media_Seed::BATCH_SIZE;
+		wp_send_json_success( Mont_Size_Media_Seed::process_batch( $batch ) );
+	}
+
+	public function ajax_seed_size_media_reset() {
+		check_ajax_referer( 'variation-settings-nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+		}
+		Mont_Size_Media_Seed::reset_state();
+		wp_send_json_success( array( 'reset' => true ) );
 	}
 
 	public static function display_slider_on_product_page() {

@@ -342,6 +342,46 @@
 	color: #8a5a12;
 }
 
+.mont-vs-seed-box {
+	margin: 0 0 18px;
+	padding: 14px 16px;
+	border: 1px solid #c3c4c7;
+	border-radius: 8px;
+	background: #f6f7f7;
+}
+.mont-vs-seed-box[hidden] {
+	display: none !important;
+}
+.mont-vs-seed-box strong {
+	display: block;
+	margin-bottom: 4px;
+}
+.mont-vs-seed-box p {
+	margin: 0 0 10px;
+	color: #50575e;
+}
+.mont-vs-seed-progress {
+	max-width: 560px;
+}
+.mont-vs-seed-bar {
+	height: 10px;
+	background: #dcdcde;
+	border-radius: 999px;
+	overflow: hidden;
+}
+.mont-vs-seed-bar > span {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: #2271b1;
+	transition: width 0.25s ease;
+}
+#mont-vs-seed-status {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #1d2327;
+}
+
 .mont-vs-delete {
 	color: #b32d2e !important;
 }

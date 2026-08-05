@@ -305,7 +305,13 @@ jQuery(document).ready(function ($) {
 
         // Refresh thumbs preview in the table cell
         var merged = $.extend({}, draftAuto, cleaned);
-        var urls = Object.keys(merged).map(function (k) { return merged[k]; }).filter(Boolean);
+        var urls = Object.keys(merged).map(function (k) {
+            var v = merged[k];
+            if (!v) return '';
+            if (typeof v === 'string') return v;
+            if (typeof v === 'object') return v.thumb || v.full || '';
+            return '';
+        }).filter(Boolean);
         var $cell = $activeDiagramRow.find('.mont-vs-thumbs');
         var thumbs = '';
         urls.slice(0, 4).forEach(function (u) {
@@ -338,4 +344,84 @@ jQuery(document).ready(function ($) {
             closeDiagramModal();
         }
     });
+
+    // ---- Size folder → Media Library seed (batched) ----
+    var seedRunning = false;
+
+    function setSeedUi(progress) {
+        $('#mont-vs-seed-box').prop('hidden', false);
+        var pct = progress && typeof progress.percent === 'number' ? progress.percent : 0;
+        $('#mont-vs-seed-bar').css('width', pct + '%');
+        var msg = 'Importing… ' + pct + '%';
+        if (progress) {
+            msg = 'Imported ' + (progress.index || 0) + '/' + (progress.total || 0) +
+                ' sizes · media files uploaded: ' + (progress.uploaded || 0);
+            if (progress.current) {
+                msg += ' · now: ' + progress.current;
+            }
+            if (progress.done) {
+                msg = (variationSettings.i18n && variationSettings.i18n.seedOk) || 'Size folder import complete.';
+                msg += ' Rows seeded: ' + (progress.updated || 0) + ', media uploaded: ' + (progress.uploaded || 0) +
+                    ', reused: ' + (progress.skipped || 0) + '. Reload the page to see updated charts.';
+            }
+        }
+        $('#mont-vs-seed-status').text(msg);
+    }
+
+    function runSeedBatch(resetFirst) {
+        if (seedRunning) return;
+        seedRunning = true;
+        $('#mont-vs-seed-media').prop('disabled', true).text((variationSettings.i18n && variationSettings.i18n.seeding) || 'Importing…');
+
+        function next() {
+            $.post(variationSettings.ajaxurl, {
+                action: 'mont_seed_size_media_batch',
+                nonce: variationSettings.nonce,
+                batch: 3
+            }).done(function (res) {
+                if (!res || !res.success) {
+                    toast((res && res.data && res.data.message) || 'Import failed', true);
+                    seedRunning = false;
+                    $('#mont-vs-seed-media').prop('disabled', false).text('Import Size folder → Media + Seed');
+                    return;
+                }
+                setSeedUi(res.data);
+                if (res.data.done) {
+                    seedRunning = false;
+                    $('#mont-vs-seed-media').prop('disabled', false).text('Re-import Size → Media + Seed');
+                    toast((variationSettings.i18n && variationSettings.i18n.seedOk) || 'Import complete');
+                    return;
+                }
+                window.setTimeout(next, 150);
+            }).fail(function () {
+                toast('Import request failed — try again', true);
+                seedRunning = false;
+                $('#mont-vs-seed-media').prop('disabled', false).text('Import Size folder → Media + Seed');
+            });
+        }
+
+        if (resetFirst) {
+            $.post(variationSettings.ajaxurl, {
+                action: 'mont_seed_size_media_reset',
+                nonce: variationSettings.nonce
+            }).always(function () {
+                setSeedUi({ percent: 0, index: 0, total: 0, uploaded: 0 });
+                next();
+            });
+        } else {
+            setSeedUi({ percent: 0, index: 0, total: 0, uploaded: 0 });
+            next();
+        }
+    }
+
+    $('#mont-vs-seed-media').on('click', function () {
+        runSeedBatch(true);
+    });
+
+    // Auto-start once when seed has never completed.
+    if (variationSettings.autoSeed) {
+        window.setTimeout(function () {
+            runSeedBatch(false);
+        }, 600);
+    }
 });

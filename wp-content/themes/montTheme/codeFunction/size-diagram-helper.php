@@ -5,14 +5,14 @@
 class Mont_Size_Diagram_Helper {
 
 	const MEASUREMENT_FILES = array(
-		'shirt_length' => array( 'Back.jpg', 'BackLength.jpg', '39REGULAR-MAN-BackLength.jpg' ),
+		'shirt_length'  => array( 'Back.jpg', 'BackLength.jpg', '39REGULAR-MAN-BackLength.jpg' ),
 		'sleeve_length' => array( 'Sleeve.jpg', '39REGULAR-MAN-Sleeve.jpg' ),
-		'half_waist'    => array( 'Waist.jpg', '39REGULAR-MAN-Waist.jpg' ),
-		'half_chest'    => array( 'Chest.jpg', '39REGULAR-MAN-Chest.jpg' ),
-		'half_bottom'   => array( 'Bottom.jpg', '39REGULAR-MAN-bottom.jpg', 'bottom.jpg' ),
+		'half_waist'    => array( 'HalfWaist.jpg', 'Waist.jpg', '39REGULAR-MAN-Waist.jpg' ),
+		'half_chest'    => array( 'HalfChest.jpg', 'Chest.jpg', '39REGULAR-MAN-Chest.jpg' ),
+		'half_bottom'   => array( 'HalfBottom.jpg', 'Bottom.jpg', '39REGULAR-MAN-bottom.jpg', 'bottom.jpg' ),
 		'shoulder'      => array( 'BackShoulder.jpg', 'Shoulder.jpg', '39REGULAR-MAN-BackSholder.jpg', 'BackSholder.jpg' ),
 		'neck_collar'   => array( 'Collar.jpg', '39REGULAR-MAN-Collar.jpg' ),
-		'armhole'       => array( 'Sleeve.jpg', 'Chest.jpg' ),
+		'armhole'       => array( 'Sleeve.jpg', 'HalfChest.jpg', 'Chest.jpg' ),
 	);
 
 	/** Map WC body-fit slug fragments → Size/ top folder. */
@@ -338,7 +338,7 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Convert full URL map to { thumb, full } pairs for the product page.
+	 * Convert full URL map OR media-id map to { thumb, full } pairs for the product page.
 	 *
 	 * @param array $url_map
 	 * @param bool  $allow_generate
@@ -346,12 +346,53 @@ class Mont_Size_Diagram_Helper {
 	public static function with_thumbs( array $url_map, $allow_generate = true ) {
 		$out = array();
 		foreach ( $url_map as $key => $url ) {
-			if ( is_array( $url ) ) {
-				$full = ! empty( $url['full'] ) ? $url['full'] : ( ! empty( $url['thumb'] ) ? $url['thumb'] : '' );
-			} else {
-				$full = (string) $url;
+			// Preferred seeded format: { id, full, thumb }
+			if ( is_array( $url ) && ( ! empty( $url['id'] ) || ! empty( $url['full'] ) || ! empty( $url['thumb'] ) ) ) {
+				$id    = ! empty( $url['id'] ) ? (int) $url['id'] : 0;
+				$full  = ! empty( $url['full'] ) ? esc_url_raw( $url['full'] ) : '';
+				$thumb = ! empty( $url['thumb'] ) ? esc_url_raw( $url['thumb'] ) : '';
+				if ( $id ) {
+					if ( ! $full ) {
+						$full = wp_get_attachment_image_url( $id, 'full' );
+					}
+					if ( ! $thumb ) {
+						$thumb = wp_get_attachment_image_url( $id, 'mont_diagram_thumb' );
+						if ( ! $thumb ) {
+							$thumb = wp_get_attachment_image_url( $id, 'thumbnail' );
+						}
+					}
+				}
+				$full  = $full ? $full : '';
+				$thumb = $thumb ? $thumb : $full;
+				if ( ! $full && ! $thumb ) {
+					continue;
+				}
+				$out[ $key ] = array(
+					'thumb' => $thumb,
+					'full'  => $full ? $full : $thumb,
+				);
+				continue;
 			}
-			$full = esc_url_raw( $full );
+
+			// Legacy: attachment ID int
+			if ( is_numeric( $url ) ) {
+				$id    = (int) $url;
+				$full  = wp_get_attachment_image_url( $id, 'full' );
+				$thumb = wp_get_attachment_image_url( $id, 'mont_diagram_thumb' );
+				if ( ! $thumb ) {
+					$thumb = wp_get_attachment_image_url( $id, 'thumbnail' );
+				}
+				if ( ! $full && ! $thumb ) {
+					continue;
+				}
+				$out[ $key ] = array(
+					'thumb' => $thumb ? $thumb : $full,
+					'full'  => $full ? $full : $thumb,
+				);
+				continue;
+			}
+
+			$full = esc_url_raw( (string) $url );
 			if ( ! $full ) {
 				continue;
 			}
@@ -420,12 +461,12 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Merge auto Size/ diagrams with custom URL overrides (custom wins).
-	 * Returns full-size URL strings (admin + internal use).
+	 * Merge auto Size/ diagrams with custom / seeded media overrides (overrides win).
+	 * Entries may be URL strings or {id,full,thumb} media objects.
 	 *
 	 * @param string $fit_slug
 	 * @param string $size_slug
-	 * @param array|string $overrides JSON string or assoc array of measurement => url
+	 * @param array|string $overrides JSON string or assoc array
 	 * @return array
 	 */
 	public static function get_merged_images( $fit_slug, $size_slug, $overrides = array() ) {
@@ -439,13 +480,24 @@ class Mont_Size_Diagram_Helper {
 
 		$clean = array();
 		foreach ( $overrides as $key => $url ) {
+			$key = sanitize_key( $key );
+			if ( is_array( $url ) ) {
+				if ( ! empty( $url['id'] ) || ! empty( $url['full'] ) || ! empty( $url['thumb'] ) ) {
+					$clean[ $key ] = $url;
+				}
+				continue;
+			}
+			if ( is_numeric( $url ) ) {
+				$clean[ $key ] = (int) $url;
+				continue;
+			}
 			$url = esc_url_raw( (string) $url );
 			if ( $url ) {
 				$clean[ $key ] = $url;
 			}
 		}
 
-		// Frontend only needs these six keys; skip filesystem if overrides cover them all.
+		// Frontend only needs these six keys; skip filesystem when media/seed covers them.
 		$needed = array( 'shirt_length', 'sleeve_length', 'half_waist', 'half_chest', 'half_bottom', 'shoulder' );
 		$covered = true;
 		foreach ( $needed as $key ) {
