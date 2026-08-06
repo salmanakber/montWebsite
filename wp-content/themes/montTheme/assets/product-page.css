@@ -1188,6 +1188,54 @@ a.custom-add-to-cart {
 
 .mont-fit-opens-drawer .mont_variation-header {
     cursor: pointer;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "title chevron"
+        "summary summary";
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 4px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.mont-fit-opens-drawer .mont_variation-header h3 {
+    grid-area: title;
+    min-width: 0;
+    padding-right: 8px;
+}
+
+.mont-fit-opens-drawer .mont_variation-header .mont_toggle-icon {
+    grid-area: chevron;
+    flex-shrink: 0;
+}
+
+.mont-fit-opens-drawer .mont_variation-header .mont-fit-size-summary,
+.mont-fit-opens-drawer .mont_variation-header span.dpName.mont-fit-size-summary {
+    grid-area: summary;
+    position: static;
+    right: auto;
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0 2px 2px 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.35;
+    color: #5c5c5c;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.mont-fit-opens-drawer .mont_variation-header .mont-fit-size-summary:empty {
+    display: none;
+}
+
+.mont-fit-opens-drawer .mont_variation-header .mont-fit-size-summary b {
+    font-weight: 500;
+    color: #333;
 }
 
 .mont-fit-opens-drawer .mont-drawer-chevron i,
