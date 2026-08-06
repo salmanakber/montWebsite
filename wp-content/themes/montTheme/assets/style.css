@@ -19,6 +19,11 @@ a.button.vipps-express-checkout {
 .mont_top_area .category-slider-container {
     margin: 0 !important;
 }
+
+.b2b-b2c-switch .active-bold {
+    font-weight: 700 !important;
+    text-decoration: underline; /* Optional */
+}
 @media (max-width: 745px){
 	.popup-right {
     display: none;
@@ -804,6 +809,8 @@ color: inherit;
 	border-bottom: 1px solid gray;
     border-right: 1px solid gray;
 }
+
+
         
         .mont_back_button:hover {
             background-color: #e9e9e9;
