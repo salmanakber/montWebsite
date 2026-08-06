@@ -22,7 +22,7 @@ a.button.vipps-express-checkout {
 
 .b2b-b2c-switch .active-bold {
     font-weight: 700 !important;
-    text-decoration: underline; /* Optional */
+ 
 }
 @media (max-width: 745px){
 	.popup-right {

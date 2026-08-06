@@ -8,7 +8,8 @@ class Mont_Size_Media_Seed {
 	const OPTION_DONE    = 'mont_size_media_seed_version';
 	const OPTION_STATE   = 'mont_size_media_seed_state';
 	const META_SOURCE    = '_mont_size_source';
-	const SEED_VERSION   = '2.0.0';
+	const META_HASH      = '_mont_size_hash';
+	const SEED_VERSION   = '2.1.0';
 	const BATCH_SIZE     = 4;
 
 	/**
@@ -99,7 +100,9 @@ class Mont_Size_Media_Seed {
 	}
 
 	/**
-	 * Reset import state so a full re-import can run (keeps already-uploaded media).
+	 * Reset import state so a full re-import can run.
+	 * Media is replaced on the next import when folder files change (hash mismatch)
+	 * or pruned when sources no longer exist under Size/.
 	 */
 	public static function reset_state() {
 		delete_option( self::OPTION_STATE );
@@ -123,10 +126,22 @@ class Mont_Size_Media_Seed {
 				'jobs'      => self::build_jobs(),
 				'index'     => 0,
 				'uploaded'  => 0,
+				'replaced'  => 0,
+				'deleted'   => 0,
 				'updated'   => 0,
 				'skipped'   => 0,
 				'errors'    => array(),
+				'keep_src'  => array(),
 			);
+		}
+		if ( ! isset( $state['replaced'] ) ) {
+			$state['replaced'] = 0;
+		}
+		if ( ! isset( $state['deleted'] ) ) {
+			$state['deleted'] = 0;
+		}
+		if ( ! isset( $state['keep_src'] ) || ! is_array( $state['keep_src'] ) ) {
+			$state['keep_src'] = array();
 		}
 
 		$jobs  = $state['jobs'];
@@ -146,7 +161,13 @@ class Mont_Size_Media_Seed {
 			try {
 				$result = self::import_size_folder( $job, $fit_map, $size_map );
 				$state['uploaded'] += (int) $result['uploaded'];
+				$state['replaced'] += (int) ( isset( $result['replaced'] ) ? $result['replaced'] : 0 );
 				$state['skipped']  += (int) $result['skipped'];
+				if ( ! empty( $result['sources'] ) && is_array( $result['sources'] ) ) {
+					foreach ( $result['sources'] as $src ) {
+						$state['keep_src'][ $src ] = 1;
+					}
+				}
 				if ( ! empty( $result['updated'] ) ) {
 					$state['updated']++;
 				}
@@ -160,6 +181,8 @@ class Mont_Size_Media_Seed {
 		update_option( self::OPTION_STATE, $state, false );
 
 		if ( $done ) {
+			$state['deleted'] = self::prune_obsolete_attachments( array_keys( $state['keep_src'] ) );
+			update_option( self::OPTION_STATE, $state, false );
 			update_option( self::OPTION_DONE, self::SEED_VERSION, true );
 			// Bust chart caches so PDP picks up media thumbs immediately.
 			delete_transient( 'mont_all_charts_meas_v1' );
@@ -173,6 +196,8 @@ class Mont_Size_Media_Seed {
 			'index'      => $i,
 			'percent'    => $total ? (int) round( ( $i / $total ) * 100 ) : 100,
 			'uploaded'   => (int) $state['uploaded'],
+			'replaced'   => (int) $state['replaced'],
+			'deleted'    => (int) $state['deleted'],
 			'updated'    => (int) $state['updated'],
 			'skipped'    => (int) $state['skipped'],
 			'errors'     => array_slice( (array) $state['errors'], -8 ),
@@ -195,7 +220,9 @@ class Mont_Size_Media_Seed {
 		$files_map = self::folder_files( $path );
 		$diagrams  = array();
 		$uploaded  = 0;
+		$replaced  = 0;
 		$skipped   = 0;
+		$sources   = array();
 
 		foreach ( Mont_Size_Diagram_Helper::MEASUREMENT_FILES as $field => $candidates ) {
 			$filename = self::match_candidate( $files_map, $candidates );
@@ -208,7 +235,12 @@ class Mont_Size_Media_Seed {
 			if ( ! $att_id ) {
 				continue;
 			}
-			if ( get_post_meta( $att_id, '_mont_just_uploaded', true ) ) {
+			$sources[] = $source_rel;
+			$status    = get_post_meta( $att_id, '_mont_just_uploaded', true );
+			if ( 'replaced' === $status ) {
+				$replaced++;
+				delete_post_meta( $att_id, '_mont_just_uploaded' );
+			} elseif ( $status ) {
 				$uploaded++;
 				delete_post_meta( $att_id, '_mont_just_uploaded' );
 			} else {
@@ -253,9 +285,11 @@ class Mont_Size_Media_Seed {
 
 		return array(
 			'uploaded' => $uploaded,
+			'replaced' => $replaced,
 			'skipped'  => $skipped,
 			'updated'  => 1,
 			'key'      => $key,
+			'sources'  => $sources,
 		);
 	}
 
@@ -292,23 +326,32 @@ class Mont_Size_Media_Seed {
 	}
 
 	/**
-	 * Sideload file into Media Library once; reuse by source meta.
+	 * Sideload file into Media Library; reuse by source meta when hash matches.
+	 * If the Size folder file changed, delete the old attachment and re-upload.
 	 */
 	private static function ensure_attachment( $abs_path, $source_rel, $title ) {
 		global $wpdb;
-		$existing = $wpdb->get_var(
+
+		if ( ! file_exists( $abs_path ) || ! is_readable( $abs_path ) ) {
+			return 0;
+		}
+
+		$hash     = md5_file( $abs_path );
+		$existing = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s LIMIT 1",
 				self::META_SOURCE,
 				$source_rel
 			)
 		);
-		if ( $existing ) {
-			return (int) $existing;
-		}
 
-		if ( ! file_exists( $abs_path ) || ! is_readable( $abs_path ) ) {
-			return 0;
+		if ( $existing ) {
+			$old_hash = (string) get_post_meta( $existing, self::META_HASH, true );
+			if ( $hash && $old_hash && hash_equals( $old_hash, $hash ) && get_post( $existing ) ) {
+				return $existing;
+			}
+			// File changed or hash missing — remove old Media item fully.
+			wp_delete_attachment( $existing, true );
 		}
 
 		$tmp = wp_tempnam( basename( $abs_path ) );
@@ -328,8 +371,44 @@ class Mont_Size_Media_Seed {
 		}
 
 		update_post_meta( $att_id, self::META_SOURCE, $source_rel );
-		update_post_meta( $att_id, '_mont_just_uploaded', 1 );
+		if ( $hash ) {
+			update_post_meta( $att_id, self::META_HASH, $hash );
+		}
+		update_post_meta( $att_id, '_mont_just_uploaded', $existing ? 'replaced' : 1 );
 		return (int) $att_id;
+	}
+
+	/**
+	 * Delete Media attachments tagged with _mont_size_source that are no longer in Size/.
+	 *
+	 * @param string[] $keep_sources Relative paths still present after this import.
+	 * @return int Number deleted.
+	 */
+	private static function prune_obsolete_attachments( array $keep_sources ) {
+		global $wpdb;
+		$keep = array_fill_keys( array_map( 'strval', $keep_sources ), true );
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
+				self::META_SOURCE
+			)
+		);
+		if ( empty( $rows ) ) {
+			return 0;
+		}
+		$deleted = 0;
+		foreach ( $rows as $row ) {
+			$src = (string) $row->meta_value;
+			if ( isset( $keep[ $src ] ) ) {
+				continue;
+			}
+			$post_id = (int) $row->post_id;
+			if ( $post_id > 0 && get_post( $post_id ) ) {
+				wp_delete_attachment( $post_id, true );
+				$deleted++;
+			}
+		}
+		return $deleted;
 	}
 
 	private static function upsert_row( array $data ) {

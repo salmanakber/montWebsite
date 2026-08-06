@@ -1177,3 +1177,416 @@ a.custom-add-to-cart {
     z-index: 2;
     pointer-events: none;
 }
+
+/* =========================================================
+   Merged Fit + Size drawer
+   ========================================================= */
+.mont-size-tab-merged,
+.mont-drawer-source-list {
+    display: none !important;
+}
+
+.mont-fit-opens-drawer .mont_variation-header {
+    cursor: pointer;
+}
+
+.mont-fit-opens-drawer .mont-drawer-chevron i,
+.mont-fit-opens-drawer .mont-drawer-chevron svg {
+    transform: none;
+}
+
+body.mont-fit-size-drawer-open {
+    overflow: hidden !important;
+}
+
+.mont-fit-size-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 100070;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.mont-fit-size-drawer.is-open {
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.mont-fit-size-drawer__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 17, 17, 0.42);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+}
+
+.mont-fit-size-drawer.is-open .mont-fit-size-drawer__backdrop {
+    opacity: 1;
+}
+
+.mont-fit-size-drawer__panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: min(440px, 100vw);
+    height: 100%;
+    background: #fff;
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.16);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.32s ease;
+}
+
+.mont-fit-size-drawer.is-open .mont-fit-size-drawer__panel {
+    transform: translateX(0);
+}
+
+.mont-fit-size-drawer__scroll {
+    flex: 1;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 28px 24px 20px;
+    box-sizing: border-box;
+}
+
+.mont-fit-size-drawer__title {
+    margin: 0 0 28px;
+    font-family: "Figtree", "Rubik", sans-serif;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
+    line-height: 1.2;
+}
+
+.mont-fit-size-drawer__section {
+    margin-bottom: 28px;
+}
+
+.mont-fit-size-drawer__label {
+    margin: 0 0 14px;
+    font-family: "Figtree", "Rubik", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #222;
+}
+
+.mont-fit-size-drawer__hint {
+    margin: 0;
+    font-size: 13px;
+    color: #8a8a8a;
+    font-family: "Rubik", sans-serif;
+}
+
+.mont-fit-size-drawer__fits {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mont-drawer-fit-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 4px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: "Rubik", sans-serif;
+    font-size: 15px;
+    color: #222;
+}
+
+.mont-drawer-fit-option__check {
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid #1a1a1a;
+    border-radius: 3px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    position: relative;
+    background: #fff;
+}
+
+.mont-drawer-fit-option.is-selected .mont-drawer-fit-option__check {
+    background: #1a1a1a;
+}
+
+.mont-drawer-fit-option.is-selected .mont-drawer-fit-option__check::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.mont-fit-size-drawer__sizes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.mont-drawer-size-option {
+    min-height: 48px;
+    padding: 10px 8px;
+    border: 1px solid #1a1a1a;
+    background: #fff;
+    color: #1a1a1a;
+    font-family: "Rubik", sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.mont-drawer-size-option.is-selected,
+.mont-drawer-size-option:hover {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.mont-fit-size-drawer__footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #ececec;
+    background: #fff;
+}
+
+.mont-fit-size-drawer__continue {
+    flex: 1;
+    min-height: 52px;
+    border: 0;
+    background: #1b2a44;
+    color: #fff;
+    font-family: "Figtree", "Rubik", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.mont-fit-size-drawer__continue:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.mont-fit-size-drawer__close {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid #d8d8d8;
+    background: #fff;
+    color: #222;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.mont-fit-size-drawer__close:hover {
+    background: #f4f4f4;
+}
+
+/* =========================================================
+   Mobile product details + sticky ATC
+   ========================================================= */
+.mont-mobile-sticky-cta {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .mont_layout_fourty {
+        width: 100% !important;
+        position: relative !important;
+        top: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 8px 16px 110px;
+        box-sizing: border-box;
+    }
+
+    .mont_top_layout {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .mont_product-title {
+        font-size: 16px;
+        padding-bottom: 8px;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .mont_product-info {
+        flex-wrap: wrap;
+        gap: 10px 12px;
+        align-items: flex-start;
+        padding: 6px 0 4px;
+    }
+
+    .mont_product-price {
+        padding-left: 0;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .mont_product-price span {
+        right: 0;
+        font-size: 18px;
+        display: inline-block;
+    }
+
+    .mont_product-stock {
+        right: 0;
+        font-size: 12px;
+        padding: 7px 10px;
+        white-space: nowrap;
+        flex: 0 0 auto;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .mont_product_des {
+        padding: 4px 0 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .mont_product_des p,
+    .mont_product_des {
+        padding-right: 0;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .mont_straight_line {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .mont_add_to_cart_button_and_alert {
+        padding-bottom: 8px;
+    }
+
+    /* Prefer sticky bar for ATC on mobile; keep inline ATC less prominent */
+    body.has-mont-mobile-sticky .mont_cart_button {
+        display: none;
+    }
+
+    .mont-mobile-sticky-cta[hidden] {
+        display: none !important;
+    }
+
+    .mont-mobile-sticky-cta:not([hidden]) {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 100050;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 255, 255, 0.96);
+        border-top: 1px solid #e6e6e6;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(8px);
+        box-sizing: border-box;
+    }
+
+    .mont-mobile-sticky-cta__meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 0 1 34%;
+    }
+
+    .mont-mobile-sticky-cta__price {
+        font-family: "Figtree", "Rubik", sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1a1a;
+        line-height: 1.2;
+    }
+
+    .mont-mobile-sticky-cta__price .woocommerce-Price-amount,
+    .mont-mobile-sticky-cta__price del,
+    .mont-mobile-sticky-cta__price ins {
+        font-size: inherit;
+        text-decoration: none;
+    }
+
+    .mont-mobile-sticky-cta__stock {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #6f8f63;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mont-mobile-sticky-cta__action {
+        flex: 1 1 auto;
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 14px;
+        border: 0;
+        background: #1b2a44;
+        color: #fff !important;
+        font-family: "Figtree", "Rubik", sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-align: center;
+        text-decoration: none !important;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .mont-mobile-sticky-cta__action.is-choose {
+        background: #1a1a1a;
+    }
+
+    .mont-fit-size-drawer__panel {
+        width: 100vw;
+        max-width: 100vw;
+    }
+
+    .mont-fit-size-drawer__title {
+        font-size: 22px;
+        margin-bottom: 22px;
+    }
+
+    .mont-fit-size-drawer__sizes {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .mont-drawer-size-option {
+        min-height: 44px;
+        font-size: 12px;
+        padding: 8px 4px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .mont-mobile-sticky-cta {
+        display: none !important;
+    }
+}

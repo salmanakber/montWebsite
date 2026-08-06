@@ -577,37 +577,56 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 						<!-- Custom product blocks will go here -->
 
 						<?php foreach ($customVariation->customVariation($product) as $names): ?>
-							<?php //print_r($names); ?>
-							<div class="mont_variation-selector to-be-open-<?php echo esc_attr($names['attribute_slug']); ?>">
-								<!-- Passform Section -->
-								<div class="mont_variation-group <?php echo esc_attr($names['attribute_slug']); ?>">
-									<div class="mont_variation-header <?php echo esc_attr($names['attribute_slug']); ?>" onclick="toggleSection(this)" 
+							<?php
+							$attr_slug = $names['attribute_slug'];
+							$is_fit    = ( $attr_slug === 'pa_body-fit' );
+							$is_size   = ( $attr_slug === 'pa_size' );
+							?>
+							<div class="mont_variation-selector to-be-open-<?php echo esc_attr($attr_slug); ?><?php echo $is_size ? ' mont-size-tab-merged' : ''; ?><?php echo $is_fit ? ' mont-fit-opens-drawer' : ''; ?>">
+								<div class="mont_variation-group <?php echo esc_attr($attr_slug); ?>">
+									<?php if ( $is_fit ) : ?>
+									<div class="mont_variation-header <?php echo esc_attr($attr_slug); ?>"
+										role="button"
+										tabindex="0"
+										data-open-fit-size-drawer
 										data-listName="<?php echo esc_attr($names['attribute_name']); ?>"
-										data-attribute-key="<?php echo esc_attr($names['attribute_slug']); ?>">
-
-										<h3><span class="mont_required">*</span> 
-											<?php echo ($names['attribute_slug'] === 'pa_body-fit' ? 'Passform (Obligatorisk)' : 'Størrelse (Obligatorisk)'); ?>
-										</h3>
-										<span class="dpName"></span>
-										<span class="mont_toggle-icon"> <i data-lucide="chevron-down"></i></span>
+										data-attribute-key="<?php echo esc_attr($attr_slug); ?>">
+										<h3><span class="mont_required">*</span> Passform &amp; Størrelse (Obligatorisk)</h3>
+										<span class="dpName mont-fit-size-summary"></span>
+										<span class="mont_toggle-icon mont-drawer-chevron"><i data-lucide="chevron-right"></i></span>
 									</div>
-									<ul class="mont_option-list">
+									<?php elseif ( $is_size ) : ?>
+									<div class="mont_variation-header <?php echo esc_attr($attr_slug); ?>"
+										data-listName="<?php echo esc_attr($names['attribute_name']); ?>"
+										data-attribute-key="<?php echo esc_attr($attr_slug); ?>"
+										aria-hidden="true">
+										<h3><span class="mont_required">*</span> Størrelse (Obligatorisk)</h3>
+										<span class="dpName"></span>
+									</div>
+									<?php else : ?>
+									<div class="mont_variation-header <?php echo esc_attr($attr_slug); ?>" onclick="toggleSection(this)"
+										data-listName="<?php echo esc_attr($names['attribute_name']); ?>"
+										data-attribute-key="<?php echo esc_attr($attr_slug); ?>">
+										<h3><span class="mont_required">*</span> <?php echo esc_html( $names['attribute_name'] ); ?></h3>
+										<span class="dpName"></span>
+										<span class="mont_toggle-icon"><i data-lucide="chevron-down"></i></span>
+									</div>
+									<?php endif; ?>
+									<ul class="mont_option-list<?php echo ( $is_fit || $is_size ) ? ' mont-drawer-source-list' : ''; ?>">
 										<?php foreach ($names['attribute_values'] as $value): ?>
-											<li class="mont_option-item <?php echo $names['attribute_slug'].'-option'; ?>" 
-												data-slug="<?php echo $value['slug']; ?>" 
-												data-id="<?php echo $product->get_id();?>">
+											<li class="mont_option-item <?php echo esc_attr( $attr_slug . '-option' ); ?>"
+												data-slug="<?php echo esc_attr( $value['slug'] ); ?>"
+												data-id="<?php echo (int) $product->get_id(); ?>">
 												<div class="mont_option-left">
-													<span class="tobeSelected"><?php echo (esc_html($value['name'])); ?></span>
+													<span class="tobeSelected"><?php echo esc_html( $value['name'] ); ?></span>
 												</div>
-												
 												<div class="mont_option-right">
-													<input type="checkbox" class="mont_checkbox_select <?php echo $names['attribute_slug'].'-checkbox'; ?>" 
-													name="passform" 
-													value="<?php //echo esc_attr($value['id']); ?>">
+													<input type="checkbox" class="mont_checkbox_select <?php echo esc_attr( $attr_slug . '-checkbox' ); ?>"
+													name="passform"
+													value="">
 												</div>
 											</li>
 										<?php endforeach; ?>
-										<!-- Add more passform options here if needed -->
 									</ul>
 								</div>
 							</div>
@@ -728,6 +747,55 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 			</div>
 		</div>
 	</div>
+</div>
+
+<!-- Fit + Size drawer (merged) -->
+<div class="mont-fit-size-drawer" id="mont-fit-size-drawer" aria-hidden="true">
+	<div class="mont-fit-size-drawer__backdrop" data-close-fit-size-drawer tabindex="-1"></div>
+	<aside class="mont-fit-size-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="mont-fit-size-drawer-title">
+		<div class="mont-fit-size-drawer__scroll">
+			<h2 id="mont-fit-size-drawer-title" class="mont-fit-size-drawer__title">Velg passform og størrelse</h2>
+
+			<section class="mont-fit-size-drawer__section" aria-labelledby="mont-drawer-fit-label">
+				<h3 id="mont-drawer-fit-label" class="mont-fit-size-drawer__label">Passform</h3>
+				<div class="mont-fit-size-drawer__fits" id="mont-drawer-fits"></div>
+			</section>
+
+			<section class="mont-fit-size-drawer__section" aria-labelledby="mont-drawer-size-label">
+				<h3 id="mont-drawer-size-label" class="mont-fit-size-drawer__label">Størrelse</h3>
+				<p class="mont-fit-size-drawer__hint" id="mont-drawer-size-hint">Velg passform først</p>
+				<div class="mont-fit-size-drawer__sizes" id="mont-drawer-sizes" hidden></div>
+			</section>
+		</div>
+		<footer class="mont-fit-size-drawer__footer">
+			<button type="button" class="mont-fit-size-drawer__continue" id="mont-fit-size-continue" disabled>Fortsett</button>
+			<button type="button" class="mont-fit-size-drawer__close" data-close-fit-size-drawer aria-label="Lukk">
+				<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+			</button>
+		</footer>
+	</aside>
+</div>
+
+<!-- Mobile sticky CTA (≤1024px) -->
+<div class="mont-mobile-sticky-cta" id="mont-mobile-sticky-cta" hidden>
+	<div class="mont-mobile-sticky-cta__meta">
+		<span class="mont-mobile-sticky-cta__price"><?php echo wp_kses_post( $product->get_price_html() ); ?></span>
+		<span class="mont-mobile-sticky-cta__stock">
+			<?php
+			$sticky_stock = $product->get_stock_quantity();
+			echo esc_html( ( $sticky_stock && $sticky_stock > 0 ) ? ( 'Tilgjengelig ' . $sticky_stock ) : 'Pre-order' );
+			?>
+		</span>
+	</div>
+	<button type="button" class="mont-mobile-sticky-cta__action is-choose" data-open-fit-size-drawer>
+		Velg passform &amp; størrelse
+	</button>
+	<a href="javascript:void(0)"
+		class="mont-mobile-sticky-cta__action is-cart custom-add-to-cart"
+		data-product_id="<?php echo (int) get_the_ID(); ?>"
+		hidden>
+		LEGG I HANDLEPOSEN
+	</a>
 </div>
 
 <div class="mont_bottom_layout">

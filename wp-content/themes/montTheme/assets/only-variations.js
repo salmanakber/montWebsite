@@ -362,6 +362,7 @@ jQuery(document).ready(function ($) {
             if (progress.done) {
                 msg = (variationSettings.i18n && variationSettings.i18n.seedOk) || 'Size folder import complete.';
                 msg += ' Rows seeded: ' + (progress.updated || 0) + ', media uploaded: ' + (progress.uploaded || 0) +
+                    ', replaced: ' + (progress.replaced || 0) + ', obsolete deleted: ' + (progress.deleted || 0) +
                     ', reused: ' + (progress.skipped || 0) + '. Reload the page to see updated charts.';
             }
         }
