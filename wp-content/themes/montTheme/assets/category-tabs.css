@@ -58,14 +58,15 @@
 .category-slider a.category-item,
 .category-slider .category-item,
 a.category-item {
-	flex: 1 1 auto;
+	flex: 1 1 0;
 	display: flex !important;
 	align-items: center;
 	justify-content: center;
 	min-height: 48px;
-	min-width: 120px;
+	min-width: 0;
+	width: 0;
 	margin: 0 !important;
-	padding: 12px 18px !important;
+	padding: 12px 10px !important;
 	border: 0 !important;
 	border-right: 1px solid var(--mont-tab-border) !important;
 	border-radius: 0 !important;
@@ -77,7 +78,7 @@ a.category-item {
 	line-height: 1.25;
 	text-align: center;
 	text-decoration: none !important;
-	white-space: nowrap;
+	white-space: normal;
 	position: relative;
 	box-sizing: border-box;
 }
@@ -168,7 +169,7 @@ ul#b2bmenu.category-slider {
 li.mont-cat-tabs__item,
 li.category-item.mont-cat-item,
 ul#b2bmenu > li {
-	flex: 1 1 auto;
+	flex: 1 1 0;
 	margin: 0 !important;
 	padding: 0 !important;
 	border: 0 !important;
@@ -177,6 +178,7 @@ ul#b2bmenu > li {
 	border-right: 1px solid var(--mont-tab-border) !important;
 	overflow: visible !important;
 	min-width: 0;
+	width: 0; /* equal-width flex columns */
 	list-style: none;
 }
 
@@ -191,7 +193,7 @@ a.mont-cat-tabs__link {
 	justify-content: center;
 	width: 100%;
 	min-height: 48px;
-	padding: 12px 18px !important;
+	padding: 12px 10px !important;
 	margin: 0 !important;
 	border: 0 !important;
 	border-radius: 0 !important;
@@ -201,9 +203,12 @@ a.mont-cat-tabs__link {
 	font-size: 13px !important;
 	font-weight: 400 !important;
 	text-decoration: none !important;
-	white-space: nowrap;
+	text-align: center;
+	white-space: normal;
+	line-height: 1.25;
 	cursor: pointer;
 	position: relative;
+	box-sizing: border-box;
 }
 
 button.nav-link-monte-b2b::after,
@@ -333,7 +338,9 @@ li.nav-item-b2b,
 	}
 
 	.category-slider-container.has-tab-overflow .slider-arrow,
-	.mont-cat-tabs.has-tab-overflow .slider-arrow {
+	.mont-cat-tabs.has-tab-overflow .slider-arrow,
+	.category-slider-container .slider-arrow,
+	.mont-cat-tabs .slider-arrow {
 		display: flex !important;
 	}
 
@@ -343,7 +350,13 @@ li.nav-item-b2b,
 	.category-slider-container.has-tab-overflow .category-slider-wrapper.mont-cat-tabs__scroller,
 	.mont-cat-tabs.has-tab-overflow .category-slider,
 	.mont-cat-tabs.has-tab-overflow .mont-cat-tabs__scroller,
-	.mont-cat-tabs.has-tab-overflow .category-slider-wrapper.mont-cat-tabs__scroller {
+	.mont-cat-tabs.has-tab-overflow .category-slider-wrapper.mont-cat-tabs__scroller,
+	.category-slider-container .category-slider,
+	.category-slider-container .mont-cat-tabs__scroller,
+	.category-slider-container .category-slider-wrapper.mont-cat-tabs__scroller,
+	.mont-cat-tabs .category-slider,
+	.mont-cat-tabs .mont-cat-tabs__scroller,
+	.mont-cat-tabs .category-slider-wrapper.mont-cat-tabs__scroller {
 		padding-left: 54px !important;
 		padding-right: 54px !important;
 		scroll-padding-left: 54px;
@@ -353,7 +366,11 @@ li.nav-item-b2b,
 	.category-slider-container.has-tab-overflow::before,
 	.category-slider-container.has-tab-overflow::after,
 	.mont-cat-tabs.has-tab-overflow::before,
-	.mont-cat-tabs.has-tab-overflow::after {
+	.mont-cat-tabs.has-tab-overflow::after,
+	.category-slider-container::before,
+	.category-slider-container::after,
+	.mont-cat-tabs::before,
+	.mont-cat-tabs::after {
 		content: "";
 		position: absolute;
 		top: 1px;
@@ -364,14 +381,18 @@ li.nav-item-b2b,
 	}
 
 	.category-slider-container.has-tab-overflow::before,
-	.mont-cat-tabs.has-tab-overflow::before {
+	.mont-cat-tabs.has-tab-overflow::before,
+	.category-slider-container::before,
+	.mont-cat-tabs::before {
 		left: 0;
 		background: linear-gradient(90deg, #fff 40%, rgba(255, 255, 255, 0));
 		border-radius: 12px 0 0 12px;
 	}
 
 	.category-slider-container.has-tab-overflow::after,
-	.mont-cat-tabs.has-tab-overflow::after {
+	.mont-cat-tabs.has-tab-overflow::after,
+	.category-slider-container::after,
+	.mont-cat-tabs::after {
 		right: 0;
 		background: linear-gradient(270deg, #fff 40%, rgba(255, 255, 255, 0));
 		border-radius: 0 12px 12px 0;
@@ -380,16 +401,29 @@ li.nav-item-b2b,
 	.category-slider a.category-item,
 	button.nav-link-monte-b2b,
 	a.mont-cat-tabs__link {
-		flex: 0 0 auto;
-		min-width: auto;
+		flex: none;
+		width: 100%;
+		min-width: 0;
 		font-size: 12px !important;
-		padding: 12px 16px !important;
+		padding: 12px 10px !important;
+		white-space: normal;
+	}
+
+	/* B2C shop links are the flex items themselves */
+	.category-slider a.category-item {
+		flex: 0 0 auto !important;
+		width: 148px !important;
+		min-width: 148px !important;
+		max-width: 148px !important;
 	}
 
 	ul#b2bmenu > li,
-	li.mont-cat-tabs__item {
+	li.mont-cat-tabs__item,
+	li.category-item.mont-cat-item {
 		flex: 0 0 auto;
-		min-width: auto;
+		width: 148px;
+		min-width: 148px;
+		max-width: 148px;
 	}
 
 	ul#b2bmenu.mont-cat-tabs__list,

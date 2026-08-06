@@ -28,16 +28,48 @@ function mont_theme_register_acf_options_page() {
 add_action('acf/init', 'mont_theme_register_acf_options_page');
 
 function dynamic_b2b_b2c_menu() {
+    $b2c_url = home_url( '/product-category/skjorter-herre/' );
+    $b2b_url = home_url( '/monte-connected-b2b/' );
     ?>
     <script>
         jQuery(document).ready(function($) {
-            var currentUrl = window.location.href;
-            if (currentUrl.includes("/monte-connected-b2b")) {
-                $(".b2b-b2c-switch a").attr("href", "<?php echo esc_url(home_url('/product-category/linskjorte/')); ?>").text("B2C");
-                $(".b2b-b2c-switch a").addClass("active-bold");
-            } else if (currentUrl.includes("/product-category/linskjorte/")) {
-                $(".b2b-b2c-switch a").attr("href", "<?php echo esc_url(home_url('/monte-connected-b2b')); ?>").text("B2B");
-                $(".b2b-b2c-switch a").addClass("active-bold");
+            var $switch = $(".b2b-b2c-switch a");
+            if (!$switch.length) return;
+
+            var path = (window.location.pathname || '').toLowerCase();
+            var search = (window.location.search || '').toLowerCase();
+            var $body = $("body");
+
+            var isB2B = path.indexOf('/monte-connected-b2b') !== -1
+                || search.indexOf('productb2b') !== -1
+                || $body.hasClass('page-monte-connected-b2b');
+
+            // Any WooCommerce shop/catalog/product surface counts as B2C (except B2B pages).
+            var isB2C = !isB2B && (
+                $body.hasClass('woocommerce')
+                || $body.hasClass('woocommerce-page')
+                || $body.hasClass('single-product')
+                || $body.hasClass('tax-product_cat')
+                || $body.hasClass('tax-product_tag')
+                || $body.hasClass('post-type-archive-product')
+                || path.indexOf('/product-category/') !== -1
+                || path.indexOf('/product-tag/') !== -1
+                || path.indexOf('/shop') !== -1
+                || (path.indexOf('/product/') !== -1 && search.indexOf('productb2b') === -1)
+            );
+
+            var b2cUrl = <?php echo wp_json_encode( $b2c_url ); ?>;
+            var b2bUrl = <?php echo wp_json_encode( $b2b_url ); ?>;
+
+            if (isB2B) {
+                // On B2B → offer switch to B2C
+                $switch.attr("href", b2cUrl).text("B2C").addClass("active-bold");
+            } else if (isB2C) {
+                // On any B2C shop/product/category → show B2C bold; click switches to B2B
+                $switch.attr("href", b2bUrl).text("B2C").addClass("active-bold");
+            } else {
+                // Home / other non-shop pages → default B2B
+                $switch.attr("href", b2bUrl).text("B2B").removeClass("active-bold");
             }
         });
 		
