@@ -68,14 +68,25 @@ jQuery(document).ready(function ($) {
         var $bar = $('#mont-mobile-sticky-cta');
         if (!$bar.length) return;
         var ready = montFitSizeReady();
-        $bar.find('.mont-mobile-sticky-cta__action.is-choose').prop('hidden', ready);
-        $bar.find('.mont-mobile-sticky-cta__action.is-cart').prop('hidden', !ready);
+        $bar.toggleClass('is-ready', ready);
+        $bar.find('.mont-mobile-sticky-cta__action.is-cart').attr('aria-disabled', ready ? 'false' : 'true');
         if (ready) {
             $('.pa_body-fit, .to-be-open-pa_body-fit .mont_variation-group').css({
                 'background': '#b0b0b0',
                 'color': 'white'
             });
         }
+    }
+
+    function montShowSizeSkeleton() {
+        var $grid = $('#mont-drawer-sizes');
+        var $hint = $('#mont-drawer-size-hint');
+        $hint.prop('hidden', true);
+        $grid.removeAttr('hidden').empty().addClass('is-loading');
+        for (var i = 0; i < 6; i++) {
+            $grid.append('<span class="mont-drawer-size-skeleton" aria-hidden="true"></span>');
+        }
+        $('#mont-fit-size-continue').prop('disabled', true);
     }
 
     function montOpenFitSizeDrawer() {
@@ -92,7 +103,7 @@ jQuery(document).ready(function ($) {
         } else {
             drawerPendingFitSlug = '';
             drawerPendingSizeSlug = '';
-            $('#mont-drawer-sizes').attr('hidden', true).empty();
+            $('#mont-drawer-sizes').removeClass('is-loading').attr('hidden', true).empty();
             $('#mont-drawer-size-hint').text('Velg passform først').prop('hidden', false);
             $('#mont-fit-size-continue').prop('disabled', true);
         }
@@ -101,6 +112,7 @@ jQuery(document).ready(function ($) {
             drawerPendingSizeSlug = String($checkedSize.data('slug') || '');
         }
     }
+    window.montOpenFitSizeDrawer = montOpenFitSizeDrawer;
 
     function montCloseFitSizeDrawer() {
         $('#mont-fit-size-drawer').removeClass('is-open').attr('aria-hidden', 'true');
@@ -117,9 +129,15 @@ jQuery(document).ready(function ($) {
             var label = $.trim($li.find('.tobeSelected').text());
             var checked = $li.find('input.pa_body-fit-checkbox').is(':checked')
                 || slug === drawerPendingFitSlug;
-            var $btn = $('<button type="button" class="mont-drawer-fit-option' + (checked ? ' is-selected' : '') + '"></button>');
+            var $btn = $('<button type="button" class="mont-drawer-fit-option' + (checked ? ' is-selected' : '') + '" role="radio" aria-checked="' + (checked ? 'true' : 'false') + '"></button>');
             $btn.attr('data-slug', slug);
-            $btn.append('<span class="mont-drawer-fit-option__check" aria-hidden="true"></span>');
+            $btn.append(
+                '<span class="mont-drawer-fit-option__check" aria-hidden="true">' +
+                    '<svg class="mont-drawer-fit-option__tick" viewBox="0 0 16 16" width="12" height="12" fill="none">' +
+                        '<path d="M3.5 8.2L6.4 11.1L12.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    '</svg>' +
+                '</span>'
+            );
             $btn.append($('<span class="mont-drawer-fit-option__label"></span>').text(label));
             $wrap.append($btn);
         });
@@ -127,14 +145,15 @@ jQuery(document).ready(function ($) {
 
     function montHighlightDrawerFit(slug) {
         $('#mont-drawer-fits .mont-drawer-fit-option').each(function () {
-            $(this).toggleClass('is-selected', String($(this).data('slug')) === String(slug));
+            var on = String($(this).data('slug')) === String(slug);
+            $(this).toggleClass('is-selected', on).attr('aria-checked', on ? 'true' : 'false');
         });
     }
 
     function montRenderDrawerSizes(validSizes) {
         var $grid = $('#mont-drawer-sizes');
         var $hint = $('#mont-drawer-size-hint');
-        $grid.empty();
+        $grid.removeClass('is-loading').empty();
         var visible = [];
         $('.pa_size-option').each(function () {
             var slug = String($(this).data('slug') || '');
@@ -249,8 +268,7 @@ jQuery(document).ready(function ($) {
 
         montAbortActive();
         if (forDrawer) {
-            $('#mont-drawer-size-hint').text('Laster størrelser…').prop('hidden', false);
-            $('#mont-drawer-sizes').attr('hidden', true).empty();
+            montShowSizeSkeleton();
         } else {
             montShowLoader($sizeGroup, 'Oppdaterer størrelser…');
         }
@@ -277,12 +295,16 @@ jQuery(document).ready(function ($) {
                     }).filter(Boolean);
                     montSizeListCache[cacheKey] = validSizes;
                     applyValidSizes(validSizes, !forDrawer);
+                } else if (forDrawer) {
+                    $('#mont-drawer-sizes').removeClass('is-loading').attr('hidden', true).empty();
+                    $('#mont-drawer-size-hint').text('Kunne ikke laste størrelser').prop('hidden', false);
                 }
             },
             error: function (xhr, status) {
                 if (status !== 'abort') {
                     montHideLoader($sizeGroup);
                     if (forDrawer) {
+                        $('#mont-drawer-sizes').removeClass('is-loading').attr('hidden', true).empty();
                         $('#mont-drawer-size-hint').text('Kunne ikke laste størrelser').prop('hidden', false);
                     }
                 }

@@ -1288,49 +1288,104 @@ body.mont-fit-size-drawer-open {
 .mont-drawer-fit-option {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
-    padding: 12px 4px;
-    border: 0;
-    background: transparent;
+    padding: 13px 14px;
+    border: 1px solid #e4e4e4;
+    border-radius: 10px;
+    background: #fff;
     cursor: pointer;
     text-align: left;
     font-family: "Rubik", sans-serif;
     font-size: 15px;
     color: #222;
+    transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mont-drawer-fit-option:hover {
+    border-color: #c8c8c8;
+    background: #fafafa;
+}
+
+.mont-drawer-fit-option.is-selected {
+    border-color: #1b2a44;
+    background: #f4f6f9;
+    box-shadow: inset 0 0 0 1px #1b2a44;
 }
 
 .mont-drawer-fit-option__check {
-    width: 20px;
-    height: 20px;
-    border: 1.5px solid #1a1a1a;
-    border-radius: 3px;
+    width: 22px;
+    height: 22px;
+    border: 1.75px solid #9a9a9a;
+    border-radius: 6px;
     box-sizing: border-box;
     flex-shrink: 0;
     position: relative;
     background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.mont-drawer-fit-option__tick {
+    display: block;
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 0.15s ease, transform 0.18s ease;
 }
 
 .mont-drawer-fit-option.is-selected .mont-drawer-fit-option__check {
-    background: #1a1a1a;
+    background: #1b2a44;
+    border-color: #1b2a44;
+    color: #fff;
 }
 
-.mont-drawer-fit-option.is-selected .mont-drawer-fit-option__check::after {
-    content: '';
-    position: absolute;
-    left: 6px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
-    border: solid #fff;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+.mont-drawer-fit-option.is-selected .mont-drawer-fit-option__tick {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.mont-drawer-fit-option__label {
+    font-weight: 400;
+    letter-spacing: 0.01em;
+}
+
+.mont-drawer-fit-option.is-selected .mont-drawer-fit-option__label {
+    font-weight: 500;
+    color: #1b2a44;
 }
 
 .mont-fit-size-drawer__sizes {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+    min-height: 48px;
+}
+
+.mont-fit-size-drawer__sizes.is-loading {
+    pointer-events: none;
+}
+
+.mont-drawer-size-skeleton {
+    display: block;
+    min-height: 48px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #ececec 0%, #f6f6f6 45%, #ececec 100%);
+    background-size: 200% 100%;
+    animation: mont-skeleton-shine 1.1s ease-in-out infinite;
+}
+
+.mont-drawer-size-skeleton:nth-child(2) { animation-delay: 0.08s; }
+.mont-drawer-size-skeleton:nth-child(3) { animation-delay: 0.16s; }
+.mont-drawer-size-skeleton:nth-child(4) { animation-delay: 0.24s; }
+.mont-drawer-size-skeleton:nth-child(5) { animation-delay: 0.32s; }
+.mont-drawer-size-skeleton:nth-child(6) { animation-delay: 0.4s; }
+
+@keyframes mont-skeleton-shine {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
 }
 
 .mont-drawer-size-option {
@@ -1497,12 +1552,22 @@ body.mont-fit-size-drawer-open {
         z-index: 100050;
         align-items: center;
         gap: 12px;
-        padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-        background: rgba(255, 255, 255, 0.96);
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 255, 255, 0.97);
         border-top: 1px solid #e6e6e6;
         box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
         backdrop-filter: blur(8px);
         box-sizing: border-box;
+    }
+
+    .mont-mobile-sticky-cta.is-nudge {
+        animation: mont-sticky-nudge 0.45s ease;
+    }
+
+    @keyframes mont-sticky-nudge {
+        0%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-4px); }
+        55% { transform: translateY(2px); }
     }
 
     .mont-mobile-sticky-cta__meta {
@@ -1510,12 +1575,12 @@ body.mont-fit-size-drawer-open {
         flex-direction: column;
         gap: 2px;
         min-width: 0;
-        flex: 0 1 34%;
+        flex: 0 1 36%;
     }
 
     .mont-mobile-sticky-cta__price {
         font-family: "Figtree", "Rubik", sans-serif;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 600;
         color: #1a1a1a;
         line-height: 1.2;
@@ -1540,7 +1605,7 @@ body.mont-fit-size-drawer-open {
 
     .mont-mobile-sticky-cta__action {
         flex: 1 1 auto;
-        min-height: 48px;
+        min-height: 50px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1559,8 +1624,8 @@ body.mont-fit-size-drawer-open {
         box-sizing: border-box;
     }
 
-    .mont-mobile-sticky-cta__action.is-choose {
-        background: #1a1a1a;
+    .mont-mobile-sticky-cta__action.is-cart[aria-disabled="true"] {
+        opacity: 0.92;
     }
 
     .mont-fit-size-drawer__panel {

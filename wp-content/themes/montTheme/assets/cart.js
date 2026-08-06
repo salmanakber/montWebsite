@@ -130,7 +130,15 @@ jQuery(document).ready(function ($) {
             $('.pa_size').css('border', '');
         }
 
-        if (!isValid) return;
+        if (!isValid) {
+            if ($(this).closest('#mont-mobile-sticky-cta').length && typeof window.montOpenFitSizeDrawer === 'function') {
+                window.montOpenFitSizeDrawer();
+                var $bar = $('#mont-mobile-sticky-cta');
+                $bar.addClass('is-nudge');
+                window.setTimeout(function () { $bar.removeClass('is-nudge'); }, 500);
+            }
+            return;
+        }
 
         letThis.addClass('dloader');
 

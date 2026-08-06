@@ -787,13 +787,9 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 			?>
 		</span>
 	</div>
-	<button type="button" class="mont-mobile-sticky-cta__action is-choose" data-open-fit-size-drawer>
-		Velg passform &amp; størrelse
-	</button>
 	<a href="javascript:void(0)"
 		class="mont-mobile-sticky-cta__action is-cart custom-add-to-cart"
-		data-product_id="<?php echo (int) get_the_ID(); ?>"
-		hidden>
+		data-product_id="<?php echo (int) get_the_ID(); ?>">
 		LEGG I HANDLEPOSEN
 	</a>
 </div>
