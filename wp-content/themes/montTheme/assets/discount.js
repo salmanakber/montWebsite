@@ -21,23 +21,33 @@ jQuery(document).ready(function($) {
         return null;
     }
 
+    function showStickyDiscountBtn() {
+        $("#sticky-popup-btn").show();
+        $("body").addClass("has-sticky-discount");
+    }
+
+    function hideStickyDiscountBtn() {
+        $("#sticky-popup-btn").hide();
+        $("body").removeClass("has-sticky-discount");
+    }
+
     // Show popup or sticky icon based on cookie
     if (!getCookie("subscribed_popup")) {
 				if(getCookie('primary_closed'))
 			{
 				$("body").removeClass("overly-modal");
-				$("#sticky-popup-btn").show();
+				showStickyDiscountBtn();
 				 $("#discount-popup").hide();
 			}
 		else{
         $("#discount-popup").fadeIn();
         $("body").addClass("overly-modal");
-        $("#sticky-popup-btn").show();
+        showStickyDiscountBtn();
 		}
     } else {
         $("#discount-popup").hide();
         $("body").removeClass("overly-modal");
-        $("#sticky-popup-btn").hide();
+        hideStickyDiscountBtn();
     }
 
     // Close popup and show sticky icon
@@ -46,6 +56,7 @@ jQuery(document).ready(function($) {
         $("#sticky-popup-icon").fadeIn();
         $("body").removeClass("overly-modal");
 		setCookie("primary_closed", "1", 30);
+        showStickyDiscountBtn();
     });
 
     // Handle form submission
@@ -68,7 +79,7 @@ jQuery(document).ready(function($) {
                     $(".error-code").html("Coupon code applied on all product: " + response.data.coupon);
 					$('.error-code').text(response.data.message);
                     setCookie("subscribed_popup", "1", 30); // Store subscription in cookies (30 days)
-                    $("#sticky-popup-btn").hide();
+                    hideStickyDiscountBtn();
                     $("#discount-popup").fadeOut();
                     $("body").removeClass("overly-modal");
                     $("#announcement-bar").slideDown(); // Show announcement bar
