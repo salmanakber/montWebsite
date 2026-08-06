@@ -30,17 +30,16 @@ add_action('acf/init', 'mont_theme_register_acf_options_page');
 function dynamic_b2b_b2c_menu() {
     ?>
     <script>
-     jQuery(document).ready(function ($) {
-    var currentUrl = window.location.href;
-
-    $(".b2b-link, .b2c-link").removeClass("active-bold");
-
-    if (currentUrl.includes("/monte-connected-b2b")) {
-        $(".b2b-link").addClass("active-bold");
-    } else if (currentUrl.includes("/product-category/linskjorte/")) {
-        $(".b2c-link").addClass("active-bold");
-    }
-});
+        jQuery(document).ready(function($) {
+            var currentUrl = window.location.href;
+            if (currentUrl.includes("/monte-connected-b2b")) {
+                $(".b2b-b2c-switch a").attr("href", "<?php echo esc_url(home_url('/product-category/linskjorte/')); ?>").text("B2C");
+                $(".b2b-b2c-switch a").addClass("active-bold");
+            } else if (currentUrl.includes("/product-category/linskjorte/")) {
+                $(".b2b-b2c-switch a").attr("href", "<?php echo esc_url(home_url('/monte-connected-b2b')); ?>").text("B2B");
+                $(".b2b-b2c-switch a").addClass("active-bold");
+            }
+        });
 		
 jQuery(document).ready(function($){
 const firstLink=$('.category-slider a').first();
