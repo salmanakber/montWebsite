@@ -7,6 +7,9 @@ jQuery(document).ready(function ($) {
     var drawerPendingSizeSlug = '';
     var montDiagramPrefetch = {};
     var montPrefetchTimer = null;
+    /** Client-side array/map: fit___size => { measurement: {thumb, full} } */
+    var montDiagramCache = {};
+    var montDiagramWarmStarted = false;
 
     function montImagesUsable(images) {
         if (!images || typeof images !== 'object') return false;
@@ -20,19 +23,138 @@ jQuery(document).ready(function ($) {
         return false;
     }
 
-    /** Page-embedded fit×size diagram map (ajaxurl.diagrams). */
-    function diagramsFromPage(key) {
-        var map = (typeof ajaxurl !== 'undefined' && ajaxurl.diagrams) ? ajaxurl.diagrams : null;
+    function montFitSlugAliases(fit) {
+        var f = String(fit || '').toLowerCase();
+        var groups = [
+            ['slim', 'slimfit', 'slim-fit'],
+            ['modern', 'modern-fit', 'regular', 'vanlig'],
+            ['contemporary', 'contemporary-fit']
+        ];
+        for (var i = 0; i < groups.length; i++) {
+            if (groups[i].indexOf(f) !== -1) return groups[i];
+        }
+        return f ? [f] : [];
+    }
+
+    function montDiagramKeyCandidates(key) {
+        var parts = String(key || '').split('___');
+        if (parts.length < 2) return key ? [String(key)] : [];
+        var fit = parts[0];
+        var size = parts.slice(1).join('___');
+        var sizeCode = (String(size).match(/\d+/) || [size])[0];
+        var out = [];
+        var seen = {};
+        function push(k) {
+            if (!k || seen[k]) return;
+            seen[k] = 1;
+            out.push(k);
+        }
+        montFitSlugAliases(fit).forEach(function (f) {
+            push(f + '___' + size);
+            push(f + '___' + sizeCode);
+            push(String(f).toLowerCase() + '___' + String(size).toLowerCase());
+            push(String(f).toLowerCase() + '___' + String(sizeCode).toLowerCase());
+        });
+        push(key);
+        push(String(key).toLowerCase());
+        return out;
+    }
+
+    function montLookupDiagramMap(map, key) {
         if (!map || !key) return null;
-        if (map[key] && montImagesUsable(map[key])) return map[key];
+        var candidates = montDiagramKeyCandidates(key);
+        var i, c;
+        for (i = 0; i < candidates.length; i++) {
+            c = candidates[i];
+            if (map[c] && montImagesUsable(map[c])) return map[c];
+        }
+        // Last resort: case-insensitive scan.
         var lk = String(key).toLowerCase();
-        if (map[lk] && montImagesUsable(map[lk])) return map[lk];
         for (var k in map) {
             if (!Object.prototype.hasOwnProperty.call(map, k)) continue;
             if (String(k).toLowerCase() === lk && montImagesUsable(map[k])) return map[k];
         }
         return null;
     }
+
+    /** Resolve diagrams from client cache, then page-embedded ajaxurl.diagrams. */
+    function diagramsFromPage(key) {
+        var cached = montLookupDiagramMap(montDiagramCache, key);
+        if (cached) return cached;
+        var map = (typeof ajaxurl !== 'undefined' && ajaxurl.diagrams) ? ajaxurl.diagrams : null;
+        var found = montLookupDiagramMap(map, key);
+        if (found) {
+            montDiagramCache[key] = found;
+            return found;
+        }
+        return null;
+    }
+
+    /**
+     * On product page load: copy all backend diagram URLs into montDiagramCache
+     * and download every thumb into the browser cache so size switches are instant.
+     */
+    function montSeedAndWarmAllDiagrams() {
+        if (typeof ajaxurl === 'undefined' || !ajaxurl.diagrams) return;
+        var map = ajaxurl.diagrams;
+        var mapKeys = Object.keys(map);
+        if (!mapKeys.length) return;
+        if (montDiagramWarmStarted) return;
+
+        montDiagramWarmStarted = true;
+        var fitSizes = ajaxurl.fitSizes || {};
+        var urlSet = {};
+
+        function store(key, images) {
+            if (!key || !montImagesUsable(images)) return;
+            montDiagramCache[key] = images;
+            if (!montChartCache[key]) montChartCache[key] = {};
+            montChartCache[key].images = images;
+            Object.keys(images).forEach(function (mk) {
+                var e = images[mk];
+                var url = typeof e === 'string' ? e : ((e && (e.thumb || e.full)) || '');
+                if (url) urlSet[url] = 1;
+            });
+        }
+
+        mapKeys.forEach(function (key) {
+            store(key, map[key]);
+        });
+
+        // Also index under this product's exact WC fit/size slugs.
+        Object.keys(fitSizes).forEach(function (fit) {
+            (fitSizes[fit] || []).forEach(function (size) {
+                var key = fit + '___' + size;
+                if (montDiagramCache[key]) return;
+                var imgs = montLookupDiagramMap(map, key);
+                if (imgs) store(key, imgs);
+            });
+        });
+
+        // Download all unique thumb/full URLs into browser HTTP cache.
+        var urls = Object.keys(urlSet);
+        var i = 0;
+        function pumpBatch() {
+            var n = 0;
+            while (i < urls.length && n < 10) {
+                (function (src) {
+                    var img = new Image();
+                    img.decoding = 'async';
+                    img.src = src;
+                })(urls[i++]);
+                n++;
+            }
+            if (i < urls.length) {
+                setTimeout(pumpBatch, 16);
+            }
+        }
+        if (urls.length) {
+            pumpBatch();
+        }
+    }
+
+    // Warm immediately when the product page boots.
+    montSeedAndWarmAllDiagrams();
 
     function montClearLoaders() {
         $('.mont_loading').each(function () {
@@ -612,18 +734,17 @@ jQuery(document).ready(function ($) {
         }
 
         function loadDiagramsAsync(key) {
-            // Instant: session cache, then page-embedded map, then AJAX fallback.
-            if (montChartCache[key] && montImagesUsable(montChartCache[key].images)) {
-                applyMontCustomSizeChart({ images: montChartCache[key].images });
-                setImageBoxLoaders(false);
-                return;
-            }
+            // Instant: client cache (seeded + browser-preloaded on page load).
+            var cachedImages = diagramsFromPage(key)
+                || (montChartCache[key] && montImagesUsable(montChartCache[key].images)
+                    ? montChartCache[key].images
+                    : null);
 
-            var embedded = diagramsFromPage(key);
-            if (embedded) {
+            if (cachedImages) {
                 if (!montChartCache[key]) montChartCache[key] = {};
-                montChartCache[key].images = embedded;
-                applyMontCustomSizeChart({ images: embedded });
+                montChartCache[key].images = cachedImages;
+                montDiagramCache[key] = cachedImages;
+                applyMontCustomSizeChart({ images: cachedImages });
                 setImageBoxLoaders(false);
                 return;
             }
@@ -642,6 +763,7 @@ jQuery(document).ready(function ($) {
                     if (montImagesUsable(images)) {
                         if (!montChartCache[key]) montChartCache[key] = {};
                         montChartCache[key].images = images;
+                        montDiagramCache[key] = images;
                         applyMontCustomSizeChart({ images: images });
                     } else {
                         $('.mont_sizes-measurement-icon').each(function () {

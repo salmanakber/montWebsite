@@ -1,5 +1,6 @@
 <?php 
 
+require_once get_template_directory(). '/codeFunction/size-diagram-helper.php';
 require_once get_template_directory(). '/codeFunction/ajaxHooks.php';
 require_once get_template_directory(). '/codeFunction/custom-variation.php';
 require_once get_template_directory(). '/codeFunction/add-to-cart.php';

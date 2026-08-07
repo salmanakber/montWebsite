@@ -202,15 +202,40 @@ class ajaxHooks
         'charts'    => new stdClass(),
         'diagrams'  => new stdClass(),
     );
-    if ( ! is_admin() && function_exists( 'is_product' ) && is_product() ) {
+    $is_product_page = ! is_admin()
+        && (
+            ( function_exists( 'is_product' ) && is_product() )
+            || ( function_exists( 'is_singular' ) && is_singular( 'product' ) )
+        );
+    if ( $is_product_page ) {
         $pid = get_queried_object_id();
         if ( $pid ) {
             $localize['productId'] = (int) $pid;
             $localize['fitSizes']  = self::get_fit_size_map( $pid );
             $localize['charts']    = self::get_size_chart_map();
-            // All fit×size diagram thumbs for instant size switches (AJAX fallback kept).
+            // All fit×size diagram URLs for client-side cache + browser preload.
             if ( class_exists( 'Mont_Size_Diagram_Helper' ) ) {
                 $diag = Mont_Size_Diagram_Helper::get_diagram_embed_map();
+                // Guarantee keys match this product's WC fit/size slugs.
+                foreach ( (array) $localize['fitSizes'] as $fit_slug => $size_slugs ) {
+                    foreach ( (array) $size_slugs as $size_slug ) {
+                        $key = $fit_slug . '___' . $size_slug;
+                        if ( ! empty( $diag[ $key ] ) ) {
+                            continue;
+                        }
+                        $images = Mont_Size_Diagram_Helper::lean_images_for_js(
+                            Mont_Size_Diagram_Helper::get_frontend_images(
+                                (string) $fit_slug,
+                                (string) $size_slug,
+                                '{}',
+                                true
+                            )
+                        );
+                        if ( ! empty( $images ) ) {
+                            $diag[ $key ] = $images;
+                        }
+                    }
+                }
                 $localize['diagrams'] = ! empty( $diag ) ? $diag : new stdClass();
             }
         }

@@ -691,7 +691,7 @@ class Mont_Size_Diagram_Helper {
 	 */
 	public static function get_diagram_embed_map() {
 		$gen       = (string) get_transient( 'mont_szfront_gen' );
-		$cache_key = 'mont_diag_embed_v1_' . md5( $gen );
+		$cache_key = 'mont_diag_embed_v2_' . md5( $gen );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
