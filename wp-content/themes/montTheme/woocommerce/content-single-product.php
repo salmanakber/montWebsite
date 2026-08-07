@@ -730,20 +730,19 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 				<?php
 				do_action( 'woocommerce_after_add_to_cart_button' );
 				?>
-			<div class="mont_alerts" >
-				<div class="mont_alert" id="mont_alert" style="display: none;">
-					<button class="mont_alert_close" onclick="closeAlert()">×</button>
-
-					<h2 class="mont_alert_title">KANSELLERING OG RETUR FOR SKREDDERSYKTE SKJORTER.</h2>
+			<div class="mont_alerts">
+				<div class="mont_alert mont_alert--popover" id="mont_alert" hidden role="dialog" aria-labelledby="mont_alert_title_1" aria-modal="false">
+					<button type="button" class="mont_alert_close" onclick="closeAlert()" aria-label="Lukk">×</button>
+					<h2 class="mont_alert_title" id="mont_alert_title_1">KANSELLERING OG RETUR FOR SKREDDERSYDDE SKJORTER.</h2>
 					<p class="mont_alert_text">
 						Alle skreddersydde skjorter er 100% individuelt tilpasset etter kundens preferanser. Derfor aksepterer vi IKKE returer av noen grunn bortsett fra produksjonsfeil.
 					</p>
-
-					<h2 class="mont_alert_title">LEVERINGSTID FOR SKREDDERSYKTE SKJORTER.</h2>
+					<h2 class="mont_alert_title">LEVERINGSTID FOR SKREDDERSYDDE SKJORTER.</h2>
 					<p class="mont_alert_text">
 						Alle skreddersydde skjorter krever mer arbeid og skifter av nye deler, derfor må vi legge til opptil syv (7) dager ekstra i tillegg til normal leveringstid.
 					</p>
 				</div>
+				<div class="mont_alert_backdrop" id="mont_alert_backdrop" hidden aria-hidden="true"></div>
 			</div>
 		</div>
 	</div>

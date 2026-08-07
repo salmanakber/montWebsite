@@ -20,9 +20,9 @@ a.button.vipps-express-checkout {
     margin: 0 !important;
 }
 
-.b2b-b2c-switch .active-bold {
+.b2b-b2c-switch .active-bold,
+a.active-bold {
     font-weight: 700 !important;
- 
 }
 @media (max-width: 745px){
 	.popup-right {

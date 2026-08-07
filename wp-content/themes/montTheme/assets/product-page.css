@@ -885,6 +885,113 @@ font-size: 20px;
     padding: 18px 0px 21px 0px;
 }
 
+/* Custom options notice — popover (desktop) / sheet (mobile) */
+.mont_alert.mont_alert--popover {
+    display: none;
+    z-index: 100080;
+    box-sizing: border-box;
+    box-shadow: 0 12px 36px rgba(20, 40, 60, 0.18);
+    border: 1px solid #b8dce4;
+}
+
+.mont_alert.mont_alert--popover.is-open {
+    display: block;
+}
+
+.mont_alert.mont_alert--popover.mont_hidden {
+    display: none !important;
+}
+
+.mont_alert_backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100075;
+    background: rgba(17, 17, 17, 0.35);
+}
+
+.mont_alert_backdrop.is-open {
+    display: block;
+}
+
+@media (min-width: 1025px) {
+    .mont_alert.mont_alert--popover.is-open {
+        position: absolute;
+        width: min(420px, calc(100vw - 48px));
+        max-width: 420px;
+        margin: 0;
+        padding: 22px 20px 20px;
+        border-radius: 4px;
+    }
+
+    .mont_alert.mont_alert--popover .mont_alert_title {
+        font-size: 14px;
+        padding-left: 0;
+        padding-right: 28px;
+    }
+
+    .mont_alert.mont_alert--popover .mont_alert_text {
+        font-size: 13px;
+        padding-left: 0;
+        padding-right: 0;
+        line-height: 1.55;
+    }
+
+    .mont_alert.mont_alert--popover .mont_alert_close {
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        font-size: 20px;
+        background: #fff;
+    }
+
+    .mont_alert_backdrop {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .mont_alert.mont_alert--popover.is-open {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-height: min(58vh, 420px);
+        overflow: auto;
+        margin: 0;
+        padding: 18px 16px 16px;
+        border-radius: 12px;
+        -webkit-overflow-scrolling: touch;
+        animation: mont-alert-sheet-in 0.28s ease;
+    }
+
+    .mont_alert.mont_alert--popover .mont_alert_title {
+        font-size: 12px;
+        padding-left: 0;
+        padding-right: 28px;
+    }
+
+    .mont_alert.mont_alert--popover .mont_alert_text {
+        font-size: 12px;
+        padding-left: 0;
+        padding-right: 0;
+        line-height: 1.5;
+    }
+
+    .mont_alert.mont_alert--popover .mont_alert_close {
+        top: 8px;
+        right: 8px;
+        background: #fff;
+    }
+
+    @keyframes mont-alert-sheet-in {
+        from { transform: translateY(16px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+}
+
 .mont_alert_close {
 position: absolute;
     top: -13px;
@@ -1359,7 +1466,7 @@ body.mont-fit-size-drawer-open {
     width: 22px;
     height: 22px;
     border: 1.5px solid #111;
-    border-radius: 2px;
+    border-radius: 3px;
     box-sizing: border-box;
     flex-shrink: 0;
     position: relative;
@@ -1367,6 +1474,7 @@ body.mont-fit-size-drawer-open {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    padding: 3px;
     color: transparent;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -1376,9 +1484,18 @@ body.mont-fit-size-drawer-open {
 }
 
 .mont-drawer-fit-option.is-selected .mont-drawer-fit-option__check {
-    background: #111;
+    background: #fff;
     border-color: #111;
     color: transparent;
+}
+
+.mont-drawer-fit-option.is-selected .mont-drawer-fit-option__check::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #111;
+    border-radius: 1px;
 }
 
 .mont-drawer-fit-option.is-selected .mont-drawer-fit-option__tick {

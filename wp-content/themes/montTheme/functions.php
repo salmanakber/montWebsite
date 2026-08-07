@@ -28,24 +28,18 @@ function mont_theme_register_acf_options_page() {
 add_action('acf/init', 'mont_theme_register_acf_options_page');
 
 function dynamic_b2b_b2c_menu() {
-    $b2c_url = home_url( '/product-category/skjorter-herre/' );
-    $b2b_url = home_url( '/monte-connected-b2b/' );
     ?>
     <script>
         jQuery(document).ready(function($) {
-            var $switch = $(".b2b-b2c-switch a");
-            if (!$switch.length) return;
-
             var path = (window.location.pathname || '').toLowerCase();
             var search = (window.location.search || '').toLowerCase();
-            var $body = $("body");
+            var $body = $('body');
 
             var isB2B = path.indexOf('/monte-connected-b2b') !== -1
                 || search.indexOf('productb2b') !== -1
                 || $body.hasClass('page-monte-connected-b2b');
 
-            // Any WooCommerce shop/catalog/product surface counts as B2C (except B2B pages).
-            var isB2C = !isB2B && (
+            var isWooOrProduct = !isB2B && (
                 $body.hasClass('woocommerce')
                 || $body.hasClass('woocommerce-page')
                 || $body.hasClass('single-product')
@@ -55,22 +49,18 @@ function dynamic_b2b_b2c_menu() {
                 || path.indexOf('/product-category/') !== -1
                 || path.indexOf('/product-tag/') !== -1
                 || path.indexOf('/shop') !== -1
-                || (path.indexOf('/product/') !== -1 && search.indexOf('productb2b') === -1)
+                || path.indexOf('/product/') !== -1
             );
 
-            var b2cUrl = <?php echo wp_json_encode( $b2c_url ); ?>;
-            var b2bUrl = <?php echo wp_json_encode( $b2b_url ); ?>;
+            // Bold only the B2C menu item — never change B2B text/href.
+            var $b2cLinks = $('a').filter(function () {
+                var text = $.trim($(this).text()).toUpperCase();
+                var href = String($(this).attr('href') || '').toLowerCase();
+                return text === 'B2C'
+                    || href.indexOf('/product-category/skjorter-herre') !== -1;
+            });
 
-            if (isB2B) {
-                // On B2B → offer switch to B2C
-                $switch.attr("href", b2cUrl).text("B2C").addClass("active-bold");
-            } else if (isB2C) {
-                // On any B2C shop/product/category → show B2C bold; click switches to B2B
-                $switch.attr("href", b2bUrl).text("B2C").addClass("active-bold");
-            } else {
-                // Home / other non-shop pages → default B2B
-                $switch.attr("href", b2bUrl).text("B2B").removeClass("active-bold");
-            }
+            $b2cLinks.toggleClass('active-bold', isWooOrProduct);
         });
 		
 jQuery(document).ready(function($){
