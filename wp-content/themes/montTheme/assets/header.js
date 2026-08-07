@@ -3,6 +3,26 @@ jQuery(document).ready(function($) {
 	var delta = 5;
 	var navbarHeight = $('.mont_header_sticky-header').outerHeight();
 
+	// Keep the sliding channel pill in sync with the active page.
+	(function syncMontChannelSwitch() {
+		var $switch = $('.mont-channel-switch');
+		if (!$switch.length) return;
+		var path = (window.location.pathname || '').toLowerCase();
+		var search = (window.location.search || '').toLowerCase();
+		var isB2B = path.indexOf('/monte-connected-b2b') !== -1
+			|| search.indexOf('productb2b') !== -1
+			|| $('body').hasClass('page-monte-connected-b2b');
+		var channel = isB2B ? 'b2b' : 'b2c';
+		$switch.attr('data-active', channel);
+		$switch.find('.mont-channel-switch__btn').each(function () {
+			var $btn = $(this);
+			var on = $btn.data('channel') === channel;
+			$btn.toggleClass('is-active', on);
+			$btn.attr('aria-current', on ? 'page' : 'false');
+		});
+		$('.mont_header_sticky-header').attr('data-mont-channel', channel);
+	})();
+
 	
             // Cache DOM elements
 	var $body = $('body');

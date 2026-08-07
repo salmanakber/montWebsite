@@ -28,6 +28,10 @@
 		'/about-us/'
 	);
 
+	$b2b_url = $resolve_page_url( array( 'monte-connected-b2b' ), '/monte-connected-b2b/' );
+	$b2c_url = home_url( '/product-category/skjorter-herre/' );
+	$channel = $is_b2b_page ? 'b2b' : 'b2c';
+
 	if (!$is_b2b_page) :
 	?>
 	<style>
@@ -54,7 +58,49 @@
 	</h3>
 	</div> -->
 	<?php endif; ?>
-    <header class="mont_header_sticky-header removeWhite ">
+    <header class="mont_header_sticky-header removeWhite " data-mont-channel="<?php echo esc_attr( $channel ); ?>">
+        <div class="mont-channel-bar" role="navigation" aria-label="Butikk type">
+            <div class="mont-channel-switch" data-active="<?php echo esc_attr( $channel ); ?>">
+                <span class="mont-channel-switch__pill" aria-hidden="true"></span>
+                <a
+                    href="<?php echo esc_url( $b2c_url ); ?>"
+                    class="mont-channel-switch__btn<?php echo $channel === 'b2c' ? ' is-active' : ''; ?>"
+                    data-channel="b2c"
+                    aria-current="<?php echo $channel === 'b2c' ? 'page' : 'false'; ?>"
+                >
+                    <span class="mont-channel-switch__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6.5 8.5h11l-.9 10.2a1.6 1.6 0 0 1-1.6 1.5H9a1.6 1.6 0 0 1-1.6-1.5L6.5 8.5Z"/>
+                            <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>
+                            <path d="M9.5 12.5h5"/>
+                        </svg>
+                    </span>
+                    <span class="mont-channel-switch__copy">
+                        <span class="mont-channel-switch__label">B2C</span>
+                        <span class="mont-channel-switch__hint">Privat</span>
+                    </span>
+                </a>
+                <a
+                    href="<?php echo esc_url( $b2b_url ); ?>"
+                    class="mont-channel-switch__btn<?php echo $channel === 'b2b' ? ' is-active' : ''; ?>"
+                    data-channel="b2b"
+                    aria-current="<?php echo $channel === 'b2b' ? 'page' : 'false'; ?>"
+                >
+                    <span class="mont-channel-switch__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3.5" y="8" width="17" height="12" rx="2"/>
+                            <path d="M8 8V6.8A1.8 1.8 0 0 1 9.8 5h4.4A1.8 1.8 0 0 1 16 6.8V8"/>
+                            <path d="M3.5 13h17"/>
+                            <path d="M12 13v7"/>
+                        </svg>
+                    </span>
+                    <span class="mont-channel-switch__copy">
+                        <span class="mont-channel-switch__label">B2B</span>
+                        <span class="mont-channel-switch__hint">Bedrift</span>
+                    </span>
+                </a>
+            </div>
+        </div>
         <nav class="mont_header_nav">
             <div class="mont_header_nav-left">
                 <div class="mont_header_hamburger <?php echo (wp_is_mobile() ? 'mobile-menu': 'desktop-menu') ?>">
