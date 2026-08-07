@@ -1474,7 +1474,7 @@ body.mont-fit-size-drawer-open {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 3px;
+    padding: 2px;
     color: transparent;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
