@@ -687,6 +687,16 @@ jQuery(document).ready(function ($) {
         }
 
         function finishWithData(data) {
+            // Attach preloaded diagrams so numbers + images paint together (no blank first tiles).
+            var imgs = diagramsFromPage(chartKey)
+                || (montChartCache[chartKey] && montImagesUsable(montChartCache[chartKey].images)
+                    ? montChartCache[chartKey].images
+                    : null);
+            if (imgs) {
+                if (!montChartCache[chartKey]) montChartCache[chartKey] = {};
+                montChartCache[chartKey].images = imgs;
+                data = $.extend({}, data || {}, { images: imgs });
+            }
             applyMontCustomSizeChart(data);
             openTailor();
         }
@@ -835,6 +845,25 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    function montForceImgSrc(el, src) {
+        if (!el || !src) return;
+        try {
+            el.loading = 'eager';
+            el.removeAttribute('loading');
+        } catch (e) { /* ignore */ }
+        // Assigning src is enough once loading is eager; avoid blanking (flashes / races).
+        if (el.getAttribute('src') !== src) {
+            el.setAttribute('src', src);
+        } else {
+            // Same URL already on a sticky lazy state — nudge a reload.
+            el.setAttribute('src', src + (src.indexOf('?') > -1 ? '&' : '?') + 'r=1');
+            el.setAttribute('src', src);
+        }
+        if (typeof el.decode === 'function') {
+            el.decode().catch(function () { /* ignore */ });
+        }
+    }
+
     function applyMontCustomSizeChart(data) {
         if (!data) return;
 
@@ -880,6 +909,8 @@ jQuery(document).ready(function ($) {
             Object.keys(imageMap).forEach(function (montKey) {
                 var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
                 if (!$img.length) return;
+                var $item = $img.closest('.mont_sizes-measurement-item');
+                $item.removeClass('is-img-loading');
 
                 var entry = imageMap[montKey];
                 var thumb = '';
@@ -887,6 +918,7 @@ jQuery(document).ready(function ($) {
                 if (entry) {
                     if (typeof entry === 'string') {
                         full = entry;
+                        thumb = entry;
                     } else {
                         thumb = entry.thumb || '';
                         full = entry.full || '';
@@ -894,18 +926,45 @@ jQuery(document).ready(function ($) {
                 }
 
                 var ph = $img.attr('data-placeholder') || '';
-                // Prefer tiny thumb; fall back to full Size/ URL — never keep placeholder when a file exists.
-                var src = thumb || full || '';
+                // Prefer full file for visible tiles (thumb gen can 404); fallback to thumb.
+                var src = full || thumb || '';
+                var fullSrc = full || thumb || src;
                 if (src) {
-                    $img.attr('src', src)
-                        .attr('data-full', full || thumb || src)
+                    $img.attr('data-full', fullSrc)
                         .attr('data-dynamic', '1')
+                        .attr('loading', 'eager')
                         .removeClass('is-placeholder');
+                    $img.off('error.montDiag').on('error.montDiag', function () {
+                        var el = this;
+                        if (fullSrc && el.getAttribute('src') !== fullSrc) {
+                            montForceImgSrc(el, fullSrc);
+                            return;
+                        }
+                        if (thumb && el.getAttribute('src') !== thumb) {
+                            montForceImgSrc(el, thumb);
+                        }
+                    });
+                    montForceImgSrc($img.get(0), src);
+                    // Retry if browser deferred paint (common with former loading=lazy tiles).
+                    (function ($target, url, retryFull) {
+                        var el = $target.get(0);
+                        setTimeout(function () {
+                            if (!el || $target.attr('data-dynamic') !== '1') return;
+                            if (el.naturalWidth > 0) return;
+                            montForceImgSrc(el, retryFull || url);
+                        }, 80);
+                        setTimeout(function () {
+                            if (!el || $target.attr('data-dynamic') !== '1') return;
+                            if (el.naturalWidth > 0) return;
+                            montForceImgSrc(el, retryFull || url);
+                        }, 250);
+                    })($img, src, fullSrc);
                 } else {
-                    $img.attr('src', ph || '')
+                    $img.off('error.montDiag')
                         .attr('data-full', '')
                         .addClass('is-placeholder')
                         .removeAttr('data-dynamic');
+                    montForceImgSrc($img.get(0), ph || '');
                 }
             });
         }

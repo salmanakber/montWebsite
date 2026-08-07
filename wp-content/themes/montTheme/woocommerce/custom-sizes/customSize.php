@@ -7,7 +7,7 @@ $mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
       <ul class="mont_sizes-measurement-list mont_option-list">
         <li class="mont_sizes-measurement-item" data-mont-size="shirt_length">
             <span class="mont_sizes-measurement-icon-wrap">
-            <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Shirt Length" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
+            <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Shirt Length" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="eager" decoding="async" width="64" height="64">
             <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
             </span>
             <div class="mont_sizes-measurement-row">
@@ -31,7 +31,7 @@ $mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
 
         <li class="mont_sizes-measurement-item" data-mont-size="sleeve_length">
             <span class="mont_sizes-measurement-icon-wrap">
-            <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Sleeve Length" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
+            <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Sleeve Length" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="eager" decoding="async" width="64" height="64">
             <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
             </span>
             <div class="mont_sizes-measurement-row">
@@ -64,7 +64,7 @@ $mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
         <div class="mont_sizes-additional-measurements mont_sizes-hidden">
             <li class="mont_sizes-measurement-item" data-mont-size="half_waist">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Waist" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Waist" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="eager" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
@@ -88,7 +88,7 @@ $mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_chest">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Chest" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Chest" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="eager" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
@@ -112,7 +112,7 @@ $mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_bottom">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Half Bottom" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Half Bottom" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="eager" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
@@ -136,7 +136,7 @@ $mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
 
             <li class="mont_sizes-measurement-item" data-mont-size="shoulder">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Shoulder" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Shoulder" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="eager" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
