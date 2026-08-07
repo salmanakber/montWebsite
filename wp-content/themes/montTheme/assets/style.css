@@ -508,7 +508,7 @@ justify-content: space-between;
 .mont_header_mobile_footer {
     margin-top: auto;
     flex-shrink: 0;
-    padding: 24px 24px max(28px, env(safe-area-inset-bottom));
+    padding: 20px 24px max(108px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: 4px;
