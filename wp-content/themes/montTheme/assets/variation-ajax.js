@@ -5,6 +5,8 @@ jQuery(document).ready(function ($) {
     var montSizeListCache = {};
     var drawerPendingFitSlug = '';
     var drawerPendingSizeSlug = '';
+    var montDiagramPrefetch = {};
+    var montPrefetchTimer = null;
 
     function montClearLoaders() {
         $('.mont_loading').each(function () {
@@ -235,6 +237,56 @@ jQuery(document).ready(function ($) {
             }
             montRenderDrawerSizes(validSizes);
         }
+
+        // Warm diagram thumbs for this fit before the customer picks a size.
+        var $fitChecked = $('.pa_body-fit-option').has('input.pa_body-fit-checkbox:checked').first();
+        var fitSlug = $fitChecked.length ? String($fitChecked.data('slug') || '') : '';
+        if (fitSlug && validSizes && validSizes.length) {
+            montPrefetchFitDiagrams(fitSlug, validSizes);
+        }
+    }
+
+    function montPrefetchFitDiagrams(fitSlug, sizeSlugs) {
+        if (!fitSlug || !sizeSlugs || !sizeSlugs.length) return;
+        if (montPrefetchTimer) {
+            clearTimeout(montPrefetchTimer);
+            montPrefetchTimer = null;
+        }
+
+        var queue = sizeSlugs.map(String).filter(Boolean);
+        var i = 0;
+
+        function pump() {
+            if (i >= queue.length) return;
+            var sizeSlug = queue[i++];
+            var key = fitSlug + '___' + sizeSlug;
+            if (montDiagramPrefetch[key] || (montChartCache[key] && montChartCache[key].images)) {
+                montPrefetchTimer = setTimeout(pump, 40);
+                return;
+            }
+            montDiagramPrefetch[key] = true;
+            $.ajax({
+                url: ajaxurl.url,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'mont_get_size_diagrams',
+                    key: key
+                },
+                success: function (res) {
+                    var images = res && res.success && res.data ? res.data.images : null;
+                    if (images && typeof images === 'object') {
+                        if (!montChartCache[key]) montChartCache[key] = {};
+                        montChartCache[key].images = images;
+                    }
+                },
+                complete: function () {
+                    montPrefetchTimer = setTimeout(pump, 90);
+                }
+            });
+        }
+
+        pump();
     }
 
     function montLoadSizesForFit($fitOption, forDrawer) {
@@ -525,6 +577,13 @@ jQuery(document).ready(function ($) {
         }
 
         function loadDiagramsAsync(key) {
+            // Instant path: already prefetched while fit was selected.
+            if (montChartCache[key] && montChartCache[key].images) {
+                applyMontCustomSizeChart({ images: montChartCache[key].images });
+                setImageBoxLoaders(false);
+                return;
+            }
+
             setImageBoxLoaders(true);
             $.ajax({
                 url: ajaxurl.url,
@@ -537,13 +596,10 @@ jQuery(document).ready(function ($) {
                 success: function (res) {
                     var images = res && res.success && res.data ? res.data.images : null;
                     if (images && typeof images === 'object') {
-                        if (montChartCache[key]) {
-                            montChartCache[key].images = images;
-                        }
+                        if (!montChartCache[key]) montChartCache[key] = {};
+                        montChartCache[key].images = images;
                         applyMontCustomSizeChart({ images: images });
                     } else {
-                        // Keep placeholders when no diagrams are available.
-                        setImageBoxLoaders(false);
                         $('.mont_sizes-measurement-icon').each(function () {
                             var $img = $(this);
                             var ph = $img.attr('data-placeholder') || '';

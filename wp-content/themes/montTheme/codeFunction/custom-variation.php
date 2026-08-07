@@ -798,7 +798,7 @@ class CustomVariation {
 		$fit   = $parts[0];
 		$size  = $parts[1];
 
-		$cache_key = 'mont_diag_v3_' . md5( $key );
+		$cache_key = 'mont_diag_v4_' . md5( $key );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			wp_send_json_success( array( 'images' => $cached ) );

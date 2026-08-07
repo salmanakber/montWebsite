@@ -5,8 +5,8 @@
 class Mont_Size_Diagram_Helper {
 
 	const MEASUREMENT_FILES = array(
-		'shirt_length'  => array( 'Back.jpg', 'BackLength.jpg', '39REGULAR-MAN-BackLength.jpg' ),
-		'sleeve_length' => array( 'Sleeve.jpg', '39REGULAR-MAN-Sleeve.jpg' ),
+		'shirt_length'  => array( 'Back.jpg', 'BackLength.jpg', 'BackLenght.jpg', '39REGULAR-MAN-BackLength.jpg' ),
+		'sleeve_length' => array( 'Sleeve.jpg', 'Sleeves.jpg', '39REGULAR-MAN-Sleeve.jpg' ),
 		'half_waist'    => array( 'HalfWaist.jpg', 'Waist.jpg', '39REGULAR-MAN-Waist.jpg' ),
 		'half_chest'    => array( 'HalfChest.jpg', 'Chest.jpg', '39REGULAR-MAN-Chest.jpg' ),
 		'half_bottom'   => array( 'HalfBottom.jpg', 'Bottom.jpg', '39REGULAR-MAN-bottom.jpg', 'bottom.jpg' ),
@@ -163,6 +163,7 @@ class Mont_Size_Diagram_Helper {
 			return '';
 		}
 
+		// Exact filename match first (case-insensitive).
 		foreach ( $candidates as $candidate ) {
 			$key = strtolower( $candidate );
 			if ( isset( $lower_map[ $key ] ) ) {
@@ -172,15 +173,32 @@ class Mont_Size_Diagram_Helper {
 			}
 		}
 
-		// Fuzzy: any file containing candidate stem.
+		// Fuzzy: prefer exact stem matches over longer names (Back != BackShoulder).
 		foreach ( $candidates as $candidate ) {
 			$stem = strtolower( pathinfo( $candidate, PATHINFO_FILENAME ) );
+			$best = '';
+			$best_score = -1;
 			foreach ( $lower_map as $lower => $real ) {
-				if ( false !== strpos( $lower, $stem ) ) {
-					$rel = str_replace( self::size_root(), '', $folder_path . '/' . $real );
-					$rel = ltrim( str_replace( '\\', '/', $rel ), '/' );
-					return trailingslashit( self::size_uri() ) . $rel;
+				$file_stem = strtolower( pathinfo( $lower, PATHINFO_FILENAME ) );
+				if ( $file_stem === $stem ) {
+					$score = 100;
+				} elseif ( 0 === strpos( $file_stem, $stem ) ) {
+					// Prefer shorter remainder so Back beats BackShoulder for stem "back".
+					$score = 50 - ( strlen( $file_stem ) - strlen( $stem ) );
+				} elseif ( false !== strpos( $file_stem, $stem ) ) {
+					$score = 10;
+				} else {
+					continue;
 				}
+				if ( $score > $best_score ) {
+					$best_score = $score;
+					$best       = $real;
+				}
+			}
+			if ( $best ) {
+				$rel = str_replace( self::size_root(), '', $folder_path . '/' . $best );
+				$rel = ltrim( str_replace( '\\', '/', $rel ), '/' );
+				return trailingslashit( self::size_uri() ) . $rel;
 			}
 		}
 
@@ -435,7 +453,7 @@ class Mont_Size_Diagram_Helper {
 			$override_token = (string) $overrides;
 		}
 		$gen = (string) get_transient( 'mont_szfront_gen' );
-		$cache_key = 'mont_szfront_v3_' . md5(
+		$cache_key = 'mont_szfront_v4_' . md5(
 			strtolower( (string) $fit_slug ) . '|' .
 			strtolower( (string) $size_slug ) . '|' .
 			md5( $override_token ) . '|' .
@@ -458,7 +476,7 @@ class Mont_Size_Diagram_Helper {
 	 * Cached in a transient (12h) so PDP AJAX does not rescan Size/ every click.
 	 */
 	public static function get_images_for( $fit_slug, $size_slug ) {
-		$cache_key = 'mont_szimg_' . md5( strtolower( (string) $fit_slug ) . '|' . strtolower( (string) $size_slug ) );
+		$cache_key = 'mont_szimg_v3_' . md5( strtolower( (string) $fit_slug ) . '|' . strtolower( (string) $size_slug ) );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -481,7 +499,30 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Merge auto Size/ diagrams with custom / seeded media overrides (overrides win).
+	 * Whether a seeded/overridden diagram entry can still resolve to a file.
+	 *
+	 * @param mixed $entry
+	 */
+	private static function override_is_usable( $entry ) {
+		if ( is_numeric( $entry ) ) {
+			$id = (int) $entry;
+			return $id > 0 && get_post( $id ) && wp_get_attachment_url( $id );
+		}
+		if ( is_array( $entry ) ) {
+			if ( ! empty( $entry['id'] ) ) {
+				$id = (int) $entry['id'];
+				return $id > 0 && get_post( $id ) && wp_get_attachment_url( $id );
+			}
+			if ( ! empty( $entry['full'] ) || ! empty( $entry['thumb'] ) ) {
+				return true;
+			}
+			return false;
+		}
+		return is_string( $entry ) && '' !== trim( $entry );
+	}
+
+	/**
+	 * Merge auto Size/ diagrams with custom / seeded media overrides (overrides win when usable).
 	 * Entries may be URL strings or {id,full,thumb} media objects.
 	 *
 	 * @param string $fit_slug
@@ -491,7 +532,7 @@ class Mont_Size_Diagram_Helper {
 	 */
 	public static function get_merged_images( $fit_slug, $size_slug, $overrides = array() ) {
 		if ( is_string( $overrides ) ) {
-			$decoded = json_decode( $overrides, true );
+			$decoded   = json_decode( $overrides, true );
 			$overrides = is_array( $decoded ) ? $decoded : array();
 		}
 		if ( ! is_array( $overrides ) ) {
@@ -501,10 +542,11 @@ class Mont_Size_Diagram_Helper {
 		$clean = array();
 		foreach ( $overrides as $key => $url ) {
 			$key = sanitize_key( $key );
+			if ( ! self::override_is_usable( $url ) ) {
+				continue;
+			}
 			if ( is_array( $url ) ) {
-				if ( ! empty( $url['id'] ) || ! empty( $url['full'] ) || ! empty( $url['thumb'] ) ) {
-					$clean[ $key ] = $url;
-				}
+				$clean[ $key ] = $url;
 				continue;
 			}
 			if ( is_numeric( $url ) ) {
@@ -517,19 +559,7 @@ class Mont_Size_Diagram_Helper {
 			}
 		}
 
-		// Frontend only needs these six keys; skip filesystem when media/seed covers them.
-		$needed = array( 'shirt_length', 'sleeve_length', 'half_waist', 'half_chest', 'half_bottom', 'shoulder' );
-		$covered = true;
-		foreach ( $needed as $key ) {
-			if ( empty( $clean[ $key ] ) ) {
-				$covered = false;
-				break;
-			}
-		}
-		if ( $covered ) {
-			return $clean;
-		}
-
+		// Always start from filesystem Size/ map so Soft misses / deleted media don't leave blanks.
 		$auto = self::get_images_for( $fit_slug, $size_slug );
 		foreach ( $clean as $key => $url ) {
 			$auto[ $key ] = $url;
