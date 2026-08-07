@@ -916,12 +916,15 @@ font-size: 20px;
 
 @media (min-width: 1025px) {
     .mont_alert.mont_alert--popover.is-open {
-        position: absolute;
+        position: fixed;
         width: min(420px, calc(100vw - 48px));
         max-width: 420px;
+        max-height: calc(100vh - 40px);
+        overflow: auto;
         margin: 0;
         padding: 22px 20px 20px;
         border-radius: 4px;
+        z-index: 100080;
     }
 
     .mont_alert.mont_alert--popover .mont_alert_title {
@@ -1263,6 +1266,13 @@ a.custom-add-to-cart {
 .mont_sizes-measurement-icon-wrap .mont_sizes-measurement-icon {
     width: 64px;
     height: 64px;
+    object-fit: cover;
+    background: #ececec;
+}
+.mont_sizes-measurement-icon.is-placeholder {
+    object-fit: contain;
+    opacity: 0.85;
+    cursor: default;
 }
 .mont_sizes-measurement-item.is-img-loading .mont_sizes-measurement-icon {
     opacity: 0.35;

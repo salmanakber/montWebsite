@@ -79,8 +79,9 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         e.stopPropagation();
         var $img = $(this);
+        if ($img.hasClass('is-placeholder')) return;
         var src = $img.attr('data-full') || $img.attr('src');
-        if (!src) return;
+        if (!src || src.indexOf('data:image/svg+xml') === 0) return;
         var $box = $('.mont-size-img-lightbox');
         $box.find('img').attr('src', src);
         $box.addClass('is-open').attr('aria-hidden', 'false');

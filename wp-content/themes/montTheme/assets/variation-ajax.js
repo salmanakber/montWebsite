@@ -508,7 +508,20 @@ jQuery(document).ready(function ($) {
         }
 
         function setImageBoxLoaders(on) {
-            $('.mont_sizes-measurement-item[data-mont-size]').toggleClass('is-img-loading', !!on);
+            $('.mont_sizes-measurement-item[data-mont-size]').each(function () {
+                var $item = $(this);
+                var $img = $item.find('.mont_sizes-measurement-icon');
+                $item.toggleClass('is-img-loading', !!on);
+                if (on && $img.length) {
+                    var ph = $img.attr('data-placeholder') || '';
+                    if (ph) {
+                        $img.attr('src', ph)
+                            .attr('data-full', '')
+                            .addClass('is-placeholder')
+                            .removeAttr('data-dynamic');
+                    }
+                }
+            });
         }
 
         function loadDiagramsAsync(key) {
@@ -528,6 +541,16 @@ jQuery(document).ready(function ($) {
                             montChartCache[key].images = images;
                         }
                         applyMontCustomSizeChart({ images: images });
+                    } else {
+                        // Keep placeholders when no diagrams are available.
+                        setImageBoxLoaders(false);
+                        $('.mont_sizes-measurement-icon').each(function () {
+                            var $img = $(this);
+                            var ph = $img.attr('data-placeholder') || '';
+                            if (ph) {
+                                $img.attr('src', ph).attr('data-full', '').addClass('is-placeholder');
+                            }
+                        });
                     }
                 },
                 complete: function () {
@@ -633,23 +656,33 @@ jQuery(document).ready(function ($) {
                 shoulder: data.images.shoulder
             };
             Object.keys(imageMap).forEach(function (montKey) {
+                var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
+                if (!$img.length) return;
+
                 var entry = imageMap[montKey];
-                if (!entry) return;
                 var thumb = '';
                 var full = '';
-                if (typeof entry === 'string') {
-                    thumb = entry;
-                    full = entry;
-                } else {
-                    thumb = entry.thumb || entry.full || '';
-                    full = entry.full || entry.thumb || '';
+                if (entry) {
+                    if (typeof entry === 'string') {
+                        full = entry;
+                    } else {
+                        thumb = entry.thumb || '';
+                        full = entry.full || '';
+                    }
                 }
-                if (!thumb && !full) return;
-                var $img = $('.mont_sizes-measurement-item[data-mont-size="' + montKey + '"] .mont_sizes-measurement-icon');
-                if ($img.length) {
-                    $img.attr('src', thumb || full)
+
+                var ph = $img.attr('data-placeholder') || '';
+                // List tiles only use small thumbs — never load full Size JPGs into 64px boxes.
+                if (thumb) {
+                    $img.attr('src', thumb)
                         .attr('data-full', full || thumb)
-                        .attr('data-dynamic', '1');
+                        .attr('data-dynamic', '1')
+                        .removeClass('is-placeholder');
+                } else {
+                    $img.attr('src', ph || '')
+                        .attr('data-full', full || '')
+                        .addClass('is-placeholder')
+                        .removeAttr('data-dynamic');
                 }
             });
         }

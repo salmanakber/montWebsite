@@ -62,21 +62,21 @@ function showMontCustomAlert(anchorEl) {
 
     if (isDesktop && el && el.getBoundingClientRect) {
         var rect = el.getBoundingClientRect();
-        var scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        var scrollX = window.pageXOffset || document.documentElement.scrollLeft;
         var popW = Math.min(420, window.innerWidth - 48);
-        var left = rect.right + scrollX + 14;
-        var top = rect.top + scrollY - 8;
+        var left = rect.right + 14;
+        var top = Math.max(16, rect.top - 8);
 
         // Prefer right of anchor; if overflow, place to the left.
-        if (left + popW > scrollX + window.innerWidth - 16) {
-            left = Math.max(16 + scrollX, rect.left + scrollX - popW - 14);
+        if (left + popW > window.innerWidth - 16) {
+            left = Math.max(16, rect.left - popW - 14);
         }
-        // Keep within viewport vertically (approx).
-        var maxTop = scrollY + window.innerHeight - 280;
-        if (top > maxTop) top = Math.max(scrollY + 16, maxTop);
+        // Keep within viewport vertically.
+        var maxTop = window.innerHeight - 280;
+        if (top > maxTop) {
+            top = Math.max(16, maxTop);
+        }
 
-        alertEl.style.position = 'absolute';
+        alertEl.style.position = 'fixed';
         alertEl.style.top = Math.round(top) + 'px';
         alertEl.style.left = Math.round(left) + 'px';
         alertEl.style.right = 'auto';
@@ -87,7 +87,7 @@ function showMontCustomAlert(anchorEl) {
         }
         document.body.classList.remove('mont-alert-open');
 
-        // Move popover to body so absolute position is page-relative.
+        // Keep on body so it sits above page scroll content.
         if (alertEl.parentElement !== document.body) {
             document.body.appendChild(alertEl);
         }

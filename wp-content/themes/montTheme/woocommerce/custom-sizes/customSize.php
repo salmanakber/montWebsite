@@ -1,8 +1,13 @@
+<?php
+$mont_size_placeholder = 'data:image/svg+xml,' . rawurlencode(
+	'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="#ececec"/><path d="M18 42l9-12 7 8 5-6 7 10H18z" fill="#cfcfcf"/><circle cx="24" cy="24" r="5" fill="#cfcfcf"/></svg>'
+);
+?>
 <form id="customizationForm">
       <ul class="mont_sizes-measurement-list mont_option-list">
         <li class="mont_sizes-measurement-item" data-mont-size="shirt_length">
             <span class="mont_sizes-measurement-icon-wrap">
-            <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/length.jpg' ); ?>" alt="Shirt Length" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/length.jpg' ); ?>">
+            <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Shirt Length" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
             <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
             </span>
             <div class="mont_sizes-measurement-row">
@@ -26,7 +31,7 @@
 
         <li class="mont_sizes-measurement-item" data-mont-size="sleeve_length">
             <span class="mont_sizes-measurement-icon-wrap">
-            <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/sleeve-length.jpg' ); ?>" alt="Sleeve Length" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/sleeve-length.jpg' ); ?>">
+            <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Sleeve Length" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
             <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
             </span>
             <div class="mont_sizes-measurement-row">
@@ -59,7 +64,7 @@
         <div class="mont_sizes-additional-measurements mont_sizes-hidden">
             <li class="mont_sizes-measurement-item" data-mont-size="half_waist">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-waist.jpg' ); ?>" alt="Waist" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-waist.jpg' ); ?>">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Waist" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
@@ -83,7 +88,7 @@
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_chest">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half_chest.jpg' ); ?>" alt="Chest" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half_chest.jpg' ); ?>">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Chest" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
@@ -107,7 +112,7 @@
 
             <li class="mont_sizes-measurement-item" data-mont-size="half_bottom">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-bottom.jpg' ); ?>" alt="Half Bottom" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/half-bottom.jpg' ); ?>">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Half Bottom" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">
@@ -131,7 +136,7 @@
 
             <li class="mont_sizes-measurement-item" data-mont-size="shoulder">
                 <span class="mont_sizes-measurement-icon-wrap">
-                <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/Shoulder.jpg' ); ?>" alt="Shoulder" class="mont_sizes-measurement-icon" data-fallback="<?php echo esc_url( get_stylesheet_directory_uri() . '/woocommerce/custom-sizes/images/Shoulder.jpg' ); ?>">
+                <img src="<?php echo esc_attr( $mont_size_placeholder ); ?>" alt="Shoulder" class="mont_sizes-measurement-icon is-placeholder" data-placeholder="<?php echo esc_attr( $mont_size_placeholder ); ?>" loading="lazy" decoding="async" width="64" height="64">
                 <span class="mont_sizes-img-spinner" aria-hidden="true"></span>
                 </span>
                 <div class="mont_sizes-measurement-row">

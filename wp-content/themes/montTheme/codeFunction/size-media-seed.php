@@ -9,7 +9,7 @@ class Mont_Size_Media_Seed {
 	const OPTION_STATE   = 'mont_size_media_seed_state';
 	const META_SOURCE    = '_mont_size_source';
 	const META_HASH      = '_mont_size_hash';
-	const SEED_VERSION   = '2.1.0';
+	const SEED_VERSION   = '2.2.0';
 	const BATCH_SIZE     = 4;
 
 	/**
@@ -25,7 +25,7 @@ class Mont_Size_Media_Seed {
 			'46' => array( 'neck_collar' => 46, 'half_chest' => 134, 'half_waist' => 125, 'half_bottom' => 133, 'shoulder' => 55, 'sleeve_length' => 71.5, 'shirt_length' => 82.5 ),
 			'48' => array( 'neck_collar' => 48, 'half_chest' => 146, 'half_waist' => 136, 'half_bottom' => 146, 'shoulder' => 58, 'sleeve_length' => 74.5, 'shirt_length' => 85 ),
 		),
-		'Modern' => array(
+		'ModernFit' => array(
 			'39' => array( 'neck_collar' => 39, 'half_chest' => 110, 'half_waist' => 100, 'half_bottom' => 109, 'shoulder' => 46.5, 'sleeve_length' => 66, 'shirt_length' => 79 ),
 			'40' => array( 'neck_collar' => 40, 'half_chest' => 114, 'half_waist' => 103, 'half_bottom' => 112, 'shoulder' => 48, 'sleeve_length' => 66.5, 'shirt_length' => 80 ),
 			'41' => array( 'neck_collar' => 41, 'half_chest' => 116, 'half_waist' => 106, 'half_bottom' => 115, 'shoulder' => 49.5, 'sleeve_length' => 67, 'shirt_length' => 81 ),
@@ -35,7 +35,7 @@ class Mont_Size_Media_Seed {
 			'45' => array( 'neck_collar' => 45, 'half_chest' => 132, 'half_waist' => 121, 'half_bottom' => 133, 'shoulder' => 56.5, 'sleeve_length' => 69.5, 'shirt_length' => 85 ),
 			'46' => array( 'neck_collar' => 46, 'half_chest' => 135, 'half_waist' => 124, 'half_bottom' => 136, 'shoulder' => 58, 'sleeve_length' => 70, 'shirt_length' => 86 ),
 		),
-		'Slim' => array(
+		'Slimfit' => array(
 			'36' => array( 'neck_collar' => 36, 'half_chest' => 93, 'half_waist' => 83, 'half_bottom' => 92, 'shoulder' => 41, 'sleeve_length' => 64, 'shirt_length' => 75 ),
 			'37' => array( 'neck_collar' => 37, 'half_chest' => 96, 'half_waist' => 86, 'half_bottom' => 96, 'shoulder' => 42.5, 'sleeve_length' => 64.5, 'shirt_length' => 77 ),
 			'38' => array( 'neck_collar' => 38, 'half_chest' => 102, 'half_waist' => 91, 'half_bottom' => 100, 'shoulder' => 44, 'sleeve_length' => 65, 'shirt_length' => 78 ),
@@ -51,8 +51,8 @@ class Mont_Size_Media_Seed {
 	/** Fit folder → preferred WC body-fit slug fragments. */
 	const FIT_SLUG_HINTS = array(
 		'CONTEMPORARY' => array( 'contemporary' ),
-		'Modern'       => array( 'modern', 'regular', 'vanlig' ),
-		'Slim'         => array( 'slim', 'slimfit' ),
+		'ModernFit'    => array( 'modern', 'regular', 'vanlig' ),
+		'Slimfit'      => array( 'slim', 'slimfit' ),
 	);
 
 	public static function is_complete() {
@@ -71,7 +71,7 @@ class Mont_Size_Media_Seed {
 			return $jobs;
 		}
 
-		foreach ( array( 'CONTEMPORARY', 'Modern', 'Slim' ) as $fit_folder ) {
+		foreach ( array( 'CONTEMPORARY', 'ModernFit', 'Slimfit' ) as $fit_folder ) {
 			$base = $root . '/' . $fit_folder;
 			if ( ! is_dir( $base ) ) {
 				continue;

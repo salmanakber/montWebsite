@@ -15,15 +15,16 @@ class Mont_Size_Diagram_Helper {
 		'armhole'       => array( 'Sleeve.jpg', 'HalfChest.jpg', 'Chest.jpg' ),
 	);
 
-	/** Map WC body-fit slug fragments → Size/ top folder. */
+	/** Map WC body-fit slug fragments → Size/ top folder (must match disk). */
 	const FIT_FOLDERS = array(
 		'contemporary' => 'CONTEMPORARY',
-		'slim'         => 'Slim',
-		'slimfit'      => 'Slim',
-		'modern'       => 'Modern',
-		'regular'      => 'Modern',
-		'vanlig'       => 'Modern',
-		'loose'        => 'Modern',
+		'slimfit'      => 'Slimfit',
+		'slim'         => 'Slimfit',
+		'modernfit'    => 'ModernFit',
+		'modern'       => 'ModernFit',
+		'regular'      => 'ModernFit',
+		'vanlig'       => 'ModernFit',
+		'loose'        => 'ModernFit',
 	);
 
 	/** PDP list thumbnail max width (px). Lightbox uses the original full URL. */
@@ -284,10 +285,12 @@ class Mont_Size_Diagram_Helper {
 	}
 
 	/**
-	 * Return a small thumbnail URL for list display; falls back to full URL.
+	 * Return a small thumbnail URL for list display.
+	 * Prefer cached ~120px thumbs; generate once from local Size/ files.
+	 * Returns empty string when no thumb is available (caller shows placeholder).
 	 *
 	 * @param string $full_url
-	 * @param bool   $allow_generate When false (storefront AJAX), never resize / never call attachment_url_to_postid.
+	 * @param bool   $allow_generate When false, still may generate for theme Size/ paths only.
 	 */
 	public static function ensure_thumb_url( $full_url, $allow_generate = true ) {
 		$full_url = esc_url_raw( (string) $full_url );
@@ -302,17 +305,21 @@ class Mont_Size_Diagram_Helper {
 			if ( $targets && file_exists( $targets['path'] ) && filesize( $targets['path'] ) > 0 ) {
 				return $targets['url'];
 			}
-			if ( $allow_generate ) {
+			$root          = trailingslashit( self::size_root() );
+			$is_size_file  = ( 0 === strpos( $path, $root ) );
+			// Always generate thumbs for theme Size/ files (one-time, then cached on disk).
+			if ( $allow_generate || $is_size_file ) {
 				$generated = self::make_cached_thumb( $path );
 				if ( $generated ) {
 					return $generated;
 				}
 			}
-			return $full_url;
+			// Prefer empty over serving huge full JPGs in the list tiles.
+			return $is_size_file ? '' : $full_url;
 		}
 
 		if ( ! $allow_generate ) {
-			return $full_url;
+			return '';
 		}
 
 		$att_id = attachment_url_to_postid( $full_url );
@@ -334,7 +341,7 @@ class Mont_Size_Diagram_Helper {
 			}
 		}
 
-		return $full_url;
+		return '';
 	}
 
 	/**
@@ -362,8 +369,15 @@ class Mont_Size_Diagram_Helper {
 						}
 					}
 				}
+				// If stored thumb is the same huge full URL, try a real small thumb.
+				if ( $full && ( ! $thumb || $thumb === $full ) ) {
+					$better = self::ensure_thumb_url( $full, true );
+					if ( $better ) {
+						$thumb = $better;
+					}
+				}
 				$full  = $full ? $full : '';
-				$thumb = $thumb ? $thumb : $full;
+				$thumb = $thumb ? $thumb : '';
 				if ( ! $full && ! $thumb ) {
 					continue;
 				}
@@ -382,11 +396,17 @@ class Mont_Size_Diagram_Helper {
 				if ( ! $thumb ) {
 					$thumb = wp_get_attachment_image_url( $id, 'thumbnail' );
 				}
+				if ( $full && ( ! $thumb || $thumb === $full ) ) {
+					$better = self::ensure_thumb_url( $full, true );
+					if ( $better ) {
+						$thumb = $better;
+					}
+				}
 				if ( ! $full && ! $thumb ) {
 					continue;
 				}
 				$out[ $key ] = array(
-					'thumb' => $thumb ? $thumb : $full,
+					'thumb' => $thumb ? $thumb : '',
 					'full'  => $full ? $full : $thumb,
 				);
 				continue;
@@ -406,7 +426,7 @@ class Mont_Size_Diagram_Helper {
 
 	/**
 	 * Frontend image map (thumb for tiles, full for lightbox).
-	 * Storefront AJAX passes $allow_generate=false so requests never block on image resize.
+	 * Local Size/ thumbs are generated once and reused from disk cache.
 	 */
 	public static function get_frontend_images( $fit_slug, $size_slug, $overrides = array(), $allow_generate = false ) {
 		if ( is_array( $overrides ) ) {
@@ -415,12 +435,11 @@ class Mont_Size_Diagram_Helper {
 			$override_token = (string) $overrides;
 		}
 		$gen = (string) get_transient( 'mont_szfront_gen' );
-		$cache_key = 'mont_szfront_v2_' . md5(
+		$cache_key = 'mont_szfront_v3_' . md5(
 			strtolower( (string) $fit_slug ) . '|' .
 			strtolower( (string) $size_slug ) . '|' .
 			md5( $override_token ) . '|' .
-			$gen . '|' .
-			( $allow_generate ? '1' : '0' )
+			$gen . '|g'
 		);
 		$cached = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
@@ -428,7 +447,8 @@ class Mont_Size_Diagram_Helper {
 		}
 
 		$merged = self::get_merged_images( $fit_slug, $size_slug, $overrides );
-		$out    = self::with_thumbs( $merged, $allow_generate );
+		// Always allow Size/-path thumb generation for fast list tiles.
+		$out    = self::with_thumbs( $merged, true );
 		set_transient( $cache_key, $out, 12 * HOUR_IN_SECONDS );
 		return $out;
 	}

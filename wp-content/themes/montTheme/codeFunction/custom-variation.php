@@ -798,7 +798,7 @@ class CustomVariation {
 		$fit   = $parts[0];
 		$size  = $parts[1];
 
-		$cache_key = 'mont_diag_v2_' . md5( $key );
+		$cache_key = 'mont_diag_v3_' . md5( $key );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			wp_send_json_success( array( 'images' => $cached ) );
@@ -815,8 +815,8 @@ class CustomVariation {
 		}
 		$overrides = ( $row && ! empty( $row->diagram_images ) ) ? $row->diagram_images : '{}';
 
-		// Full URLs only (+ existing thumbs if already on disk). No resize during request.
-		$images = Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides, false );
+		// Prefer ~120px thumbs (auto-generated once from Size/ and cached on disk).
+		$images = Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides, true );
 		set_transient( $cache_key, $images, 12 * HOUR_IN_SECONDS );
 		wp_send_json_success( array( 'images' => $images ) );
 	}
