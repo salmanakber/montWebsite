@@ -40,10 +40,11 @@ a.active-bold {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: max(12px, env(safe-area-inset-bottom, 0px));
+        /* Raised to sit level with typical chat widgets (~20–24px floor) */
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
         z-index: 100040;
         width: 100%;
-        padding: 0 20px;
+        padding: 0 72px; /* leave room for chat bubble on the right */
         box-sizing: border-box;
         background: transparent;
         border: none;
@@ -53,28 +54,28 @@ a.active-bold {
 
     .mont-channel-switch {
         --mont-channel-ink: #171512;
-        --mont-channel-muted: #7a736a;
-        --mont-channel-track: rgba(255, 255, 255, 0.94);
+        --mont-channel-muted: #6f685f;
+        --mont-channel-track: rgba(255, 255, 255, 0.96);
         position: relative;
         display: grid;
         grid-template-columns: 1fr 1fr;
         align-items: stretch;
         gap: 0;
         width: 100%;
-        max-width: 220px;
-        min-height: 34px;
+        max-width: 176px;
+        min-height: 28px;
         padding: 2px;
         border-radius: 999px;
         background: var(--mont-channel-track);
-        border: 1px solid rgba(28, 25, 21, 0.08);
+        border: 1px solid rgba(28, 25, 21, 0.07);
         box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.85),
-            0 8px 22px rgba(28, 25, 21, 0.14);
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            0 6px 16px rgba(28, 25, 21, 0.12);
         overflow: hidden;
         isolation: isolate;
         pointer-events: auto;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px) saturate(1.1);
+        -webkit-backdrop-filter: blur(12px) saturate(1.1);
     }
 
     .mont-channel-switch__pill {
@@ -84,12 +85,12 @@ a.active-bold {
         left: 2px;
         width: calc(50% - 2px);
         border-radius: 999px;
-        background: linear-gradient(145deg, #23201c 0%, #12100e 100%);
+        background: linear-gradient(160deg, #2a2622 0%, #12100e 100%);
         box-shadow:
-            0 4px 10px rgba(18, 16, 14, 0.22),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            0 3px 8px rgba(18, 16, 14, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12);
         transform: translateX(0);
-        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
         z-index: 0;
         pointer-events: none;
     }
@@ -99,7 +100,7 @@ a.active-bold {
         position: absolute;
         inset: 1px;
         border-radius: inherit;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 45%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 50%);
         pointer-events: none;
     }
 
@@ -113,14 +114,14 @@ a.active-bold {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
-        min-height: 30px;
-        padding: 3px 8px;
+        gap: 4px;
+        min-height: 24px;
+        padding: 2px 6px;
         border-radius: 999px;
         text-decoration: none !important;
         color: var(--mont-channel-muted) !important;
         font-family: "Figtree", "Rubik", sans-serif;
-        transition: color 0.25s ease, transform 0.25s ease;
+        transition: color 0.22s ease, transform 0.22s ease;
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -136,18 +137,19 @@ a.active-bold {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 18px;
-        height: 18px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
         background: transparent;
         color: inherit;
         flex-shrink: 0;
+        opacity: 0.92;
     }
 
     .mont-channel-switch__icon svg {
         display: block;
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
     }
 
     .mont-channel-switch__copy {
@@ -159,9 +161,9 @@ a.active-bold {
     }
 
     .mont-channel-switch__label {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.07em;
         text-transform: uppercase;
     }
 
@@ -171,7 +173,7 @@ a.active-bold {
 
     /* Sit above product sticky ATC when visible */
     body.has-mont-mobile-sticky .mont-channel-bar {
-        bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
     }
 
     @keyframes mont-channel-in {
