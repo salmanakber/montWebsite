@@ -197,9 +197,10 @@ class ajaxHooks
 
     wp_enqueue_script('mont-variation-ajax', $theme_uri . '/assets/variation-ajax.js', array('jquery'), filemtime($theme_dir . '/assets/variation-ajax.js'), true);
     $localize = array(
-        'url'      => admin_url('admin-ajax.php'),
-        'fitSizes' => new stdClass(),
-        'charts'   => new stdClass(),
+        'url'       => admin_url('admin-ajax.php'),
+        'fitSizes'  => new stdClass(),
+        'charts'    => new stdClass(),
+        'diagrams'  => new stdClass(),
     );
     if ( ! is_admin() && function_exists( 'is_product' ) && is_product() ) {
         $pid = get_queried_object_id();
@@ -207,6 +208,11 @@ class ajaxHooks
             $localize['productId'] = (int) $pid;
             $localize['fitSizes']  = self::get_fit_size_map( $pid );
             $localize['charts']    = self::get_size_chart_map();
+            // All fit×size diagram thumbs for instant size switches (AJAX fallback kept).
+            if ( class_exists( 'Mont_Size_Diagram_Helper' ) ) {
+                $diag = Mont_Size_Diagram_Helper::get_diagram_embed_map();
+                $localize['diagrams'] = ! empty( $diag ) ? $diag : new stdClass();
+            }
         }
     }
     wp_localize_script('mont-variation-ajax', 'ajaxurl', $localize);

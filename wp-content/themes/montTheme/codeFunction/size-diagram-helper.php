@@ -243,6 +243,7 @@ class Mont_Size_Diagram_Helper {
 
 	/**
 	 * Deterministic cached thumb path/url for a local file (no image processing).
+	 * Prefers uploads/mont-size-thumbs, falls back to theme Size/.thumbs when uploads are not writable.
 	 *
 	 * @return array{path:string,url:string,dir:string}|null
 	 */
@@ -251,18 +252,35 @@ class Mont_Size_Diagram_Helper {
 		if ( ! $source_path || ! file_exists( $source_path ) ) {
 			return null;
 		}
-		$mtime   = (string) @filemtime( $source_path );
-		$hash    = md5( $source_path . '|' . $mtime . '|' . self::THUMB_WIDTH . '|jpg82' );
+		$mtime = (string) @filemtime( $source_path );
+		$hash  = md5( $source_path . '|' . $mtime . '|' . self::THUMB_WIDTH . '|jpg82' );
+
 		$uploads = wp_upload_dir();
-		if ( ! empty( $uploads['error'] ) ) {
-			return null;
+		if ( empty( $uploads['error'] ) ) {
+			$dir = trailingslashit( $uploads['basedir'] ) . 'mont-size-thumbs';
+			if ( wp_mkdir_p( $dir ) && is_writable( $dir ) ) {
+				return array(
+					'path' => $dir . '/' . $hash . '.jpg',
+					'url'  => trailingslashit( $uploads['baseurl'] ) . 'mont-size-thumbs/' . $hash . '.jpg',
+					'dir'  => $dir,
+				);
+			}
 		}
-		$dir = trailingslashit( $uploads['basedir'] ) . 'mont-size-thumbs';
-		return array(
-			'path' => $dir . '/' . $hash . '.jpg',
-			'url'  => trailingslashit( $uploads['baseurl'] ) . 'mont-size-thumbs/' . $hash . '.jpg',
-			'dir'  => $dir,
-		);
+
+		// Fallback next to Size/ diagrams (theme folder).
+		$dir = trailingslashit( self::size_root() ) . '.thumbs';
+		if ( ! is_dir( $dir ) ) {
+			@mkdir( $dir, 0755, true );
+		}
+		if ( is_dir( $dir ) && is_writable( $dir ) ) {
+			return array(
+				'path' => $dir . '/' . $hash . '.jpg',
+				'url'  => trailingslashit( self::size_uri() ) . '.thumbs/' . $hash . '.jpg',
+				'dir'  => $dir,
+			);
+		}
+
+		return null;
 	}
 
 	/**
@@ -278,34 +296,58 @@ class Mont_Size_Diagram_Helper {
 			return $targets['url'];
 		}
 
-		if ( ! function_exists( 'wp_get_image_editor' ) ) {
-			return '';
-		}
-		if ( ! wp_mkdir_p( $targets['dir'] ) ) {
+		if ( ! wp_mkdir_p( $targets['dir'] ) && ! is_dir( $targets['dir'] ) ) {
 			return '';
 		}
 
-		$editor = wp_get_image_editor( $source_path );
-		if ( is_wp_error( $editor ) ) {
-			return '';
+		if ( function_exists( 'wp_get_image_editor' ) ) {
+			$editor = wp_get_image_editor( $source_path );
+			if ( ! is_wp_error( $editor ) ) {
+				$editor->resize( self::THUMB_WIDTH, self::THUMB_WIDTH, false );
+				if ( is_callable( array( $editor, 'set_quality' ) ) ) {
+					$editor->set_quality( 78 );
+				}
+				$saved = $editor->save( $targets['path'], 'image/jpeg' );
+				if ( ! is_wp_error( $saved ) && file_exists( $targets['path'] ) ) {
+					return $targets['url'];
+				}
+			}
 		}
 
-		$editor->resize( self::THUMB_WIDTH, self::THUMB_WIDTH, false );
-		if ( is_callable( array( $editor, 'set_quality' ) ) ) {
-			$editor->set_quality( 82 );
-		}
-		$saved = $editor->save( $targets['path'], 'image/jpeg' );
-		if ( is_wp_error( $saved ) ) {
-			return '';
+		// Direct GD fallback when WP editors fail (common when Imagick is broken).
+		if ( function_exists( 'imagecreatefromjpeg' ) ) {
+			$src = @imagecreatefromjpeg( $source_path );
+			if ( ! $src ) {
+				$src = @imagecreatefromstring( (string) @file_get_contents( $source_path ) );
+			}
+			if ( $src ) {
+				$sw = imagesx( $src );
+				$sh = imagesy( $src );
+				if ( $sw > 0 && $sh > 0 ) {
+					$scale = min( 1, self::THUMB_WIDTH / max( $sw, $sh ) );
+					$tw    = max( 1, (int) round( $sw * $scale ) );
+					$th    = max( 1, (int) round( $sh * $scale ) );
+					$dst   = imagecreatetruecolor( $tw, $th );
+					imagecopyresampled( $dst, $src, 0, 0, 0, 0, $tw, $th, $sw, $sh );
+					$ok = imagejpeg( $dst, $targets['path'], 78 );
+					imagedestroy( $dst );
+					imagedestroy( $src );
+					if ( $ok && file_exists( $targets['path'] ) ) {
+						return $targets['url'];
+					}
+				} else {
+					imagedestroy( $src );
+				}
+			}
 		}
 
-		return $targets['url'];
+		return '';
 	}
 
 	/**
 	 * Return a small thumbnail URL for list display.
 	 * Prefer cached ~120px thumbs; generate once from local Size/ files.
-	 * Returns empty string when no thumb is available (caller shows placeholder).
+	 * Falls back to the full URL so the UI never shows a blank placeholder when a file exists.
 	 *
 	 * @param string $full_url
 	 * @param bool   $allow_generate When false, still may generate for theme Size/ paths only.
@@ -323,8 +365,8 @@ class Mont_Size_Diagram_Helper {
 			if ( $targets && file_exists( $targets['path'] ) && filesize( $targets['path'] ) > 0 ) {
 				return $targets['url'];
 			}
-			$root          = trailingslashit( self::size_root() );
-			$is_size_file  = ( 0 === strpos( $path, $root ) );
+			$root         = trailingslashit( self::size_root() );
+			$is_size_file = ( 0 === strpos( $path, $root ) );
 			// Always generate thumbs for theme Size/ files (one-time, then cached on disk).
 			if ( $allow_generate || $is_size_file ) {
 				$generated = self::make_cached_thumb( $path );
@@ -332,12 +374,12 @@ class Mont_Size_Diagram_Helper {
 					return $generated;
 				}
 			}
-			// Prefer empty over serving huge full JPGs in the list tiles.
-			return $is_size_file ? '' : $full_url;
+			// Never hide a real diagram behind a placeholder.
+			return $full_url;
 		}
 
 		if ( ! $allow_generate ) {
-			return '';
+			return $full_url;
 		}
 
 		$att_id = attachment_url_to_postid( $full_url );
@@ -359,7 +401,7 @@ class Mont_Size_Diagram_Helper {
 			}
 		}
 
-		return '';
+		return $full_url;
 	}
 
 	/**
@@ -453,7 +495,7 @@ class Mont_Size_Diagram_Helper {
 			$override_token = (string) $overrides;
 		}
 		$gen = (string) get_transient( 'mont_szfront_gen' );
-		$cache_key = 'mont_szfront_v4_' . md5(
+		$cache_key = 'mont_szfront_v5_' . md5(
 			strtolower( (string) $fit_slug ) . '|' .
 			strtolower( (string) $size_slug ) . '|' .
 			md5( $override_token ) . '|' .
@@ -505,13 +547,15 @@ class Mont_Size_Diagram_Helper {
 	 */
 	private static function override_is_usable( $entry ) {
 		if ( is_numeric( $entry ) ) {
-			$id = (int) $entry;
-			return $id > 0 && get_post( $id ) && wp_get_attachment_url( $id );
+			$id   = (int) $entry;
+			$path = $id > 0 ? get_attached_file( $id ) : '';
+			return $path && file_exists( $path );
 		}
 		if ( is_array( $entry ) ) {
 			if ( ! empty( $entry['id'] ) ) {
-				$id = (int) $entry['id'];
-				return $id > 0 && get_post( $id ) && wp_get_attachment_url( $id );
+				$id   = (int) $entry['id'];
+				$path = $id > 0 ? get_attached_file( $id ) : '';
+				return $path && file_exists( $path );
 			}
 			if ( ! empty( $entry['full'] ) || ! empty( $entry['thumb'] ) ) {
 				return true;
@@ -579,6 +623,170 @@ class Mont_Size_Diagram_Helper {
 		}
 		$decoded = json_decode( $raw, true );
 		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * Lean image map for JS embed (prefer thumb URLs).
+	 *
+	 * @param array $images
+	 * @return array
+	 */
+	public static function lean_images_for_js( $images ) {
+		$out = array();
+		if ( ! is_array( $images ) ) {
+			return $out;
+		}
+		foreach ( self::MEASUREMENT_FILES as $key => $_candidates ) {
+			if ( empty( $images[ $key ] ) ) {
+				continue;
+			}
+			$entry = $images[ $key ];
+			if ( is_string( $entry ) ) {
+				$out[ $key ] = array(
+					'thumb' => $entry,
+					'full'  => $entry,
+				);
+				continue;
+			}
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+			$full  = isset( $entry['full'] ) ? (string) $entry['full'] : '';
+			$thumb = isset( $entry['thumb'] ) ? (string) $entry['thumb'] : '';
+			if ( '' === $thumb ) {
+				$thumb = $full;
+			}
+			if ( '' === $full ) {
+				$full = $thumb;
+			}
+			if ( '' === $thumb && '' === $full ) {
+				continue;
+			}
+			$out[ $key ] = array(
+				'thumb' => $thumb,
+				'full'  => $full,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Fit folder name on disk => WC / UI slug aliases used in composite keys.
+	 *
+	 * @return array<string, string[]>
+	 */
+	private static function fit_folder_slug_aliases() {
+		return array(
+			'CONTEMPORARY' => array( 'contemporary', 'contemporary-fit' ),
+			'ModernFit'    => array( 'modern', 'modern-fit', 'regular', 'vanlig' ),
+			'Slimfit'      => array( 'slim', 'slimfit', 'slim-fit' ),
+		);
+	}
+
+	/**
+	 * Build all fit___size diagram maps for page embed (cached).
+	 * Key format matches JS: bodyCheck + '___' + sizeSlug.
+	 *
+	 * @return array<string, array>
+	 */
+	public static function get_diagram_embed_map() {
+		$gen       = (string) get_transient( 'mont_szfront_gen' );
+		$cache_key = 'mont_diag_embed_v1_' . md5( $gen );
+		$cached    = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$map  = array();
+		$root = self::size_root();
+
+		if ( is_dir( $root ) ) {
+			$aliases = self::fit_folder_slug_aliases();
+			foreach ( scandir( $root ) as $fit_folder ) {
+				if ( '.' === $fit_folder || '..' === $fit_folder ) {
+					continue;
+				}
+				$fit_path = $root . '/' . $fit_folder;
+				if ( ! is_dir( $fit_path ) ) {
+					continue;
+				}
+				$slugs = isset( $aliases[ $fit_folder ] )
+					? $aliases[ $fit_folder ]
+					: array( sanitize_title( $fit_folder ) );
+				$hint  = $slugs[0];
+
+				foreach ( scandir( $fit_path ) as $size_dir ) {
+					$size_path = $fit_path . '/' . $size_dir;
+					if ( '.' === $size_dir || '..' === $size_dir || ! is_dir( $size_path ) ) {
+						continue;
+					}
+					$code   = self::extract_size_code( $size_dir );
+					$images = self::lean_images_for_js(
+						self::get_frontend_images( $hint, $code, '{}', true )
+					);
+					if ( empty( $images ) ) {
+						continue;
+					}
+					foreach ( $slugs as $slug ) {
+						$map[ $slug . '___' . $code ] = $images;
+						$map[ sanitize_title( $slug ) . '___' . $code ] = $images;
+					}
+				}
+			}
+		}
+
+		// Exact attribute keys from variation_settings (overrides / custom media).
+		global $wpdb;
+		$table = $wpdb->prefix . 'variation_settings';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows  = $wpdb->get_results( "SELECT attributes, body_fit, size_slug, diagram_images FROM {$table}", ARRAY_A );
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $row ) {
+				$attr = isset( $row['attributes'] ) ? (string) $row['attributes'] : '';
+				$fit  = isset( $row['body_fit'] ) ? (string) $row['body_fit'] : '';
+				$size = isset( $row['size_slug'] ) ? (string) $row['size_slug'] : '';
+				$diag = isset( $row['diagram_images'] ) ? $row['diagram_images'] : '{}';
+				if ( '' === $fit || '' === $size ) {
+					continue;
+				}
+				$images = self::lean_images_for_js(
+					self::get_frontend_images( $fit, $size, $diag, true )
+				);
+				if ( empty( $images ) ) {
+					continue;
+				}
+				if ( '' !== $attr ) {
+					$map[ $attr ] = $images;
+				}
+				$map[ $fit . '___' . $size ] = $images;
+				$map[ sanitize_title( $fit ) . '___' . $size ] = $images;
+			}
+		}
+
+		set_transient( $cache_key, $map, 12 * HOUR_IN_SECONDS );
+		return $map;
+	}
+
+	/**
+	 * Lookup embed entry with case-insensitive / alias fallbacks.
+	 *
+	 * @param string $key bodyCheck___sizeSlug
+	 * @param array  $map embed map
+	 * @return array|null
+	 */
+	public static function lookup_embed_images( $key, $map ) {
+		if ( ! is_array( $map ) || ! is_string( $key ) || '' === $key ) {
+			return null;
+		}
+		if ( ! empty( $map[ $key ] ) && is_array( $map[ $key ] ) ) {
+			return $map[ $key ];
+		}
+		$lower = array_change_key_case( $map, CASE_LOWER );
+		$lk    = strtolower( $key );
+		if ( ! empty( $lower[ $lk ] ) && is_array( $lower[ $lk ] ) ) {
+			return $lower[ $lk ];
+		}
+		return null;
 	}
 
 	/**

@@ -786,7 +786,6 @@ class CustomVariation {
 
 	/**
 	 * Load diagram thumb/full URLs after measurements (non-blocking for the user).
-	 * Never generates thumbnails on this request.
 	 */
 	public function ajax_get_size_diagrams() {
 		$key = isset( $_POST['key'] ) ? sanitize_text_field( wp_unslash( $_POST['key'] ) ) : '';
@@ -795,29 +794,40 @@ class CustomVariation {
 		}
 
 		$parts = explode( '___', $key, 2 );
-		$fit   = $parts[0];
-		$size  = $parts[1];
+		// Always resolve diagrams from the customer-selected fit/size key.
+		// Do not remap via loose DB LIKE matches (that was blanking Slimfit images).
+		$fit  = $parts[0];
+		$size = $parts[1];
 
-		$cache_key = 'mont_diag_v4_' . md5( $key );
+		$cache_key = 'mont_diag_v5_' . md5( $key );
 		$cached    = get_transient( $cache_key );
-		if ( is_array( $cached ) ) {
+		if ( is_array( $cached ) && ! empty( $cached ) ) {
 			wp_send_json_success( array( 'images' => $cached ) );
 		}
 
-		$row = $this->find_chart_row( $key );
-		if ( $row ) {
-			if ( ! empty( $row->body_fit ) ) {
-				$fit = $row->body_fit;
-			}
-			if ( ! empty( $row->size_slug ) ) {
-				$size = $row->size_slug;
-			}
+		global $wpdb;
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table_name} WHERE attributes = %s LIMIT 1",
+				$key
+			)
+		);
+		if ( ! $row ) {
+			$row = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT * FROM {$this->table_name} WHERE body_fit = %s AND size_slug = %s LIMIT 1",
+					$fit,
+					$size
+				)
+			);
 		}
+
 		$overrides = ( $row && ! empty( $row->diagram_images ) ) ? $row->diagram_images : '{}';
 
-		// Prefer ~120px thumbs (auto-generated once from Size/ and cached on disk).
 		$images = Mont_Size_Diagram_Helper::get_frontend_images( $fit, $size, $overrides, true );
-		set_transient( $cache_key, $images, 12 * HOUR_IN_SECONDS );
+		if ( ! empty( $images ) ) {
+			set_transient( $cache_key, $images, 12 * HOUR_IN_SECONDS );
+		}
 		wp_send_json_success( array( 'images' => $images ) );
 	}
 

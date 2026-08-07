@@ -8,6 +8,32 @@ jQuery(document).ready(function ($) {
     var montDiagramPrefetch = {};
     var montPrefetchTimer = null;
 
+    function montImagesUsable(images) {
+        if (!images || typeof images !== 'object') return false;
+        var keys = ['shirt_length', 'sleeve_length', 'half_chest', 'half_waist', 'half_bottom', 'shoulder'];
+        for (var i = 0; i < keys.length; i++) {
+            var e = images[keys[i]];
+            if (!e) continue;
+            if (typeof e === 'string' && e) return true;
+            if ((e.thumb && String(e.thumb)) || (e.full && String(e.full))) return true;
+        }
+        return false;
+    }
+
+    /** Page-embedded fit×size diagram map (ajaxurl.diagrams). */
+    function diagramsFromPage(key) {
+        var map = (typeof ajaxurl !== 'undefined' && ajaxurl.diagrams) ? ajaxurl.diagrams : null;
+        if (!map || !key) return null;
+        if (map[key] && montImagesUsable(map[key])) return map[key];
+        var lk = String(key).toLowerCase();
+        if (map[lk] && montImagesUsable(map[lk])) return map[lk];
+        for (var k in map) {
+            if (!Object.prototype.hasOwnProperty.call(map, k)) continue;
+            if (String(k).toLowerCase() === lk && montImagesUsable(map[k])) return map[k];
+        }
+        return null;
+    }
+
     function montClearLoaders() {
         $('.mont_loading').each(function () {
             $(this).removeClass('mont_loading');
@@ -260,7 +286,16 @@ jQuery(document).ready(function ($) {
             if (i >= queue.length) return;
             var sizeSlug = queue[i++];
             var key = fitSlug + '___' + sizeSlug;
-            if (montDiagramPrefetch[key] || (montChartCache[key] && montChartCache[key].images)) {
+            if (montDiagramPrefetch[key] || (montChartCache[key] && montImagesUsable(montChartCache[key].images))) {
+                montPrefetchTimer = setTimeout(pump, 40);
+                return;
+            }
+            // Already on the page — seed cache, skip AJAX.
+            var embedded = diagramsFromPage(key);
+            if (embedded) {
+                if (!montChartCache[key]) montChartCache[key] = {};
+                montChartCache[key].images = embedded;
+                montDiagramPrefetch[key] = true;
                 montPrefetchTimer = setTimeout(pump, 40);
                 return;
             }
@@ -275,7 +310,7 @@ jQuery(document).ready(function ($) {
                 },
                 success: function (res) {
                     var images = res && res.success && res.data ? res.data.images : null;
-                    if (images && typeof images === 'object') {
+                    if (montImagesUsable(images)) {
                         if (!montChartCache[key]) montChartCache[key] = {};
                         montChartCache[key].images = images;
                     }
@@ -577,9 +612,18 @@ jQuery(document).ready(function ($) {
         }
 
         function loadDiagramsAsync(key) {
-            // Instant path: already prefetched while fit was selected.
-            if (montChartCache[key] && montChartCache[key].images) {
+            // Instant: session cache, then page-embedded map, then AJAX fallback.
+            if (montChartCache[key] && montImagesUsable(montChartCache[key].images)) {
                 applyMontCustomSizeChart({ images: montChartCache[key].images });
+                setImageBoxLoaders(false);
+                return;
+            }
+
+            var embedded = diagramsFromPage(key);
+            if (embedded) {
+                if (!montChartCache[key]) montChartCache[key] = {};
+                montChartCache[key].images = embedded;
+                applyMontCustomSizeChart({ images: embedded });
                 setImageBoxLoaders(false);
                 return;
             }
@@ -595,7 +639,7 @@ jQuery(document).ready(function ($) {
                 },
                 success: function (res) {
                     var images = res && res.success && res.data ? res.data.images : null;
-                    if (images && typeof images === 'object') {
+                    if (montImagesUsable(images)) {
                         if (!montChartCache[key]) montChartCache[key] = {};
                         montChartCache[key].images = images;
                         applyMontCustomSizeChart({ images: images });
@@ -728,15 +772,16 @@ jQuery(document).ready(function ($) {
                 }
 
                 var ph = $img.attr('data-placeholder') || '';
-                // List tiles only use small thumbs — never load full Size JPGs into 64px boxes.
-                if (thumb) {
-                    $img.attr('src', thumb)
-                        .attr('data-full', full || thumb)
+                // Prefer tiny thumb; fall back to full Size/ URL — never keep placeholder when a file exists.
+                var src = thumb || full || '';
+                if (src) {
+                    $img.attr('src', src)
+                        .attr('data-full', full || thumb || src)
                         .attr('data-dynamic', '1')
                         .removeClass('is-placeholder');
                 } else {
                     $img.attr('src', ph || '')
-                        .attr('data-full', full || '')
+                        .attr('data-full', '')
                         .addClass('is-placeholder')
                         .removeAttr('data-dynamic');
                 }
