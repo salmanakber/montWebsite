@@ -993,7 +993,7 @@ ul#b2bmenu {
    ========================================================= */
 
 .b2b-listing-page {
-  padding-top: 148px; /* clear fixed header + top bar */
+  padding-top: 88px; /* clear fixed header on mobile before tabs stick */
   box-sizing: border-box;
 }
 
@@ -1124,6 +1124,10 @@ ul#b2bmenu.category-slider {
 
 @media (max-width: 767px) {
   .b2b-listing-page {
-    padding-top: 118px;
+    padding-top: 72px;
+  }
+
+  body.has-sticky-discount.b2b-listing-page {
+    padding-top: 106px; /* promo (~34) + header clearance */
   }
 }

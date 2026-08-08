@@ -321,17 +321,28 @@ li.nav-item-b2b,
 		top: 98px; /* discount bar (~34) + header (~64) */
 	}
 
+	/* B2B tabs: stick under promo bar, or flush to top if no promo (header can scroll away). */
 	.b2b-listing-page .category-slider-container.mont-cat-tabs,
 	.category-slider-container.mont-cat-tabs {
 		width: 100% !important;
 		max-width: 100% !important;
-		top: 64px;
+		left: 0;
+		right: 0;
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+		padding: 6px 0 8px !important;
 		position: sticky !important;
+		top: 0;
+		top: env(safe-area-inset-top, 0px);
+		z-index: 1002;
+		background: #fff;
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
 	}
 
 	body.has-sticky-discount.b2b-listing-page .category-slider-container.mont-cat-tabs,
-	body.has-sticky-discount .category-slider-container.mont-cat-tabs {
-		top: 98px;
+	body.has-sticky-discount .b2b-listing-page .category-slider-container.mont-cat-tabs {
+		/* Sit directly under the promotional banner (~34px). */
+		top: 34px;
 	}
 
 	.category-slider-container .category-slider,
