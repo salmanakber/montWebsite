@@ -281,13 +281,153 @@ class b2b extends getApi {
         return $html_content;
     }
 
+    /**
+     * Absolute image URLs for a local WC product (DC image, featured, gallery).
+     *
+     * @param WC_Product $wc_product
+     * @return string[]
+     */
+    public function get_wc_product_image_urls( $wc_product ) {
+        $urls = array();
+        if ( ! $wc_product || ! is_a( $wc_product, 'WC_Product' ) ) {
+            return $urls;
+        }
+        $pid = $wc_product->get_id();
+        $dc  = get_post_meta( $pid, '_dc_product_image', true );
+        if ( is_string( $dc ) && $dc !== '' && filter_var( $dc, FILTER_VALIDATE_URL ) ) {
+            $urls[] = esc_url_raw( $dc );
+        }
+        $thumb_id = get_post_thumbnail_id( $pid );
+        if ( $thumb_id ) {
+            $thumb = wp_get_attachment_image_url( $thumb_id, 'large' );
+            if ( $thumb ) {
+                $urls[] = $thumb;
+            }
+        }
+        foreach ( (array) $wc_product->get_gallery_image_ids() as $gid ) {
+            $u = wp_get_attachment_image_url( (int) $gid, 'large' );
+            if ( $u ) {
+                $urls[] = $u;
+            }
+        }
+        $out  = array();
+        $seen = array();
+        foreach ( $urls as $u ) {
+            $u = esc_url_raw( $u );
+            if ( ! $u || isset( $seen[ $u ] ) ) {
+                continue;
+            }
+            $seen[ $u ] = true;
+            $out[]      = $u;
+        }
+        if ( empty( $out ) && function_exists( 'wc_placeholder_img_src' ) ) {
+            $out[] = wc_placeholder_img_src( 'large' );
+        }
+        return $out;
+    }
+
+    /**
+     * Whether a WC product is marked B2B / Wholesale Channel.
+     *
+     * @param int $product_id
+     * @return bool
+     */
+    public function is_b2b_wc_product( $product_id ) {
+        $flag = get_post_meta( (int) $product_id, '_b2b_product', true );
+        return in_array( (string) $flag, array( '1', 'yes' ), true );
+    }
+
+    /**
+     * All published WC product IDs flagged for the B2B portal.
+     *
+     * @param int $term_id Optional product_cat term ID.
+     * @return int[]
+     */
+    public function query_b2b_product_ids( $term_id = 0 ) {
+        $args = array(
+            'post_type'              => 'product',
+            'post_status'            => 'publish',
+            'posts_per_page'         => -1,
+            'fields'                 => 'ids',
+            'orderby'                => 'title',
+            'order'                  => 'ASC',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+            'meta_query'             => array(
+                array(
+                    'key'     => '_b2b_product',
+                    'value'   => array( '1', 'yes' ),
+                    'compare' => 'IN',
+                ),
+            ),
+        );
+        $term_id = (int) $term_id;
+        if ( $term_id > 0 ) {
+            $args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'product_cat',
+                    'field'    => 'term_id',
+                    'terms'    => $term_id,
+                ),
+            );
+        }
+        $ids = get_posts( $args );
+        return array_map( 'intval', (array) $ids );
+    }
+
+    /**
+     * Group local B2B WC products by WooCommerce product category.
+     *
+     * @return array<int, array{name:string,slug:string,products:int[]}>
+     */
+    public function get_local_b2b_catalog() {
+        $ids = $this->query_b2b_product_ids();
+        $map = array();
+
+        foreach ( $ids as $pid ) {
+            $terms = get_the_terms( $pid, 'product_cat' );
+            if ( empty( $terms ) || is_wp_error( $terms ) ) {
+                if ( ! isset( $map[0] ) ) {
+                    $map[0] = array(
+                        'name'     => __( 'All products', 'mont-b2b' ),
+                        'slug'     => 'all-products',
+                        'products' => array(),
+                    );
+                }
+                $map[0]['products'][] = $pid;
+                continue;
+            }
+            foreach ( $terms as $term ) {
+                $tid = (int) $term->term_id;
+                if ( ! isset( $map[ $tid ] ) ) {
+                    $map[ $tid ] = array(
+                        'name'     => $term->name,
+                        'slug'     => $term->slug,
+                        'products' => array(),
+                    );
+                }
+                $map[ $tid ]['products'][] = $pid;
+            }
+        }
+
+        // Sort categories by name; keep product order from query.
+        uasort(
+            $map,
+            static function ( $a, $b ) {
+                return strcasecmp( $a['name'], $b['name'] );
+            }
+        );
+
+        return $map;
+    }
+
     public function getCategory()
     {
-        $categories = json_decode($this->getApifromDC('cat', '', $this->api), true);
+        $catalog = $this->get_local_b2b_catalog();
 
-        if (!empty($categories)) {
+        if ( ! empty( $catalog ) ) {
 
-// Your existing PHP code with some modifications for the slider
             echo '<div class="category-slider-container mont-cat-tabs">';
             echo '<button type="button" class="slider-arrow prev-arrow" aria-label="Previous categories">'
                 . '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -295,23 +435,21 @@ class b2b extends getApi {
             echo '<div class="category-slider-wrapper mont-cat-tabs__scroller">';
             echo '<ul class="category-slider mont-cat-tabs__list" id="b2bmenu" role="tablist">';
 
-// Variable to track if it's the first category
             $first_category = true;
 
-            foreach ($categories as $category) {
-                $category_name = $category['category_name'];
-                $tab_id = 'tab-' . strtolower(str_replace(' ', '-', $category_name));
-                $content_id = 'content-' . strtolower(str_replace(' ', '-', $category_name));
+            foreach ( $catalog as $term_id => $category ) {
+                $category_name = $category['name'];
+                $slug_base     = ! empty( $category['slug'] ) ? $category['slug'] : sanitize_title( $category_name );
+                $tab_id        = 'tab-' . $slug_base;
+                $content_id    = 'content-' . $slug_base;
 
-    // Add the "active" class to the first category
-                $class = $first_category ? 'active' : '';
+                $class  = $first_category ? 'active' : '';
                 $class2 = $first_category ? 'active-li is-active' : '';
 
-                echo '<li class="category-item mont-cat-tabs__item mont-cat-item ' . $class2 . '">';
-                echo '<button class="nav-link-monte-b2b mont-cat-tabs__link ' . $class . '" id="' . $tab_id . '" data-bs-toggle="tab" data-bs-target="#' . $content_id . '" type="button" role="tab" aria-controls="' . $content_id . '" aria-selected="' . ($first_category ? 'true' : 'false') . '">' . esc_html( $category_name ) . '</button>';
+                echo '<li class="category-item mont-cat-tabs__item mont-cat-item ' . esc_attr( $class2 ) . '">';
+                echo '<button class="nav-link-monte-b2b mont-cat-tabs__link ' . esc_attr( $class ) . '" id="' . esc_attr( $tab_id ) . '" data-bs-toggle="tab" data-bs-target="#' . esc_attr( $content_id ) . '" type="button" role="tab" aria-controls="' . esc_attr( $content_id ) . '" aria-selected="' . ( $first_category ? 'true' : 'false' ) . '">' . esc_html( $category_name ) . '</button>';
                 echo '</li>';
 
-    // Set $first_category to false after the first category tab is created
                 $first_category = false;
             }
 
@@ -322,127 +460,132 @@ class b2b extends getApi {
                 . '</button>';
             echo '</div>';
 
-
-
-        // Tab content
             echo '<div class="tab-content tabb2b" id="myTabContent">';
 
-        // Reset $first_category for tab-pane
             $first_category = true;
 
-            foreach ($categories as $category) {
-                $category_name = $category['category_name'];
-                $content_id = 'content-' . strtolower(str_replace(' ', '-', $category_name));
+            foreach ( $catalog as $term_id => $category ) {
+                $category_name = $category['name'];
+                $slug_base     = ! empty( $category['slug'] ) ? $category['slug'] : sanitize_title( $category_name );
+                $tab_id        = 'tab-' . $slug_base;
+                $content_id    = 'content-' . $slug_base;
+                $class         = $first_category ? ' show active' : '';
 
-            // Add the "active" class to the first tab-pane
-                $class = $first_category ? ' show active' : '';
-
-
-                echo '<div class="tab-pane-monte-b2b ' . $class . '" id="' . $content_id . '" role="tabpanel" aria-labelledby="' . $tab_id . '">';
+                echo '<div class="tab-pane-monte-b2b ' . esc_attr( $class ) . '" id="' . esc_attr( $content_id ) . '" role="tabpanel" aria-labelledby="' . esc_attr( $tab_id ) . '">';
                 echo '<div class="container-fluid ">';
                 echo '<div class="row">';
-            // Check if products exist for this category
-                if (!empty($category['products'])) {
-                    foreach ($category['products'] as $product) {
-                     $in_wishlist = isset($_SESSION['custom_wishlist']) && 
-                     in_array($product['id'], $_SESSION['custom_wishlist']);
-                     $pdata = json_decode( isset( $product['data'] ) ? $product['data'] : '{}', true );
-                     $pname = is_array( $pdata ) && ! empty( $pdata['pname'] ) ? $pdata['pname'] : '';
-                     $image_urls = $this->get_b2b_image_urls( $product );
-                    // Display product data here
-                     echo '<div class="col-sm-3"><a class="b2b-product-card-link" href="'.esc_url( add_query_arg( 'productb2b', $product['id'] ) ).'">';
-                     echo '<div class="product-img-b2b" style="position:relative">'; ?>
+
+                if ( ! empty( $category['products'] ) ) {
+                    foreach ( $category['products'] as $product_id ) {
+                        $wc = wc_get_product( $product_id );
+                        if ( ! $wc ) {
+                            continue;
+                        }
+                        $pname      = $wc->get_name();
+                        $image_urls = $this->get_wc_product_image_urls( $wc );
+                        $in_wishlist = isset( $_SESSION['custom_wishlist'] )
+                            && in_array( $product_id, $_SESSION['custom_wishlist'], false );
+
+                        echo '<div class="col-sm-3"><a class="b2b-product-card-link" href="' . esc_url( add_query_arg( 'productb2b', $product_id ) ) . '">';
+                        echo '<div class="product-img-b2b" style="position:relative">';
+                        ?>
                      <div class="wishlist-toggle <?php echo $in_wishlist ? 'in-wishlist' : ''; ?>"
-                       data-product-id="<?php echo esc_attr($product['id']); ?>">
+                       data-product-id="<?php echo esc_attr( $product_id ); ?>">
                        <i class="heart-icon"></i>
                    </div>
                    <?php
-                   echo $this->render_b2b_card_slider( $image_urls, $pname );
-                   echo '</div>';
-                   echo '<div class="product-name-b2b">';
-                   echo '<p>' . esc_html( $pname ) . '</p>';
-                   echo '</div>';
-                   echo '</a></div>';
-               }
-           } else {
+                        echo $this->render_b2b_card_slider( $image_urls, $pname );
+                        echo '</div>';
+                        echo '<div class="product-name-b2b">';
+                        echo '<p>' . esc_html( $pname ) . '</p>';
+                        echo '</div>';
+                        echo '</a></div>';
+                    }
+                } else {
+                    echo '<div class="b2b-empty-category">';
+                    echo '<p class="b2b-empty-category__title">Nothing in this collection yet</p>';
+                    echo '<p class="b2b-empty-category__text">New styles will appear here soon. Browse another category in the meantime.</p>';
+                    echo '</div>';
+                }
+                echo '</div>';
+                echo '</div>';
+                echo '</div>';
+
+                $first_category = false;
+            }
+
+            echo '</div>';
+        } else {
             echo '<div class="b2b-empty-category">';
-            echo '<p class="b2b-empty-category__title">Nothing in this collection yet</p>';
-            echo '<p class="b2b-empty-category__text">New styles will appear here soon. Browse another category in the meantime.</p>';
+            echo '<p class="b2b-empty-category__title">No B2B products yet</p>';
+            echo '<p class="b2b-empty-category__text">Mark products as <strong>B2B / Wholesale Channel</strong> in the CRM stock manager to show them here.</p>';
             echo '</div>';
         }
-        echo '</div>';
-        echo '</div>';
-        echo '</div>';
-
-            // Set $first_category to false after the first tab-pane is created
-        $first_category = false;
     }
 
-
-    echo '</div>';
-} else {
-    echo '<div class="b2b-empty-category">';
-    echo '<p class="b2b-empty-category__title">No collections available</p>';
-    echo '<p class="b2b-empty-category__text">Please check back shortly.</p>';
-    echo '</div>';
-}
-}
-
-public function getProductDetails($pid, $remoteURL)
+public function getProductDetails($pid, $remoteURL = '')
 {
     $rightColumn = '';
-    $leftColumn = '';
-    $products = json_decode($this->getApifromDC('productDetails', $pid, $this->api), true);
-    if ( ! is_array( $products ) ) {
-        $products = array();
-    }
-    $products['id'] = $pid;
+    $leftColumn  = '';
+    $pid         = (int) $pid;
+    $wc          = function_exists( 'wc_get_product' ) ? wc_get_product( $pid ) : null;
 
-    // Prefer local WC / stock-management media when SKU matches.
-    $image_urls = $this->get_b2b_image_urls( $products, $remoteURL );
-    if ( empty( $image_urls ) ) {
-        $base = trailingslashit( $remoteURL );
-        foreach ( $this->decode_product_paths( isset( $products['paths'] ) ? $products['paths'] : '' ) as $path ) {
-            $image_urls[] = $base . ltrim( $path, '/' );
-        }
+    if ( ! $wc || ! $this->is_b2b_wc_product( $pid ) ) {
+        $rightColumn = '<div class="b2b-empty-category"><p class="b2b-empty-category__title">Product not found</p><p class="b2b-empty-category__text">This item is not available in the B2B portal.</p></div>';
+        return array(
+            'right' => $rightColumn,
+            'left'  => '',
+            'moq'   => 1,
+            'data'  => array(
+                'moq'     => 1,
+                'pname'   => '',
+                'color'   => '',
+                'weight'  => '',
+                'quality' => '',
+            ),
+        );
     }
-    
-    // Start left column (60%)
-    $rightColumn .= '<div class="mont_gallery_wrapper">';
-    
-    // Back button
- 
+
+    $image_urls = $this->get_wc_product_image_urls( $wc );
+    $pname      = $wc->get_name();
+    $moq        = get_post_meta( $pid, '_moq', true );
+    $moq        = ( $moq === '' || $moq === null ) ? 1 : $moq;
+    $color      = get_post_meta( $pid, '_fabric_color', true );
+    if ( $color === '' || $color === null ) {
+        $color = get_post_meta( $pid, '_fabric_color_english', true );
+    }
+    $weight  = get_post_meta( $pid, '_weight', true );
+    $quality = get_post_meta( $pid, '_quality', true );
+    $stock   = $wc->managing_stock() ? (int) $wc->get_stock_quantity() : '';
+
     // Desktop Gallery Grid
+    $rightColumn .= '<div class="mont_gallery_wrapper">';
     $rightColumn .= '<div class="mont_gallery_image-grid">';
     foreach ( $image_urls as $index => $url ) {
         $rightColumn .= '<div class="mont_gallery_image-container">';
-        $rightColumn .= '<img src="'.esc_url( $url ).'" 
+        $rightColumn .= '<img src="' . esc_url( $url ) . '" 
         class="mont_gallery_main-image" 
-        alt="Product Image '.($index + 1).'" 
-        data-index="'.$index.'" 
-        data-gallerysrc="'.esc_url( $url ).'"'
+        alt="' . esc_attr( $pname . ' ' . ( $index + 1 ) ) . '" 
+        data-index="' . $index . '" 
+        data-gallerysrc="' . esc_url( $url ) . '"'
         . ( $index === 0 ? ' loading="eager"' : ' loading="lazy"' ) . '>';
         $rightColumn .= '</div>';
     }
     $rightColumn .= '</div>';
-    
-    // Navigation dots
+
     $rightColumn .= '<div class="mont_gallery_navigation-dots">';
     foreach ( $image_urls as $index => $url ) {
-        $rightColumn .= '<div class="mont_gallery_dot '.($index === 0 ? 'active' : '').'"></div>';
+        $rightColumn .= '<div class="mont_gallery_dot ' . ( $index === 0 ? 'active' : '' ) . '"></div>';
     }
     $rightColumn .= '</div>';
-    
-    // Mobile carousel (keep existing)
+
     $rightColumn .= '<div class="mobile-view-b2b loop owl-carousel owl-theme">';
     foreach ( $image_urls as $url ) {
-        $rightColumn .= '<div class="item"><img src="'.esc_url( $url ).'" class="b2b-img" loading="lazy"></div>';
+        $rightColumn .= '<div class="item"><img src="' . esc_url( $url ) . '" class="b2b-img" loading="lazy" alt="' . esc_attr( $pname ) . '"></div>';
     }
     $rightColumn .= '</div>';
-    
-    $rightColumn .= '</div>'; // Close gallery wrapper
+    $rightColumn .= '</div>';
 
-    // Add lightbox structure
     $rightColumn .= '<div class="mont_gallery_lightbox">';
     $rightColumn .= '<div class="mont_gallery_close-btn">×</div>';
     $rightColumn .= '<div class="mont_gallery_zoom-controls">';
@@ -453,27 +596,40 @@ public function getProductDetails($pid, $remoteURL)
     $rightColumn .= '<div class="mont_gallery_lightbox-content">';
     $rightColumn .= '<img src="/placeholder.svg" class="mont_gallery_lightbox-image" alt="Lightbox Image">';
     $rightColumn .= '<div class="mont_gallery_thumbnails">';
-    
+
     foreach ( $image_urls as $index => $url ) {
-        $rightColumn .= '<img src="'.esc_url( $url ).'" 
-        class="mont_gallery_thumbnail '.($index === 0 ? 'active' : '').'" 
-        alt="Thumbnail '.($index + 1).'" 
-        data-index="'.$index.'">';
+        $rightColumn .= '<img src="' . esc_url( $url ) . '" 
+        class="mont_gallery_thumbnail ' . ( $index === 0 ? 'active' : '' ) . '" 
+        alt="Thumbnail ' . ( $index + 1 ) . '" 
+        data-index="' . $index . '">';
     }
-    
-    $rightColumn .= '</div>'; // Close thumbnails
-    $rightColumn .= '</div>'; // Close lightbox-content
-    $rightColumn .= '</div>'; // Close lightbox
 
-    // Your existing hidden inputs
-    $leftColumn .= '<input type="hidden" id="moq" name="moq" value="'.json_decode($products['data'], true)['moq'].'" >';
-    $leftColumn .= '<input type="hidden" id="pname" name="pname" value="'.json_decode($products['data'], true)['pname'].'" >';
-    $leftColumn .= '<input type="hidden" id="pcolor" name="pcolor" value="'.json_decode($products['data'], true)['color'].'" >';
-    $leftColumn .= '<input type="hidden" id="pweight" name="pweight" value="'.json_decode($products['data'], true)['weight'].'" >';
-    $leftColumn .= '<input type="hidden" id="pquality" name="pquality" value="'.json_decode($products['data'], true)['quality'].'" >';
-    $leftColumn .= '<input type="hidden" id="pstock" name="pstock" value="'.$products['stock'].'" >';
+    $rightColumn .= '</div>';
+    $rightColumn .= '</div>';
+    $rightColumn .= '</div>';
 
-    return array('right' => $rightColumn, 'left' => $leftColumn, 'moq' => json_decode($products['data'], true)['moq'] , 'data' => json_decode($products['data'], true));
+    $leftColumn .= '<input type="hidden" id="moq" name="moq" value="' . esc_attr( $moq ) . '" >';
+    $leftColumn .= '<input type="hidden" id="pname" name="pname" value="' . esc_attr( $pname ) . '" >';
+    $leftColumn .= '<input type="hidden" id="pcolor" name="pcolor" value="' . esc_attr( $color ) . '" >';
+    $leftColumn .= '<input type="hidden" id="pweight" name="pweight" value="' . esc_attr( $weight ) . '" >';
+    $leftColumn .= '<input type="hidden" id="pquality" name="pquality" value="' . esc_attr( $quality ) . '" >';
+    $leftColumn .= '<input type="hidden" id="pstock" name="pstock" value="' . esc_attr( $stock ) . '" >';
+    $leftColumn .= '<input type="hidden" id="p_wc_id" name="p_wc_id" value="' . esc_attr( $pid ) . '" >';
+
+    $data = array(
+        'moq'     => $moq,
+        'pname'   => $pname,
+        'color'   => $color,
+        'weight'  => $weight,
+        'quality' => $quality,
+    );
+
+    return array(
+        'right' => $rightColumn,
+        'left'  => $leftColumn,
+        'moq'   => $moq,
+        'data'  => $data,
+    );
 }
 
 
@@ -513,7 +669,7 @@ public function monte_b2b_shortcode($atts) {
         
 $pdetails = get_query_var('productb2b');
 if(isset($_GET['productb2b']) AND !empty($_GET['productb2b'])){
-    $product_details = $this->getProductDetails($_GET['productb2b'], 'https://dc-garment.com/staff/');
+    $product_details = $this->getProductDetails( $_GET['productb2b'] );
      // $fabricDetail = '<input type="hidden" name="fabricColor" value="'.$product_details['data']['color'].'"> '
     // echo '<br><br><br><br>';
     // print_r($product_details['data']);
