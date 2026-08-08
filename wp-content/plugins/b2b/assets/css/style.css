@@ -99,6 +99,23 @@ li.nav-item-b2b button {
     }
 }
 
+.product-img-b2b {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: #f3f1ed;
+    overflow: hidden;
+}
+.product-img-b2b .mont-card-slider {
+    position: absolute;
+    inset: 0;
+}
+.product-img-b2b .mont-card-slider__slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .size-name {
     color: #8f8e8e;
     width: 36px !important;

@@ -904,6 +904,77 @@ justify-content: space-between;
     overflow: hidden;
     
 }
+
+/* Card image slider (B2C + B2B listings) */
+.mont-card-slider {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: pan-y;
+    background: #f3f1ed;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.mont-card-slider__track {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+}
+.mont-card-slider__slide {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+.mont-card-slider__slide img,
+.mont-card-slider .main-image,
+.product-image-wrapper .mont-card-slider img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    opacity: 1 !important;
+    position: static !important;
+}
+.mont-card-slider__dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    z-index: 6;
+    pointer-events: auto;
+}
+.mont-card-slider__dot {
+    width: 4px;
+    height: 4px;
+    min-width: 4px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: width 0.2s ease, background 0.2s ease;
+}
+.mont-card-slider__dot.is-active {
+    width: 12px;
+    background: #fff;
+}
+.product-img-b2b .mont-card-slider {
+    position: absolute;
+    inset: 0;
+}
+.product-img-b2b {
+    overflow: hidden;
+}
+
 .mont_bottom_layout {
     margin-top: 5rem;
 }

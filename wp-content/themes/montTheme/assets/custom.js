@@ -46,8 +46,8 @@ jQuery(document).ready(function($) {
 			return false; 
     });
 
-    // Optional: Add hover effect for gallery images
-    $('.product-image-wrapper').hover(
+    // Optional: Add hover effect for gallery images (legacy dual-image cards only)
+    $('.product-image-wrapper').not(':has([data-mont-card-slider])').hover(
         function() {
             $(this).find('.hover-image').css('opacity', '1');
             $(this).find('.main-image').css('opacity', '0');
@@ -57,6 +57,24 @@ jQuery(document).ready(function($) {
             $(this).find('.main-image').css('opacity', '1');
         }
     );
+
+    // Card click (avoid when user was swiping the image slider).
+    $(document).on('click', '.product-item[data-href]', function (e) {
+        if ($(e.target).closest('.wishlist-toggle, .mont-card-slider__dot').length) return;
+        if (String($(this).attr('data-mont-swiped') || '') === '1') {
+            $(this).attr('data-mont-swiped', '0');
+            return;
+        }
+        var href = $(this).attr('data-href');
+        if (href) window.location.href = href;
+    });
+
+    $(document).on('click', 'a.b2b-product-card-link', function (e) {
+        if (String($(this).attr('data-mont-swiped') || '') === '1') {
+            e.preventDefault();
+            $(this).attr('data-mont-swiped', '0');
+        }
+    });
 
      $(window).on('beforeunload', function() {
                 sessionStorage.setItem('mont_previousPageTitle', document.title);

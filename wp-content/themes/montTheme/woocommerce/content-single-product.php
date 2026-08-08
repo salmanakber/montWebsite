@@ -483,7 +483,9 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                                      alt="Product Image"
                                      data-media-type="image"
                                      data-src="<?php echo esc_url($image_url); ?>"
-                                     loading="lazy">
+                                     loading="<?php echo $index < 2 ? 'eager' : 'lazy'; ?>"
+                                     decoding="async"
+                                     <?php echo $index === 0 ? 'fetchpriority="high"' : ''; ?>>
                             </div>
                         <?php endif; ?>
                     <?php endforeach; ?>

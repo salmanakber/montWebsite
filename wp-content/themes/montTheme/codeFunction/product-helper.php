@@ -105,16 +105,16 @@ class productHelper
 
                 // Get gallery images
                     $gallery_images = $product->get_gallery_image_ids();
-                    $hover_image = !empty($gallery_images) ? wp_get_attachment_image_url($gallery_images[0], 'full') : '';
 
                 // Check if product is in wishlist
                     $in_wishlist = isset($_SESSION['custom_wishlist']) && 
                     in_array($product->get_id(), $_SESSION['custom_wishlist']);
                     ?>
 				
-                    <div class="product-item" 
-                    data-product-id="<?php echo esc_attr($product->get_id()); ?>" 
-                    onclick="window.location.href='<?php echo esc_url(get_permalink()); ?>'" style="cursor: pointer;">
+                    <div class="product-item"
+                    data-product-id="<?php echo esc_attr($product->get_id()); ?>"
+                    data-href="<?php echo esc_url(get_permalink()); ?>"
+                    style="cursor: pointer;">
                     <div class="wishlist-toggle <?php echo $in_wishlist ? 'in-wishlist' : ''; ?>"
                      data-product-id="<?php echo esc_attr($product->get_id()); ?>">
                      <i class="heart-icon"></i>
@@ -139,21 +139,46 @@ class productHelper
 						<?php endif; ?>
 						 
 					 </div>
-                    <?php 
-                    $main_image = get_the_post_thumbnail_url($product->get_id(), 'full');
-                    if (!$main_image) {
-                        $main_image = wc_placeholder_img_src();
+                    <?php
+                    $slide_urls = array();
+                    $main_image = get_the_post_thumbnail_url($product->get_id(), 'large');
+                    if ($main_image) {
+                        $slide_urls[] = $main_image;
+                    }
+                    foreach ( (array) $gallery_images as $gid ) {
+                        $u = wp_get_attachment_image_url( (int) $gid, 'large' );
+                        if ( $u && ! in_array( $u, $slide_urls, true ) ) {
+                            $slide_urls[] = $u;
+                        }
+                    }
+                    if ( empty( $slide_urls ) ) {
+                        $slide_urls[] = wc_placeholder_img_src();
                     }
                     ?>
-                    <img src="<?php echo esc_url($main_image); ?>" 
-                    alt="<?php echo esc_attr($product->get_name()); ?>" 
-                    class="main-image">
-
-                    <?php if ($hover_image) : ?>
-                        <img src="<?php echo esc_url($hover_image); ?>" 
-                        alt="<?php echo esc_attr($product->get_name()); ?>" 
-                        class="hover-image">
-                    <?php endif; ?>
+                    <div class="mont-card-slider" data-mont-card-slider>
+                        <div class="mont-card-slider__track">
+                            <?php foreach ( $slide_urls as $i => $url ) : ?>
+                                <div class="mont-card-slider__slide">
+                                    <img src="<?php echo esc_url( $url ); ?>"
+                                         alt="<?php echo esc_attr( $product->get_name() ); ?>"
+                                         <?php echo $i === 0 ? 'loading="eager"' : 'loading="lazy"'; ?>
+                                         decoding="async"
+                                         draggable="false"
+                                         class="<?php echo $i === 0 ? 'main-image' : ''; ?>">
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if ( count( $slide_urls ) > 1 ) : ?>
+                            <div class="mont-card-slider__dots" aria-hidden="true">
+                                <?php foreach ( $slide_urls as $i => $_u ) : ?>
+                                    <button type="button"
+                                            class="mont-card-slider__dot<?php echo $i === 0 ? ' is-active' : ''; ?>"
+                                            data-index="<?php echo (int) $i; ?>"
+                                            aria-label="<?php echo esc_attr( sprintf( 'Image %d', $i + 1 ) ); ?>"></button>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <h2 class="product-title">

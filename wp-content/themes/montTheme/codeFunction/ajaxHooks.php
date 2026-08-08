@@ -187,6 +187,7 @@ class ajaxHooks
 
     wp_enqueue_script('mont-gallery-js', $theme_uri . '/assets/productGallery.js', array('jquery'), filemtime($theme_dir . '/assets/productGallery.js'), true);
     wp_enqueue_script('mont-product-gallery-slider', $theme_uri . '/assets/product-gallery-slider.js', array(), filemtime($theme_dir . '/assets/product-gallery-slider.js'), true);
+    wp_enqueue_script('mont-card-slider', $theme_uri . '/assets/mont-card-slider.js', array(), filemtime($theme_dir . '/assets/mont-card-slider.js'), true);
     wp_enqueue_script('mont-header-js', $theme_uri . '/assets/header.js', array('jquery'), filemtime($theme_dir . '/assets/header.js'), true);
     wp_enqueue_script('mont-discount-js', $theme_uri . '/assets/discount.js', array('jquery'), filemtime($theme_dir . '/assets/discount.js'), true);
     wp_enqueue_script('mont-gallery-size-js', $theme_uri . '/assets/custom-sizes.js', array('jquery'), filemtime($theme_dir . '/assets/custom-sizes.js'), true);

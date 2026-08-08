@@ -128,6 +128,17 @@
             }
 
             ensureDots();
+            // Warm first few slides into browser cache on mobile enter.
+            slides.slice(0, 3).forEach(function (slide) {
+                var media = slide.querySelector('img');
+                if (!media) return;
+                media.loading = 'eager';
+                var src = media.getAttribute('data-src') || media.currentSrc || media.src;
+                if (src) {
+                    var warm = new Image();
+                    warm.src = src;
+                }
+            });
             goTo(index, false);
         }
 
@@ -170,6 +181,19 @@
                 if (!vid) return;
                 if (si !== index) {
                     try { vid.pause(); } catch (e) {}
+                }
+            });
+
+            // Eager-load current + next (+ prev) images so slides feel instant.
+            [index - 1, index, index + 1].forEach(function (si) {
+                if (si < 0 || si >= slides.length) return;
+                var media = slides[si].querySelector('img');
+                if (!media) return;
+                media.loading = 'eager';
+                var src = media.getAttribute('data-src') || media.currentSrc || media.src;
+                if (src && !media.complete) {
+                    var warm = new Image();
+                    warm.src = src;
                 }
             });
         }

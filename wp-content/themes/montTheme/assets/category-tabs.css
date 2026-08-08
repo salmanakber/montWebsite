@@ -305,15 +305,33 @@ li.nav-item-b2b,
 		max-width: 100% !important;
 		margin-left: 0 !important;
 		margin-right: 0 !important;
-		padding: 0 0 8px !important;
+		padding: 8px 0 !important;
 		overflow: hidden !important;
 		box-sizing: border-box;
+		position: sticky;
+		top: 64px;
+		z-index: 920;
+		background: #fff;
+		box-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+	}
+
+	body.has-sticky-discount .category-slider-container.ssds,
+	body.has-sticky-discount .category-slider-container,
+	body.has-sticky-discount .mont-cat-tabs {
+		top: 98px; /* discount bar (~34) + header (~64) */
 	}
 
 	.b2b-listing-page .category-slider-container.mont-cat-tabs,
 	.category-slider-container.mont-cat-tabs {
 		width: 100% !important;
 		max-width: 100% !important;
+		top: 64px;
+		position: sticky !important;
+	}
+
+	body.has-sticky-discount.b2b-listing-page .category-slider-container.mont-cat-tabs,
+	body.has-sticky-discount .category-slider-container.mont-cat-tabs {
+		top: 98px;
 	}
 
 	.category-slider-container .category-slider,

@@ -54,6 +54,221 @@ class b2b extends getApi {
         // Deactivation tasks, if any
     }
 
+    /**
+     * Decode CRM paths field to a list of relative image paths.
+     *
+     * @param mixed $paths
+     * @return string[]
+     */
+    public function decode_product_paths( $paths ) {
+        if ( is_array( $paths ) ) {
+            return array_values( array_filter( array_map( 'strval', $paths ) ) );
+        }
+        if ( ! is_string( $paths ) || $paths === '' ) {
+            return array();
+        }
+        $decoded = json_decode( $paths, true );
+        if ( is_array( $decoded ) ) {
+            return array_values( array_filter( array_map( 'strval', $decoded ) ) );
+        }
+        return array();
+    }
+
+    /**
+     * Find a local WooCommerce product for a remote B2B catalog row (SKU / supplier SKU / fabric no).
+     *
+     * @param array $remote_product
+     * @return WC_Product|null
+     */
+    public function find_local_wc_product( $remote_product ) {
+        if ( ! function_exists( 'wc_get_product' ) ) {
+            return null;
+        }
+
+        static $cache = array();
+        $remote_id = isset( $remote_product['id'] ) ? (string) $remote_product['id'] : '';
+        if ( $remote_id !== '' && array_key_exists( $remote_id, $cache ) ) {
+            return $cache[ $remote_id ];
+        }
+
+        $data = array();
+        if ( ! empty( $remote_product['data'] ) ) {
+            if ( is_array( $remote_product['data'] ) ) {
+                $data = $remote_product['data'];
+            } else {
+                $decoded = json_decode( (string) $remote_product['data'], true );
+                if ( is_array( $decoded ) ) {
+                    $data = $decoded;
+                }
+            }
+        }
+
+        $candidates = array();
+        foreach ( array( 'sku', 'SKU', 'supplier_sku', 'article', 'fabric_no', 'fabricNo', 'code' ) as $key ) {
+            if ( ! empty( $data[ $key ] ) ) {
+                $candidates[] = (string) $data[ $key ];
+            }
+        }
+        if ( $remote_id !== '' ) {
+            $candidates[] = $remote_id;
+        }
+        $candidates = array_values( array_unique( array_filter( array_map( 'trim', $candidates ) ) ) );
+
+        $product = null;
+        foreach ( $candidates as $sku ) {
+            $pid = function_exists( 'wc_get_product_id_by_sku' ) ? wc_get_product_id_by_sku( $sku ) : 0;
+            if ( $pid ) {
+                $product = wc_get_product( $pid );
+                if ( $product ) {
+                    break;
+                }
+            }
+
+            $by_meta = get_posts(
+                array(
+                    'post_type'              => 'product',
+                    'post_status'            => 'publish',
+                    'posts_per_page'         => 1,
+                    'fields'                 => 'ids',
+                    'no_found_rows'          => true,
+                    'update_post_meta_cache' => false,
+                    'update_post_term_cache' => false,
+                    'meta_query'             => array(
+                        'relation' => 'OR',
+                        array(
+                            'key'   => '_supplier_sku',
+                            'value' => $sku,
+                        ),
+                        array(
+                            'key'   => '_fabric_no',
+                            'value' => $sku,
+                        ),
+                    ),
+                )
+            );
+            if ( ! empty( $by_meta[0] ) ) {
+                $product = wc_get_product( (int) $by_meta[0] );
+                if ( $product ) {
+                    break;
+                }
+            }
+        }
+
+        // Last resort: title match on pname for B2B-flagged products.
+        if ( ! $product && ! empty( $data['pname'] ) ) {
+            global $wpdb;
+            $title = sanitize_text_field( $data['pname'] );
+            $found_id = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT p.ID FROM {$wpdb->posts} p
+                     INNER JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_b2b_product'
+                     WHERE p.post_type = 'product'
+                       AND p.post_status = 'publish'
+                       AND p.post_title = %s
+                       AND m.meta_value IN ('1','yes')
+                     LIMIT 1",
+                    $title
+                )
+            );
+            if ( $found_id ) {
+                $product = wc_get_product( $found_id );
+            }
+        }
+
+        if ( $remote_id !== '' ) {
+            $cache[ $remote_id ] = $product;
+        }
+        return $product;
+    }
+
+    /**
+     * Prefer local WC / DC Product Manager images; fall back to remote staff paths.
+     *
+     * @param array  $remote_product
+     * @param string $remote_base
+     * @return string[] Absolute image URLs
+     */
+    public function get_b2b_image_urls( $remote_product, $remote_base = 'https://dc-garment.com/staff/' ) {
+        $urls = array();
+        $local = $this->find_local_wc_product( $remote_product );
+
+        if ( $local ) {
+            $pid = $local->get_id();
+            $dc  = get_post_meta( $pid, '_dc_product_image', true );
+            if ( is_string( $dc ) && $dc !== '' && filter_var( $dc, FILTER_VALIDATE_URL ) ) {
+                $urls[] = esc_url_raw( $dc );
+            }
+            $thumb_id = get_post_thumbnail_id( $pid );
+            if ( $thumb_id ) {
+                $thumb = wp_get_attachment_image_url( $thumb_id, 'large' );
+                if ( $thumb ) {
+                    $urls[] = $thumb;
+                }
+            }
+            foreach ( (array) $local->get_gallery_image_ids() as $gid ) {
+                $u = wp_get_attachment_image_url( (int) $gid, 'large' );
+                if ( $u ) {
+                    $urls[] = $u;
+                }
+            }
+        }
+
+        if ( empty( $urls ) ) {
+            $base = trailingslashit( $remote_base );
+            foreach ( $this->decode_product_paths( isset( $remote_product['paths'] ) ? $remote_product['paths'] : '' ) as $path ) {
+                $path = ltrim( (string) $path, '/' );
+                if ( $path !== '' ) {
+                    $urls[] = $base . $path;
+                }
+            }
+        }
+
+        // Unique preserve order.
+        $out = array();
+        $seen = array();
+        foreach ( $urls as $u ) {
+            $u = esc_url_raw( $u );
+            if ( ! $u || isset( $seen[ $u ] ) ) {
+                continue;
+            }
+            $seen[ $u ] = true;
+            $out[] = $u;
+        }
+        return $out;
+    }
+
+    /**
+     * Render card image slider markup for B2B listing.
+     *
+     * @param string[] $urls
+     * @param string   $alt
+     * @return string
+     */
+    public function render_b2b_card_slider( $urls, $alt = '' ) {
+        if ( empty( $urls ) ) {
+            return '<div class="mont-card-slider mont-card-slider--empty"></div>';
+        }
+        $html  = '<div class="mont-card-slider" data-mont-card-slider>';
+        $html .= '<div class="mont-card-slider__track">';
+        foreach ( $urls as $i => $url ) {
+            $html .= '<div class="mont-card-slider__slide">';
+            $html .= '<img src="' . esc_url( $url ) . '" alt="' . esc_attr( $alt ) . '"'
+                . ( $i === 0 ? ' loading="eager"' : ' loading="lazy"' )
+                . ' decoding="async" draggable="false">';
+            $html .= '</div>';
+        }
+        $html .= '</div>';
+        if ( count( $urls ) > 1 ) {
+            $html .= '<div class="mont-card-slider__dots" aria-hidden="true">';
+            foreach ( $urls as $i => $_u ) {
+                $html .= '<button type="button" class="mont-card-slider__dot' . ( $i === 0 ? ' is-active' : '' ) . '" data-index="' . (int) $i . '" aria-label="Image ' . (int) ( $i + 1 ) . '"></button>';
+            }
+            $html .= '</div>';
+        }
+        $html .= '</div>';
+        return $html;
+    }
+
     function replace_variables_in_html_file($file_url, $variables) {
         $html_content = file_get_contents($file_url);
         if ($html_content === false) {
@@ -131,18 +346,21 @@ class b2b extends getApi {
                     foreach ($category['products'] as $product) {
                      $in_wishlist = isset($_SESSION['custom_wishlist']) && 
                      in_array($product['id'], $_SESSION['custom_wishlist']);
+                     $pdata = json_decode( isset( $product['data'] ) ? $product['data'] : '{}', true );
+                     $pname = is_array( $pdata ) && ! empty( $pdata['pname'] ) ? $pdata['pname'] : '';
+                     $image_urls = $this->get_b2b_image_urls( $product );
                     // Display product data here
-                     echo '<div class="col-sm-3"><a href="'.esc_url( add_query_arg( 'productb2b', $product['id'] ) ).'">';
+                     echo '<div class="col-sm-3"><a class="b2b-product-card-link" href="'.esc_url( add_query_arg( 'productb2b', $product['id'] ) ).'">';
                      echo '<div class="product-img-b2b" style="position:relative">'; ?>
                      <div class="wishlist-toggle <?php echo $in_wishlist ? 'in-wishlist' : ''; ?>"
                        data-product-id="<?php echo esc_attr($product['id']); ?>">
                        <i class="heart-icon"></i>
                    </div>
                    <?php
-                   echo '<img src="https://dc-garment.com/staff/'.json_decode($product['paths'])[0] .'" />';
+                   echo $this->render_b2b_card_slider( $image_urls, $pname );
                    echo '</div>';
                    echo '<div class="product-name-b2b">';
-                   echo '<p>' . json_decode($product['data'], true)['pname'] . '</p>';
+                   echo '<p>' . esc_html( $pname ) . '</p>';
                    echo '</div>';
                    echo '</a></div>';
                }
@@ -175,6 +393,19 @@ public function getProductDetails($pid, $remoteURL)
     $rightColumn = '';
     $leftColumn = '';
     $products = json_decode($this->getApifromDC('productDetails', $pid, $this->api), true);
+    if ( ! is_array( $products ) ) {
+        $products = array();
+    }
+    $products['id'] = $pid;
+
+    // Prefer local WC / stock-management media when SKU matches.
+    $image_urls = $this->get_b2b_image_urls( $products, $remoteURL );
+    if ( empty( $image_urls ) ) {
+        $base = trailingslashit( $remoteURL );
+        foreach ( $this->decode_product_paths( isset( $products['paths'] ) ? $products['paths'] : '' ) as $path ) {
+            $image_urls[] = $base . ltrim( $path, '/' );
+        }
+    }
     
     // Start left column (60%)
     $rightColumn .= '<div class="mont_gallery_wrapper">';
@@ -183,28 +414,29 @@ public function getProductDetails($pid, $remoteURL)
  
     // Desktop Gallery Grid
     $rightColumn .= '<div class="mont_gallery_image-grid">';
-    foreach (json_decode($products['paths'], true) as $index => $path) {
+    foreach ( $image_urls as $index => $url ) {
         $rightColumn .= '<div class="mont_gallery_image-container">';
-        $rightColumn .= '<img src="'.$remoteURL.$path.'" 
+        $rightColumn .= '<img src="'.esc_url( $url ).'" 
         class="mont_gallery_main-image" 
         alt="Product Image '.($index + 1).'" 
         data-index="'.$index.'" 
-        data-gallerysrc="'.$remoteURL.$path.'">';
+        data-gallerysrc="'.esc_url( $url ).'"'
+        . ( $index === 0 ? ' loading="eager"' : ' loading="lazy"' ) . '>';
         $rightColumn .= '</div>';
     }
     $rightColumn .= '</div>';
     
     // Navigation dots
     $rightColumn .= '<div class="mont_gallery_navigation-dots">';
-    foreach (json_decode($products['paths'], true) as $index => $path) {
+    foreach ( $image_urls as $index => $url ) {
         $rightColumn .= '<div class="mont_gallery_dot '.($index === 0 ? 'active' : '').'"></div>';
     }
     $rightColumn .= '</div>';
     
     // Mobile carousel (keep existing)
     $rightColumn .= '<div class="mobile-view-b2b loop owl-carousel owl-theme">';
-    foreach (json_decode($products['paths'], true) as $path) {
-        $rightColumn .= '<div class="item"><img src="'.$remoteURL.$path.'" class="b2b-img"></div>';
+    foreach ( $image_urls as $url ) {
+        $rightColumn .= '<div class="item"><img src="'.esc_url( $url ).'" class="b2b-img" loading="lazy"></div>';
     }
     $rightColumn .= '</div>';
     
@@ -222,8 +454,8 @@ public function getProductDetails($pid, $remoteURL)
     $rightColumn .= '<img src="/placeholder.svg" class="mont_gallery_lightbox-image" alt="Lightbox Image">';
     $rightColumn .= '<div class="mont_gallery_thumbnails">';
     
-    foreach (json_decode($products['paths'], true) as $index => $path) {
-        $rightColumn .= '<img src="'.$remoteURL.$path.'" 
+    foreach ( $image_urls as $index => $url ) {
+        $rightColumn .= '<img src="'.esc_url( $url ).'" 
         class="mont_gallery_thumbnail '.($index === 0 ? 'active' : '').'" 
         alt="Thumbnail '.($index + 1).'" 
         data-index="'.$index.'">';
