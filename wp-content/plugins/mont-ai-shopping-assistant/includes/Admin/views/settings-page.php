@@ -56,8 +56,12 @@ $s = $settings;
 				<td><input type="text" class="regular-text" id="gemini_model" name="mont_ai[gemini_model]" value="<?php echo esc_attr( $s['gemini_model'] ); ?>" /></td>
 			</tr>
 			<tr>
+			<tr>
 				<th><label for="temperature"><?php esc_html_e( 'Temperature', 'mont-ai-assistant' ); ?></label></th>
-				<td><input type="number" step="0.1" min="0" max="2" id="temperature" name="mont_ai[temperature]" value="<?php echo esc_attr( $s['temperature'] ); ?>" /></td>
+				<td>
+					<input type="number" step="0.1" min="0" max="2" id="temperature" name="mont_ai[temperature]" value="<?php echo esc_attr( $s['temperature'] ); ?>" />
+					<p class="description"><?php esc_html_e( '0.6–0.7 sounds more natural for chat. Lower = stricter / more dry.', 'mont-ai-assistant' ); ?></p>
+				</td>
 			</tr>
 			<tr>
 				<th><label for="max_tokens"><?php esc_html_e( 'Max tokens', 'mont-ai-assistant' ); ?></label></th>
@@ -75,6 +79,13 @@ $s = $settings;
 				<th><label for="system_prompt"><?php esc_html_e( 'Extra system prompt', 'mont-ai-assistant' ); ?></label></th>
 				<td><textarea class="large-text" rows="6" id="system_prompt" name="mont_ai[system_prompt]"><?php echo esc_textarea( $s['system_prompt'] ); ?></textarea>
 				<p class="description"><?php esc_html_e( 'Appended to the built-in shopping concierge instructions.', 'mont-ai-assistant' ); ?></p></td>
+			</tr>
+			<tr>
+				<th><label for="store_policies"><?php esc_html_e( 'Store policies (shipping / returns)', 'mont-ai-assistant' ); ?></label></th>
+				<td>
+					<textarea class="large-text" rows="5" id="store_policies" name="mont_ai[store_policies]"><?php echo esc_textarea( isset( $s['store_policies'] ) ? $s['store_policies'] : '' ); ?></textarea>
+					<p class="description"><?php esc_html_e( 'Ground-truth text for delivery, free shipping, returns, custom lead times, etc. The assistant will answer shipping questions from this — keep it accurate.', 'mont-ai-assistant' ); ?></p>
+				</td>
 			</tr>
 			<tr>
 				<th><?php esc_html_e( 'Allowed categories', 'mont-ai-assistant' ); ?></th>

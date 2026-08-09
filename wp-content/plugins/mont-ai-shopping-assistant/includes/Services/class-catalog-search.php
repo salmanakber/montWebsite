@@ -89,6 +89,30 @@ class Catalog_Search {
 	 */
 	public function should_browse( $message, array $history = array() ) {
 		$text = strtolower( trim( (string) $message ) );
+
+		// FAQ / advice — send to AI (natural language), not product browse.
+		$advice = array(
+			'ship', 'shipping', 'delivery', 'deliver', 'arrive', 'arrival', 'when will',
+			'frakt', 'levering', 'leveringstid', 'når kommer', 'nar kommer',
+			'spedizione', 'consegna', 'quando arriva',
+			'giao hàng', 'giao hang', 'khi nào', 'khi nao',
+			'return', 'retur', 'refund', 'refunds',
+			'how long', 'how much is shipping', 'track',
+			'moq', 'minimum order',
+		);
+		foreach ( $advice as $needle ) {
+			if ( false !== strpos( $text, $needle ) ) {
+				return false;
+			}
+		}
+
+		// Size/fit questions without browse intent → AI (use product facts).
+		$size_only = preg_match( '/\b(size|sizes|størrelse|storrelse|taglia|size\s*\d{2}|fit|passform|slim|regular|classic)\b/i', $text );
+		$browse_verb = preg_match( '/\b(show|list|see|browse|find|looking for|which shirts|what shirts)\b/i', $text );
+		if ( $size_only && ! $browse_verb ) {
+			return false;
+		}
+
 		$patterns = array(
 			'show', 'list', 'see', 'browse', 'options', 'choose', 'which',
 			'shirt', 'shirts', 'skjorte', 'camicia',
@@ -371,25 +395,37 @@ class Catalog_Search {
 		$language = Language_Manager::normalize( $language );
 		if ( 'b2b' === $channel ) {
 			if ( $count < 1 ) {
-				return __( 'I could not find matching B2B / wholesale fabrics yet. Ask for a colour or quality, or use the category tabs on this page.', 'mont-ai-assistant' );
+				$map = array(
+					'en' => 'Hmm, I couldn’t find a match in the B2B fabrics just now. Try a colour or quality — or use the tabs on this page.',
+					'it' => 'Mm, non trovo un match nei tessuti B2B al momento. Prova un colore o una qualità — oppure usa le tab sulla pagina.',
+					'nb' => 'Hmm, fant ingen match i B2B-stoffene akkurat nå. Prøv en farge eller kvalitet — eller bruk fanene på siden.',
+					'vi' => 'Hmm, mình chưa thấy vải B2B phù hợp. Thử màu hoặc chất liệu — hoặc dùng tab trên trang nhé.',
+				);
+				return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 			}
-			return __( 'Here are B2B fabrics that match. Open one on the wholesale portal to set size breakdowns — MOQ applies — then add to your B2B cart.', 'mont-ai-assistant' );
+			$map = array(
+				'en' => 'Here are some wholesale fabrics that look like a fit. Open one to set sizes — just remember MOQ — then add to your B2B cart.',
+				'it' => 'Ecco alcuni tessuti wholesale che potrebbero fare al caso. Aprine uno per le taglie (vale il MOQ), poi aggiungi al carrello B2B.',
+				'nb' => 'Her er noen grossiststoffer som kan passe. Åpne ett for størrelser — husk MOQ — og legg i B2B-kurven.',
+				'vi' => 'Đây là một số vải sỉ khá hợp. Mở một mẫu để chọn size — nhớ MOQ — rồi thêm vào giỏ B2B nhé.',
+			);
+			return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 		}
 		if ( $count < 1 ) {
 			$map = array(
-				'en' => 'I could not find matching shirts just now. Tell me a colour, fabric (e.g. linen), or style and I will try again.',
-				'it' => 'Non trovo camicie corrispondenti al momento. Dimmi un colore, un tessuto o uno stile e riprovo.',
-				'nb' => 'Jeg fant ingen matchende skjorter akkurat nå. Si en farge, stoff eller stil, så prøver jeg igjen.',
-				'vi' => 'Hiện tôi chưa tìm thấy áo phù hợp. Cho tôi biết màu, chất liệu hoặc kiểu dáng để tìm lại nhé.',
+				'en' => 'I couldn’t quite find a match there. Want to try a colour, fabric (like linen), or a style and I’ll look again?',
+				'it' => 'Non trovo proprio una corrispondenza. Proviamo con un colore, un tessuto (tipo lino) o uno stile?',
+				'nb' => 'Fant ikke noe som traff helt. Vil du prøve en farge, et stoff (f.eks. lin) eller en stil, så sjekker jeg på nytt?',
+				'vi' => 'Mình chưa tìm thấy mẫu hợp lắm. Thử thêm màu, chất liệu (ví dụ linen) hoặc kiểu dáng nhé?',
 			);
 			return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 		}
 
 		$map = array(
-			'en' => 'Here are some shirts from our shop. Tap one to select it — or tell me a colour/fabric for a tighter match.',
-			'it' => 'Ecco alcune camicie dal nostro shop. Tocca una per selezionarla — oppure dimmi colore/tessuto per affinare.',
-			'nb' => 'Her er noen skjorter fra butikken. Trykk for å velge — eller si farge/stoff hvis du vil snevre inn.',
-			'vi' => 'Đây là một số áo trong cửa hàng. Chạm để chọn — hoặc cho thêm màu/chất liệu nếu muốn lọc kỹ hơn.',
+			'en' => 'Nice — here are a few shirts from the shop. Tap one you like, or tell me a colour/fabric if you want me to narrow it down.',
+			'it' => 'Ottimo — ecco qualche camicia dello shop. Tocca quella che ti piace, oppure dimmi colore/tessuto se vuoi restringere.',
+			'nb' => 'Supert — her er noen skjorter fra butikken. Trykk på en du liker, eller si farge/stoff hvis du vil at jeg snevrer inn.',
+			'vi' => 'Đây là vài mẫu trong shop. Chạm vào áo bạn thích, hoặc cho thêm màu/chất liệu nếu muốn mình lọc kỹ hơn.',
 		);
 		return isset( $map[ $language ] ) ? $map[ $language ] : $map['en'];
 	}
