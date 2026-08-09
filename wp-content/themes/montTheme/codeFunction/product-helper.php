@@ -77,24 +77,67 @@ class productHelper
             );
         }
 
-    // Handle related products
+    // Handle related products — same category, exclude current, prefer in-stock.
         if ($atts['related'] === 'yes' && is_product()) {
             global $post;
             $current_product_id = $post->ID;
             $product_cats = wp_get_post_terms($current_product_id, 'product_cat', array('fields' => 'ids'));
+            $limit = ($atts['limit'] === 'all') ? 8 : max(1, intval($atts['limit']));
 
-            $args['tax_query'] = array(
+            $args['posts_per_page'] = $limit;
+            $args['post__not_in']   = array($current_product_id);
+            $args['orderby']        = 'rand';
+            $args['tax_query']      = array(
                 array(
                     'taxonomy' => 'product_cat',
-                    'field' => 'term_id',
-                    'terms' => $product_cats
-                )
+                    'field'    => 'term_id',
+                    'terms'    => ! empty( $product_cats ) ? $product_cats : array( 0 ),
+                ),
             );
-            $args['post__not_in'] = array($current_product_id);
+            // Prefer sellable shirts first.
+            $args['meta_query'] = array(
+                array(
+                    'key'     => '_stock_status',
+                    'value'   => array( 'instock', 'onbackorder' ),
+                    'compare' => 'IN',
+                ),
+            );
+
+            $products = new WP_Query($args);
+
+            // Fallback: same category without stock filter if too few.
+            if ( $products->post_count < $limit && ! empty( $product_cats ) ) {
+                $found_ids = wp_list_pluck( $products->posts, 'ID' );
+                $need = $limit - count( $found_ids );
+                $fill_args = array(
+                    'post_type'      => 'product',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => $need,
+                    'orderby'        => 'rand',
+                    'post__not_in'   => array_merge( array( $current_product_id ), $found_ids ),
+                    'tax_query'      => array(
+                        array(
+                            'taxonomy' => 'product_cat',
+                            'field'    => 'term_id',
+                            'terms'    => $product_cats,
+                        ),
+                    ),
+                );
+                $fill = new WP_Query( $fill_args );
+                if ( $fill->have_posts() ) {
+                    $products->posts = array_merge( $products->posts, $fill->posts );
+                    $products->post_count = count( $products->posts );
+                }
+                wp_reset_postdata();
+            }
+        } else {
+            // Get products
+            $products = new WP_Query($args);
         }
 
-    // Get products
-        $products = new WP_Query($args);
+        if ( ! isset( $products ) ) {
+            $products = new WP_Query($args);
+        }
 
         ob_start();
 

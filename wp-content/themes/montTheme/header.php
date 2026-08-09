@@ -28,9 +28,43 @@
 		'/about-us/'
 	);
 
-	$b2b_url = $resolve_page_url( array( 'monte-connected-b2b' ), '/monte-connected-b2b/' );
-	$b2c_url = home_url( '/product-category/skjorter-herre/' );
+	$b2b_hub = $resolve_page_url( array( 'monte-connected-b2b' ), '/monte-connected-b2b/' );
+	$b2c_hub = home_url( '/product-category/skjorter-herre/' );
+	$b2b_url = $b2b_hub;
+	$b2c_url = $b2c_hub;
 	$channel = $is_b2b_page ? 'b2b' : 'b2c';
+	$b2b_switch_disabled = false;
+	$b2b_switch_title    = '';
+
+	// Smart detail-page switching: same WC product ID across B2C ↔ B2B.
+	$smart_product_id = 0;
+	if ( function_exists( 'is_product' ) && is_product() ) {
+		$smart_product_id = (int) get_queried_object_id();
+	} elseif ( ! empty( $_GET['productb2b'] ) ) {
+		$smart_product_id = (int) $_GET['productb2b'];
+	}
+
+	if ( $smart_product_id > 0 ) {
+		$b2b_flag      = get_post_meta( $smart_product_id, '_b2b_product', true );
+		$is_b2b_marked = in_array( (string) $b2b_flag, array( '1', 'yes' ), true );
+		$b2c_permalink = get_permalink( $smart_product_id );
+
+		if ( $channel === 'b2b' || ( ! empty( $_GET['productb2b'] ) && (int) $_GET['productb2b'] === $smart_product_id ) ) {
+			// On B2B details → B2C product page for the same ID.
+			$b2b_url = add_query_arg( 'productb2b', $smart_product_id, $b2b_hub );
+			$b2c_url = $b2c_permalink ? $b2c_permalink : $b2c_hub;
+		} else {
+			// On B2C single product → B2B details if marked wholesale.
+			$b2c_url = $b2c_permalink ? $b2c_permalink : $b2c_hub;
+			if ( $is_b2b_marked ) {
+				$b2b_url = add_query_arg( 'productb2b', $smart_product_id, $b2b_hub );
+			} else {
+				$b2b_switch_disabled = true;
+				$b2b_url             = '#';
+				$b2b_switch_title    = 'Ikke tilgjengelig i B2B';
+			}
+		}
+	}
 
 	if (!$is_b2b_page) :
 	?>
@@ -178,36 +212,28 @@
                 data-channel="b2c"
                 aria-current="<?php echo $channel === 'b2c' ? 'page' : 'false'; ?>"
             >
-                <span class="mont-channel-switch__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6.5 8.5h11l-.9 10.2a1.6 1.6 0 0 1-1.6 1.5H9a1.6 1.6 0 0 1-1.6-1.5L6.5 8.5Z"/>
-                        <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/>
-                        <path d="M9.5 12.5h5"/>
-                    </svg>
-                </span>
                 <span class="mont-channel-switch__copy">
-                    <span class="mont-channel-switch__label">B2C</span>
-                    <span class="mont-channel-switch__hint">Privat</span>
+                    <span class="mont-channel-switch__label">B2C Skjorter</span>
                 </span>
             </a>
             <a
-                href="<?php echo esc_url( $b2b_url ); ?>"
-                class="mont-channel-switch__btn<?php echo $channel === 'b2b' ? ' is-active' : ''; ?>"
+                href="<?php echo $b2b_switch_disabled ? '#' : esc_url( $b2b_url ); ?>"
+                class="mont-channel-switch__btn<?php echo $channel === 'b2b' ? ' is-active' : ''; ?><?php echo $b2b_switch_disabled ? ' is-disabled' : ''; ?>"
                 data-channel="b2b"
                 aria-current="<?php echo $channel === 'b2b' ? 'page' : 'false'; ?>"
+                <?php if ( $b2b_switch_disabled ) : ?>
+                    aria-disabled="true"
+                    tabindex="-1"
+                    title="<?php echo esc_attr( $b2b_switch_title ); ?>"
+                    onclick="return false;"
+                <?php endif; ?>
             >
-                <span class="mont-channel-switch__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3.5" y="8" width="17" height="12" rx="2"/>
-                        <path d="M8 8V6.8A1.8 1.8 0 0 1 9.8 5h4.4A1.8 1.8 0 0 1 16 6.8V8"/>
-                        <path d="M3.5 13h17"/>
-                        <path d="M12 13v7"/>
-                    </svg>
-                </span>
                 <span class="mont-channel-switch__copy">
-                    <span class="mont-channel-switch__label">B2B</span>
-                    <span class="mont-channel-switch__hint">Bedrift</span>
+                    <span class="mont-channel-switch__label">B2B Skjorter</span>
                 </span>
             </a>
         </div>
+        <?php if ( $b2b_switch_disabled ) : ?>
+            <span class="mont-channel-switch__note"><?php echo esc_html( $b2b_switch_title ); ?></span>
+        <?php endif; ?>
     </div>

@@ -799,7 +799,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 	<div class="mont_related_products_slider">
 		<h3>Skjorter: Våre anbefalinger</h3>
 		<div class="mont_slider_single_product_page">
-            <?php echo do_shortcode('[custom_product_grid related="yes" limit="3"]'); ?>
+            <?php echo do_shortcode('[custom_product_grid related="yes" limit="8"]'); ?>
         </div>
     </div>
 </div>

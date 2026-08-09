@@ -1,5 +1,6 @@
 /**
- * Standalone product-card image sliders: dots, swipe, autoplay ~3s.
+ * Standalone product-card image sliders: dots, swipe, slower autoplay.
+ * Each card gets its own random interval so slides don't sync.
  */
 (function () {
     'use strict';
@@ -7,8 +8,17 @@
     if (window.__montCardSliderInit) return;
     window.__montCardSliderInit = true;
 
-    var AUTO_MS = 3000;
+    var AUTO_MIN = 5200;
+    var AUTO_MAX = 9200;
     var SWIPE_THRESHOLD = 36;
+
+    function randomInterval() {
+        return Math.floor(AUTO_MIN + Math.random() * (AUTO_MAX - AUTO_MIN));
+    }
+
+    function randomStartDelay() {
+        return Math.floor(400 + Math.random() * 2800);
+    }
 
     function initSlider(root) {
         if (!root || root.__montSliderBound) return;
@@ -23,6 +33,8 @@
         var dots = Array.prototype.slice.call(root.querySelectorAll('.mont-card-slider__dot'));
         var index = 0;
         var timer = null;
+        var startDelay = null;
+        var autoMs = randomInterval();
         var startX = 0;
         var deltaX = 0;
         var dragging = false;
@@ -37,14 +49,13 @@
         function goTo(i, animate) {
             if (typeof animate === 'undefined') animate = true;
             index = ((i % slides.length) + slides.length) % slides.length;
-            track.style.transition = animate ? 'transform 0.35s ease' : 'none';
+            track.style.transition = animate ? 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
             track.style.transform = 'translate3d(' + (-index * 100) + '%, 0, 0)';
             dots.forEach(function (dot, di) {
                 dot.classList.toggle('is-active', di === index);
             });
-            // Prefetch next slide image.
-            var next = slides[(index + 1) % slides.length];
-            var img = next ? next.querySelector('img') : null;
+            var nextSlide = slides[(index + 1) % slides.length];
+            var img = nextSlide ? nextSlide.querySelector('img') : null;
             if (img) {
                 img.loading = 'eager';
                 if (!img.complete) {
@@ -63,12 +74,21 @@
                 clearInterval(timer);
                 timer = null;
             }
+            if (startDelay) {
+                clearTimeout(startDelay);
+                startDelay = null;
+            }
         }
 
         function startAuto() {
             stopAuto();
             if (paused || slides.length < 2) return;
-            timer = setInterval(next, AUTO_MS);
+            autoMs = randomInterval();
+            startDelay = setTimeout(function () {
+                startDelay = null;
+                if (paused) return;
+                timer = setInterval(next, autoMs);
+            }, randomStartDelay());
         }
 
         dots.forEach(function (dot) {
@@ -148,7 +168,6 @@
             }
         });
 
-        // Prevent card navigation when interacting with the slider chrome.
         root.addEventListener('click', function (e) {
             if (e.target.closest('.mont-card-slider__dot')) {
                 e.preventDefault();
@@ -177,6 +196,5 @@
         boot(document);
     }
 
-    // Support lazy-loaded grids.
     window.montInitCardSliders = boot;
 })();
