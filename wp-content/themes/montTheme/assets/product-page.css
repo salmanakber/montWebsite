@@ -1835,3 +1835,58 @@ body.mont-fit-size-drawer-open {
         display: none !important;
     }
 }
+
+/* =========================================================
+   Chat widgets — lift above sticky ATC (B2C + B2B)
+   ========================================================= */
+@media (max-width: 1024px) {
+    body.has-mont-mobile-sticky #tidio-chat,
+    body.has-mont-b2b-sticky #tidio-chat,
+    body.has-mont-mobile-sticky #tidio-chat-iframe,
+    body.has-mont-b2b-sticky #tidio-chat-iframe,
+    body.has-mont-mobile-sticky iframe#tidio-chat-iframe,
+    body.has-mont-b2b-sticky iframe#tidio-chat-iframe,
+    body.has-mont-mobile-sticky .tidio-chat-iframe,
+    body.has-mont-b2b-sticky .tidio-chat-iframe,
+    body.has-mont-mobile-sticky #hubspot-messages-iframe-container,
+    body.has-mont-b2b-sticky #hubspot-messages-iframe-container,
+    body.has-mont-mobile-sticky .crisp-client,
+    body.has-mont-b2b-sticky .crisp-client,
+    body.has-mont-mobile-sticky #tawkchat-container,
+    body.has-mont-b2b-sticky #tawkchat-container,
+    body.has-mont-mobile-sticky #chat-widget-container,
+    body.has-mont-b2b-sticky #chat-widget-container,
+    body.has-mont-mobile-sticky .intercom-lightweight-app,
+    body.has-mont-b2b-sticky .intercom-lightweight-app,
+    body.has-mont-mobile-sticky .intercom-app,
+    body.has-mont-b2b-sticky .intercom-app {
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Channel switch also rides above sticky ATC */
+    body.has-mont-mobile-sticky .mont-channel-bar,
+    body.has-mont-b2b-sticky .mont-channel-bar {
+        bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Lightbox close — clear promo banner on mobile */
+    .mont_gallery_lightbox .mont_gallery_close-btn,
+    .mont_gallery_close-btn {
+        top: max(16px, env(safe-area-inset-top, 0px)) !important;
+        right: 14px !important;
+        z-index: 10020 !important;
+        position: fixed !important;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    body.has-sticky-discount .mont_gallery_lightbox .mont_gallery_close-btn,
+    body.has-sticky-discount .mont_gallery_close-btn {
+        top: calc(42px + env(safe-area-inset-top, 0px)) !important;
+    }
+
+    .mont_gallery_lightbox.active .mont_gallery_close-btn,
+    .mont_gallery_lightbox[style*="block"] .mont_gallery_close-btn {
+        display: block !important;
+    }
+}

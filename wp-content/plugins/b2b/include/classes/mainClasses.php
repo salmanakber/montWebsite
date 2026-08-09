@@ -377,49 +377,107 @@ class b2b extends getApi {
     }
 
     /**
-     * Group local B2B WC products by WooCommerce product category.
+     * Category tabs matching B2C shop (children of skjorter-herre, menu_order).
+     * Products are local WC items flagged B2B / Wholesale.
      *
      * @return array<int, array{name:string,slug:string,products:int[]}>
      */
     public function get_local_b2b_catalog() {
         $ids = $this->query_b2b_product_ids();
-        $map = array();
+        $by_term = array(); // term_id => product ids
 
         foreach ( $ids as $pid ) {
             $terms = get_the_terms( $pid, 'product_cat' );
             if ( empty( $terms ) || is_wp_error( $terms ) ) {
-                if ( ! isset( $map[0] ) ) {
-                    $map[0] = array(
-                        'name'     => __( 'All products', 'mont-b2b' ),
-                        'slug'     => 'all-products',
-                        'products' => array(),
-                    );
-                }
-                $map[0]['products'][] = $pid;
                 continue;
             }
             foreach ( $terms as $term ) {
                 $tid = (int) $term->term_id;
-                if ( ! isset( $map[ $tid ] ) ) {
-                    $map[ $tid ] = array(
-                        'name'     => $term->name,
-                        'slug'     => $term->slug,
-                        'products' => array(),
-                    );
+                if ( ! isset( $by_term[ $tid ] ) ) {
+                    $by_term[ $tid ] = array();
                 }
-                $map[ $tid ]['products'][] = $pid;
+                $by_term[ $tid ][] = $pid;
             }
         }
 
-        // Sort categories by name; keep product order from query.
-        uasort(
-            $map,
-            static function ( $a, $b ) {
-                return strcasecmp( $a['name'], $b['name'] );
-            }
-        );
+        $ordered = array();
+        $parent  = get_term_by( 'slug', 'skjorter-herre', 'product_cat' );
+        $tab_terms = array();
 
-        return $map;
+        if ( $parent && ! is_wp_error( $parent ) ) {
+            $tab_terms = get_terms(
+                array(
+                    'taxonomy'   => 'product_cat',
+                    'hide_empty' => false,
+                    'parent'     => (int) $parent->term_id,
+                    'orderby'    => 'menu_order',
+                    'order'      => 'ASC',
+                )
+            );
+        }
+
+        // Fallback: same top-level siblings as B2C when no children.
+        if ( empty( $tab_terms ) || is_wp_error( $tab_terms ) ) {
+            $tab_terms = get_terms(
+                array(
+                    'taxonomy'   => 'product_cat',
+                    'hide_empty' => false,
+                    'parent'     => 0,
+                    'orderby'    => 'menu_order',
+                    'order'      => 'ASC',
+                    'number'     => 12,
+                )
+            );
+        }
+
+        if ( ! empty( $tab_terms ) && ! is_wp_error( $tab_terms ) ) {
+            foreach ( $tab_terms as $term ) {
+                if ( 'Uncategorized' === $term->name ) {
+                    continue;
+                }
+                $tid = (int) $term->term_id;
+                // Include products in this term or any descendant.
+                $product_ids = isset( $by_term[ $tid ] ) ? $by_term[ $tid ] : array();
+                $children    = get_terms(
+                    array(
+                        'taxonomy'   => 'product_cat',
+                        'hide_empty' => false,
+                        'child_of'   => $tid,
+                        'fields'     => 'ids',
+                    )
+                );
+                if ( ! empty( $children ) && ! is_wp_error( $children ) ) {
+                    foreach ( $children as $cid ) {
+                        if ( ! empty( $by_term[ (int) $cid ] ) ) {
+                            $product_ids = array_merge( $product_ids, $by_term[ (int) $cid ] );
+                        }
+                    }
+                }
+                $product_ids = array_values( array_unique( array_map( 'intval', $product_ids ) ) );
+                $label       = str_replace( ' skjorte', ' skjorter', $term->name );
+                $ordered[ $tid ] = array(
+                    'name'     => $label,
+                    'slug'     => $term->slug,
+                    'products' => $product_ids,
+                );
+            }
+        }
+
+        // Any B2B products not covered by the B2C tab tree → "Other".
+        $shown = array();
+        foreach ( $ordered as $block ) {
+            $shown = array_merge( $shown, $block['products'] );
+        }
+        $orphan = array_values( array_diff( $ids, $shown ) );
+        if ( ! empty( $orphan ) ) {
+            $ordered[0] = array(
+                'name'     => __( 'Andre', 'mont-b2b' ),
+                'slug'     => 'andre',
+                'products' => $orphan,
+            );
+        }
+
+        return $ordered;
     }
 
     public function getCategory()

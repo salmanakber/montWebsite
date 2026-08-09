@@ -520,7 +520,10 @@
 
 @media (max-width: 991px) {
 	.b2b-pdp {
-		padding: 88px 0 120px;
+		padding: 72px 0 128px;
+		width: 100%;
+		max-width: 100%;
+		overflow-x: hidden;
 	}
 
 	.b2b-pdp .mont_top_layout,
@@ -528,6 +531,8 @@
 		flex-wrap: wrap;
 		flex-direction: column;
 		gap: 0;
+		width: 100%;
+		max-width: 100%;
 	}
 
 	.b2b-pdp .mont_layout_sixty,
@@ -535,18 +540,39 @@
 	.b2b-pdp .mont_layout_fourty,
 	.b2b-pdp #details-column,
 	.b2b-pdp .b2b-pdp__panel {
-		width: 100%;
-		flex: 1 1 100%;
-		padding: 0;
+		width: 100% !important;
+		flex: 1 1 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		padding: 0 !important;
+		box-sizing: border-box;
+		position: relative !important;
+	}
+
+	.b2b-pdp .mont_gallery_wrapper {
+		padding-right: 0;
 	}
 
 	.b2b-pdp .mont_back_button {
-		margin: 0 20px 14px;
+		margin: 8px 16px 12px;
 	}
 
 	.b2b-pdp .b2b-pdp__panel {
-		padding: 22px 20px 0 !important;
+		padding: 18px 16px 100px !important;
+		margin: 0 !important;
 		box-sizing: border-box;
+	}
+
+	.b2b-pdp .b2b-pdp__grid.row {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.b2b-pdp .b2b-pdp__grid > [class*="col-"] {
+		padding-left: 0 !important;
+		padding-right: 0 !important;
 	}
 
 	.b2b-pdp .moq,
@@ -677,6 +703,14 @@
 		gap: 10px;
 		margin-top: 22px;
 		padding-bottom: 8px;
+	}
+
+	.b2b-pdp .b2b-add-to-cart-button .submit-it-directly {
+		display: none; /* primary action lives in sticky bar */
+	}
+
+	.mont-b2b-sticky-cta:not([hidden]) {
+		display: flex !important;
 	}
 
 	.b2b-pdp .send-it-to-cart,

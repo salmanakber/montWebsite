@@ -148,6 +148,7 @@ jQuery(document).ready(function($) {
             sum += parseFloat($(this).val()) || 0;
         });
         $('.price-b2b').val(sum +' '+ "Shirts" );
+        $('.mont-b2b-sticky-price').text(sum +' '+ "Shirts" );
     }
     $('.b2b-size-input').on('input', function() {
         updateSum();

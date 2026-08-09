@@ -104,6 +104,16 @@
 	</div>
 </div>
 
+<div class="mont-mobile-sticky-cta mont-b2b-sticky-cta" id="mont-b2b-sticky-cta" hidden>
+	<div class="mont-mobile-sticky-cta__meta">
+		<span class="mont-mobile-sticky-cta__price mont-b2b-sticky-price">0 Shirts</span>
+		<span class="mont-mobile-sticky-cta__stock">Minimum order applies</span>
+	</div>
+	<a href="javascript:void(0)" class="mont-mobile-sticky-cta__action is-cart mont-b2b-sticky-done">
+		I'M DONE CHOOSING
+	</a>
+</div>
+
 <script type="text/javascript">
 jQuery(document).ready(function($){
 	// Keep right column in normal sticky CSS flow — skip old jump sticky JS.
@@ -114,5 +124,23 @@ jQuery(document).ready(function($){
 			window.history.back();
 		}
 	});
+
+	// Mobile sticky bar — mirror B2C ATC.
+	var $sticky = $('#mont-b2b-sticky-cta');
+	if ($sticky.length && window.matchMedia('(max-width: 1024px)').matches) {
+		$sticky.prop('hidden', false);
+		$('body').addClass('has-mont-mobile-sticky has-mont-b2b-sticky');
+		function syncB2bStickyPrice() {
+			var txt = ($('.price-b2b').val() || '').trim();
+			$('.mont-b2b-sticky-price').text(txt || '0 Shirts');
+		}
+		syncB2bStickyPrice();
+		$(document).on('input change', '.b2b-size-input, .price-b2b', syncB2bStickyPrice);
+		$(document).on('click', '.mont-b2b-sticky-done', function(e) {
+			e.preventDefault();
+			var $done = $('.submit-it-directly').first();
+			if ($done.length) $done.trigger('click');
+		});
+	}
 });
 </script>

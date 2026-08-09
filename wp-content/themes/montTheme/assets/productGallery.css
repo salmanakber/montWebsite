@@ -115,6 +115,28 @@ width: 6px;
     font-family: system-ui;
     font-weight: 100;
     font-size: 21px;
+    z-index: 10020;
+}
+
+@media (max-width: 1024px) {
+    .mont_gallery_close-btn {
+        position: fixed;
+        top: max(16px, env(safe-area-inset-top, 0px));
+        right: 14px;
+        height: 40px;
+        width: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+    }
+
+    body.has-sticky-discount .mont_gallery_close-btn {
+        top: calc(42px + env(safe-area-inset-top, 0px));
+    }
 }
 .mont_gallery_zoom-controls {
     border: 1px solid #0000004a;
