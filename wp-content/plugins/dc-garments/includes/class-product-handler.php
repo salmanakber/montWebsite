@@ -268,7 +268,9 @@ public function dc_product_manager_redirect() {
                 'stock_status' => $wc_product->get_stock_status(),
 			   'image' => get_post_meta( $product->ID, '_dc_product_image', true) ? : wp_get_attachment_image_url(get_post_thumbnail_id($product->ID), 'large'),
                 'categories' => $categories,
-				'supplier_sku' => get_post_meta( $product->ID, '_supplier_sku', true)
+				'supplier_sku' => get_post_meta( $product->ID, '_supplier_sku', true),
+                'b2b_product' => get_post_meta( $product->ID, '_b2b_product', true ),
+                'moq' => get_post_meta( $product->ID, '_moq', true ),
             );
         }
         

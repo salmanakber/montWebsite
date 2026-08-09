@@ -72,7 +72,7 @@ get_header();
     <div class="dc-crm-header">
         <h1><?php _e('Edit Product', 'dc-product-manager'); ?></h1>
         <div class="dc-crm-actions">
-            <a href="javascript:history.back()" class="button"><?php _e('Back to Products', 'dc-product-manager'); ?></a>
+            <a href="<?php echo esc_url( add_query_arg( 'tab', 'products', home_url( '/crm/' ) ) ); ?>" class="button"><?php _e('Back to Products', 'dc-product-manager'); ?></a>
         </div>
     </div>
     
@@ -149,51 +149,122 @@ if ($featured_image_url) {
             <div class="dc-product-edit-form">
                 <form id="dc-product-edit-form" class="dc-product-form">
                     <input type="hidden" id="dc-product-id" value="<?php echo esc_attr($product_data['id']); ?>">
-                    
-                    <div class="dc-form-section">
-                        <h3>Basic Information</h3>
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-fabric-color" class="required"><?php _e('Fabric Color', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-fabric-color" value="<?php echo esc_attr($product_data['fabric_color']); ?>" required>
+
+                    <?php
+                    $is_b2b = in_array( (string) $product_data['b2b_product'], array( 'yes', '1' ), true );
+                    $stock = intval($product_data['stock']);
+                    $stock_class = 'good';
+                    if ($stock <= 0) {
+                        $stock_class = 'out';
+                    } elseif ($stock <= 10) {
+                        $stock_class = 'low';
+                    }
+                    ?>
+
+                    <div class="dc-form-columns dc-form-columns--top">
+                        <div class="dc-form-section">
+                            <h3><?php _e( 'Basic Information', 'dc-product-manager' ); ?></h3>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-fabric-color" class="required"><?php _e('Fabric Color', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-fabric-color" value="<?php echo esc_attr($product_data['fabric_color']); ?>" required>
+                                </div>
+                            </div>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-fabric-color-english" class="required"><?php _e('Fabric Color (English)', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-fabric-color-english" value="<?php echo esc_attr($product_data['fabric_color_english']); ?>" required>
+                                </div>
+                            </div>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-category" class="required"><?php _e('Category', 'dc-product-manager'); ?></label>
+                                    <select id="dc-product-category" required>
+                                        <?php
+                                        $categories = get_terms(array(
+                                            'taxonomy' => 'product_cat',
+                                            'hide_empty' => false,
+                                        ));
+
+                                        foreach ($categories as $category) {
+                                            $selected = ($category->term_id == $product_data['category_id']) ? 'selected' : '';
+                                            echo '<option value="' . esc_attr($category->term_id) . '" ' . $selected . '>' . esc_html($category->name) . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="dc-form-row dc-form-row--split">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-fabric-no" class="required"><?php _e('Fabric No', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-fabric-no" value="<?php echo esc_attr($product_data['fabric_no']); ?>" required>
+                                </div>
+                                <div class="dc-form-group">
+                                    <label for="dc-product-stock"><?php _e('Stock', 'dc-product-manager'); ?></label>
+                                    <div class="dc-stock-field">
+                                        <input type="number" id="dc-product-stock" value="<?php echo esc_attr($product_data['stock']); ?>">
+                                        <span class="stock-status <?php echo esc_attr($stock_class); ?>" title="<?php echo esc_attr(sprintf(__('Current stock: %d', 'dc-product-manager'), $stock)); ?>"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-				 <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-fabric-color" class="required"><?php _e('Fabric Color (English)', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-fabric-color-english" value="<?php echo esc_attr($product_data['fabric_color_english']); ?>" required>
+
+                        <div class="dc-form-section dc-supplier-section">
+                            <h3><?php _e( 'Supplier Information', 'dc-product-manager' ); ?></h3>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-supplier"><?php _e('Supplier', 'dc-product-manager'); ?></label>
+                                    <select id="dc-product-supplier">
+                                        <option value=""><?php _e('Select Supplier', 'dc-product-manager'); ?></option>
+                                        <?php
+                                        $suppliers = get_posts(array(
+                                            'post_type' => 'dc_supplier',
+                                            'posts_per_page' => -1,
+                                            'orderby' => 'title',
+                                            'order' => 'ASC',
+                                        ));
+
+                                        foreach ($suppliers as $supplier) {
+                                            $selected = ($supplier->ID == $product_data['supplier_id']) ? 'selected' : '';
+                                            echo '<option value="' . esc_attr($supplier->ID) . '" ' . $selected . '>' . esc_html($supplier->post_title) . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-category" class="required"><?php _e('Category', 'dc-product-manager'); ?></label>
-                                <select id="dc-product-category" required>
-                                    <?php
-                                    $categories = get_terms(array(
-                                        'taxonomy' => 'product_cat',
-                                        'hide_empty' => false,
-                                    ));
-                                    
-                                    foreach ($categories as $category) {
-                                        $selected = ($category->term_id == $product_data['category_id']) ? 'selected' : '';
-                                        echo '<option value="' . esc_attr($category->term_id) . '" ' . $selected . '>' . esc_html($category->name) . '</option>';
-                                    }
-                                    ?>
-                                </select>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-supplier-sku"><?php _e('Supplier SKU', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-supplier-sku" value="<?php echo esc_attr($product_data['supplier_sku']); ?>">
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-fabric-no" class="required"><?php _e('Fabric No', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-fabric-no" value="<?php echo esc_attr($product_data['fabric_no']); ?>" required>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-quality"><?php _e('Quality', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-quality" value="<?php echo esc_attr($product_data['quality']); ?>">
+                                </div>
+                            </div>
+                            <div class="dc-form-row dc-form-row--split">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-fabric-width"><?php _e('Fabric Width', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-fabric-width" value="<?php echo esc_attr($product_data['fabric_width']); ?>">
+                                </div>
+                                <div class="dc-form-group">
+                                    <label for="dc-product-weight"><?php _e('Weight', 'dc-product-manager'); ?></label>
+                                    <input type="text" id="dc-product-weight" value="<?php echo esc_attr($product_data['weight']); ?>">
+                                </div>
+                            </div>
+                            <div class="dc-form-row">
+                                <div class="dc-form-group">
+                                    <label for="dc-product-supplier-price"><?php _e('Supplier Price', 'dc-product-manager'); ?></label>
+                                    <input type="number" id="dc-product-supplier-price" value="<?php echo esc_attr($product_data['supplier_price']); ?>" step="0.01">
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="dc-form-section">
-                        <h3>Product Details</h3>
+                        <h3><?php _e( 'Product Details', 'dc-product-manager' ); ?></h3>
                         <div class="dc-form-row">
                             <div class="dc-form-group">
                                 <label for="dc-product-title"><?php _e('Product Title', 'dc-product-manager'); ?></label>
@@ -207,63 +278,37 @@ if ($featured_image_url) {
                                 <input type="text" id="dc-product-custom-title-input" value="<?php echo esc_attr($product_data['title']); ?>" style="display: none;">
                             </div>
                         </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group dc-form-group--full">
-                                <label><?php _e('Prices by Region', 'dc-product-manager'); ?></label>
-                                <p class="description"><?php _e('Set a price for each currency. If a currency is empty, the default NOK price is used on the storefront.', 'dc-product-manager'); ?></p>
-                                <div class="dc-multicurrency-grid">
-                                    <?php
-                                    $mc_prices = isset($product_data['multicurrency_prices']) ? $product_data['multicurrency_prices'] : array();
-                                    foreach (\DC_Product_Manager\DC_Region_Currency::get_regions() as $slug => $region) :
-                                        $code = $region['currency'];
-                                        $val = isset($mc_prices[$code]) ? $mc_prices[$code] : '';
-                                    ?>
-                                    <div class="dc-form-group">
-                                        <label for="dc-price-<?php echo esc_attr(strtolower($code)); ?>">
-                                            <?php echo esc_html($region['label'] . ' (' . $region['display'] . ')'); ?>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="dc-price-<?php echo esc_attr(strtolower($code)); ?>"
-                                            class="dc-multicurrency-price"
-                                            data-currency="<?php echo esc_attr($code); ?>"
-                                            value="<?php echo esc_attr($val); ?>"
-                                            step="<?php echo $code === 'VND' ? '1' : '0.01'; ?>"
-                                            min="0"
-                                        >
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <input type="hidden" id="dc-product-price" value="<?php echo esc_attr($product_data['price']); ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-stock"><?php _e('Stock', 'dc-product-manager'); ?></label>
-                                <div style="position: relative;">
-                                    <input type="number" id="dc-product-stock" value="<?php echo esc_attr($product_data['stock']); ?>">
-                                    <?php 
-                                    $stock = intval($product_data['stock']);
-                                    $stock_class = 'good';
-                                    if ($stock <= 0) {
-                                        $stock_class = 'out';
-                                    } elseif ($stock <= 10) {
-                                        $stock_class = 'low';
-                                    }
-                                    ?>
-                                    <span class="stock-status <?php echo esc_attr($stock_class); ?>" title="<?php echo esc_attr(sprintf(__('Current stock: %d', 'dc-product-manager'), $stock)); ?>"></span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        
                     </div>
 
-                    <?php
-                    $is_b2b = in_array( (string) $product_data['b2b_product'], array( 'yes', '1' ), true );
-                    ?>
+                    <div class="dc-form-section dc-prices-section">
+                        <h3><?php _e( 'Prices by Region', 'dc-product-manager' ); ?></h3>
+                        <p class="description"><?php _e('Set a price for each currency. If a currency is empty, the default NOK price is used on the storefront.', 'dc-product-manager'); ?></p>
+                        <div class="dc-multicurrency-grid">
+                            <?php
+                            $mc_prices = isset($product_data['multicurrency_prices']) ? $product_data['multicurrency_prices'] : array();
+                            foreach (\DC_Product_Manager\DC_Region_Currency::get_regions() as $slug => $region) :
+                                $code = $region['currency'];
+                                $val = isset($mc_prices[$code]) ? $mc_prices[$code] : '';
+                            ?>
+                            <div class="dc-form-group">
+                                <label for="dc-price-<?php echo esc_attr(strtolower($code)); ?>">
+                                    <?php echo esc_html($region['label'] . ' (' . $region['display'] . ')'); ?>
+                                </label>
+                                <input
+                                    type="number"
+                                    id="dc-price-<?php echo esc_attr(strtolower($code)); ?>"
+                                    class="dc-multicurrency-price"
+                                    data-currency="<?php echo esc_attr($code); ?>"
+                                    value="<?php echo esc_attr($val); ?>"
+                                    step="<?php echo $code === 'VND' ? '1' : '0.01'; ?>"
+                                    min="0"
+                                >
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <input type="hidden" id="dc-product-price" value="<?php echo esc_attr($product_data['price']); ?>">
+                    </div>
+
                     <div class="dc-form-section dc-b2b-channel-section <?php echo $is_b2b ? 'is-b2b-active' : ''; ?>">
                         <div class="dc-b2b-channel-header">
                             <div>
@@ -296,66 +341,6 @@ if ($featured_image_url) {
                                 <label for="dc-product-moq"><?php _e( 'Minimum Order Quantity (MOQ)', 'dc-product-manager' ); ?></label>
                                 <input type="number" id="dc-product-moq" min="1" value="<?php echo esc_attr( $product_data['moq'] ); ?>" placeholder="e.g. 50">
                                 <small class="dc-field-hint"><?php _e( 'Wholesale customers must order at least this many shirts for this product.', 'dc-product-manager' ); ?></small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="dc-supplier-section">
-                        <h3>Supplier Information</h3>
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-supplier"><?php _e('Supplier', 'dc-product-manager'); ?></label>
-                                <select id="dc-product-supplier">
-                                    <option value=""><?php _e('Select Supplier', 'dc-product-manager'); ?></option>
-                                    <?php
-                                    $suppliers = get_posts(array(
-                                        'post_type' => 'dc_supplier',
-                                        'posts_per_page' => -1,
-                                        'orderby' => 'title',
-                                        'order' => 'ASC',
-                                    ));
-                                    
-                                    foreach ($suppliers as $supplier) {
-                                        $selected = ($supplier->ID == $product_data['supplier_id']) ? 'selected' : '';
-                                        echo '<option value="' . esc_attr($supplier->ID) . '" ' . $selected . '>' . esc_html($supplier->post_title) . '</option>';
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-supplier-sku"><?php _e('Supplier SKU', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-supplier-sku" value="<?php echo esc_attr($product_data['supplier_sku']); ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-quality"><?php _e('Quality', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-quality" value="<?php echo esc_attr($product_data['quality']); ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-fabric-width"><?php _e('Fabric Width', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-fabric-width" value="<?php echo esc_attr($product_data['fabric_width']); ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-weight"><?php _e('Weight', 'dc-product-manager'); ?></label>
-                                <input type="text" id="dc-product-weight" value="<?php echo esc_attr($product_data['weight']); ?>">
-                            </div>
-                        </div>
-                        
-                        <div class="dc-form-row">
-                            <div class="dc-form-group">
-                                <label for="dc-product-supplier-price"><?php _e('Supplier Price', 'dc-product-manager'); ?></label>
-                                <input type="number" id="dc-product-supplier-price" value="<?php echo esc_attr($product_data['supplier_price']); ?>" step="0.01">
                             </div>
                         </div>
                     </div>

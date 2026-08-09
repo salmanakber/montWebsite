@@ -11,6 +11,36 @@ if (!defined('ABSPATH')) {
 // Get current user
 $current_user = wp_get_current_user();
 $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'dashboard';
+$current_channel = isset($_GET['channel']) ? sanitize_text_field(wp_unslash($_GET['channel'])) : '';
+$is_b2b_products_tab = ($current_tab === 'products' && $current_channel === 'b2b');
+
+// Count B2B-flagged products for sidebar badge.
+$b2b_product_count = 0;
+$b2b_count_ids = get_posts(
+	array(
+		'post_type'              => 'product',
+		'post_status'            => 'publish',
+		'posts_per_page'         => -1,
+		'fields'                 => 'ids',
+		'no_found_rows'          => true,
+		'update_post_meta_cache' => false,
+		'update_post_term_cache' => false,
+		'meta_query'             => array(
+			'relation' => 'OR',
+			array(
+				'key'   => '_b2b_product',
+				'value' => '1',
+			),
+			array(
+				'key'   => '_b2b_product',
+				'value' => 'yes',
+			),
+		),
+	)
+);
+if (is_array($b2b_count_ids)) {
+	$b2b_product_count = count($b2b_count_ids);
+}
 
 // Production print sheet — no theme chrome.
 if ( 'orders' === $current_tab && ! empty( $_GET['print'] ) && ! empty( $_GET['order_id'] ) ) {
@@ -48,8 +78,14 @@ div#sticky-popup-btn {
                     <li class="<?php echo $current_tab === 'dashboard' ? 'active' : ''; ?>">
                         <a href="<?php echo esc_url(add_query_arg('tab', 'dashboard', home_url('/crm/'))); ?>">Dashboard</a>
                     </li>
-                    <li class="<?php echo $current_tab === 'products' ? 'active' : ''; ?>">
+                    <li class="<?php echo ($current_tab === 'products' && ! $is_b2b_products_tab) ? 'active' : ''; ?>">
                         <a href="<?php echo esc_url(add_query_arg('tab', 'products', home_url('/crm/'))); ?>">Products</a>
+                    </li>
+                    <li class="<?php echo $is_b2b_products_tab ? 'active' : ''; ?>">
+                        <a href="<?php echo esc_url(add_query_arg(array('tab' => 'products', 'channel' => 'b2b'), home_url('/crm/'))); ?>">
+                            B2B
+                            <span class="dc-nav-count" title="<?php echo esc_attr(sprintf(__('%d B2B products', 'dc-product-manager'), $b2b_product_count)); ?>"><?php echo esc_html((string) $b2b_product_count); ?></span>
+                        </a>
                     </li>
                     <li class="<?php echo $current_tab === 'orders' ? 'active' : ''; ?>">
                         <a href="<?php echo esc_url(add_query_arg(array('tab' => 'orders', 'channel' => 'all'), home_url('/crm/'))); ?>">Orders</a>
@@ -68,6 +104,8 @@ div#sticky-popup-btn {
             <?php
             switch ($current_tab) {
                 case 'products':
+                    $dc_b2b_products_only = $is_b2b_products_tab;
+                    $dc_b2b_product_count = $b2b_product_count;
                     require_once DC_PM_PLUGIN_DIR . 'admin/partials/product-management.php';
                     break;
 
@@ -107,6 +145,10 @@ div#sticky-popup-btn {
                             <div class="dc-crm-stat-box">
                                 <h3>Total Products</h3>
                                 <div class="dc-crm-stat-number"><?php echo esc_html($total_products); ?></div>
+                            </div>
+                            <div class="dc-crm-stat-box">
+                                <h3>B2B Products</h3>
+                                <div class="dc-crm-stat-number"><?php echo esc_html((string) $b2b_product_count); ?></div>
                             </div>
                             <div class="dc-crm-stat-box">
                                 <h3>Total Suppliers</h3>

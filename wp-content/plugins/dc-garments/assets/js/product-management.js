@@ -22,6 +22,13 @@ jQuery(document).ready(function($) {
     var currentCategory = 'all';
     var lowStockThreshold = 10; // Threshold for low stock notifications
     var selectedProducts = []; // Array to store selected product IDs
+    var b2bOnly = $('.dc-product-crm').data('b2b-only') === 1 || $('.dc-product-crm').attr('data-b2b-only') === '1';
+    if (!b2bOnly) {
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            b2bOnly = urlParams.get('channel') === 'b2b';
+        } catch (e) {}
+    }
     
     // DOM Elements
     var $productListBody = $('#dc-product-list-body');
@@ -322,6 +329,18 @@ jQuery(document).ready(function($) {
     }
     
     // Functions
+    function isB2BProduct(product) {
+        var value = String(product && product.b2b_product != null ? product.b2b_product : '').toLowerCase();
+        return value === '1' || value === 'yes';
+    }
+
+    function getBaseProductList() {
+        if (!b2bOnly) {
+            return productList.slice();
+        }
+        return productList.filter(isB2BProduct);
+    }
+
     function loadProducts() {
         showLoading();
         
@@ -337,15 +356,19 @@ jQuery(document).ready(function($) {
                 hideLoading();
                 if (response.success) {
                     productList = response.data;
+
+                    if (b2bOnly) {
+                        $('.dc-list-count').text(getBaseProductList().length);
+                    }
                     
                     // Apply current category filter if one is selected
                     if (currentCategory && currentCategory !== 'all') {
-                        const filteredProducts = productList.filter(product => {
+                        const filteredProducts = getBaseProductList().filter(product => {
                             return product.categories && product.categories.includes(parseInt(currentCategory));
                         });
                         renderProducts(filteredProducts);
                     } else {
-                        renderProducts(productList);
+                        renderProducts(getBaseProductList());
                     }
                     
                     // Clear old notifications
@@ -371,7 +394,7 @@ jQuery(document).ready(function($) {
         if (!products || products.length === 0) {
             $grid.html(`
                 <div class="dc-no-products">
-                    <p>No products found. Try adjusting your search or filters.</p>
+                    <p>${b2bOnly ? 'No B2B products found. Mark products as B2B from the product edit screen.' : 'No products found. Try adjusting your search or filters.'}</p>
                 </div>
             `);
             return;
@@ -383,6 +406,9 @@ jQuery(document).ready(function($) {
             const imageHtml = imageUrl 
                 ? `<img src="${imageUrl}" alt="${product.title}" loading="lazy">`
                 : `<div class="dc-product-card-no-image">No image available</div>`;
+            const b2bBadge = isB2BProduct(product)
+                ? '<span class="dc-product-card-b2b-badge">B2B</span>'
+                : '';
 
             const selectedClass = selectedProducts.includes(product.id) ? 'selected' : '';
             const card = `
@@ -390,6 +416,7 @@ jQuery(document).ready(function($) {
                     <div class="dc-product-checkbox-wrapper">
                         <input type="checkbox" class="dc-product-checkbox" ${selectedProducts.includes(product.id) ? 'checked' : ''}>
                     </div>
+                    ${b2bBadge}
                     <div class="dc-product-card-image">
                         ${imageHtml}
                     </div>
@@ -499,14 +526,18 @@ function formatPrice(price, currency) {
     
     function filterProducts() {
         var searchTerm = $productSearch.val().toLowerCase();
-        var filteredProducts = productList.filter(function(product) {
-            return product.title.toLowerCase().includes(searchTerm) ||
-                   product.sku.toLowerCase().includes(searchTerm);
+        var filteredProducts = getBaseProductList().filter(function(product) {
+            var title = (product.title || '').toLowerCase();
+            var sku = (product.sku || '').toLowerCase();
+            var supplierSku = (product.supplier_sku || '').toLowerCase();
+            return title.indexOf(searchTerm) !== -1 ||
+                   sku.indexOf(searchTerm) !== -1 ||
+                   supplierSku.indexOf(searchTerm) !== -1;
         });
         
         if (currentCategory !== 'all') {
             filteredProducts = filteredProducts.filter(function(product) {
-                return product.category === currentCategory;
+                return product.categories && product.categories.includes(parseInt(currentCategory, 10));
             });
         }
         
@@ -516,14 +547,14 @@ function formatPrice(price, currency) {
     function filterByCategory(category) {
         currentCategory = category;
         
-        // If category is 'all', show all products
+        // If category is 'all', show all products (respecting B2B view)
         if (category === 'all') {
-            renderProducts(productList);
+            renderProducts(getBaseProductList());
             return;
         }
         
         // Filter products by category
-        const filteredProducts = productList.filter(product => {
+        const filteredProducts = getBaseProductList().filter(product => {
             // Check if product has categories array and if it includes the selected category
             return product.categories && product.categories.includes(parseInt(category));
         });

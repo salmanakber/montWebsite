@@ -7,16 +7,27 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$dc_b2b_products_only = ! empty( $dc_b2b_products_only );
+$dc_b2b_product_count = isset( $dc_b2b_product_count ) ? (int) $dc_b2b_product_count : 0;
 ?>
 
-<div class="wrap dc-product-crm">
+<div class="wrap dc-product-crm" data-b2b-only="<?php echo $dc_b2b_products_only ? '1' : '0'; ?>">
     <!--<h1><?php //_e('Product CRM', 'dc-product-manager'); ?></h1>-->
     
     
     <div class="dc-product-management">
         <div class="dc-product-list-container">
             <div class="dc-product-list-header">
-                <h2><?php _e('Manage Products', 'dc-product-manager'); ?></h2>
+                <?php if ( $dc_b2b_products_only ) : ?>
+                    <h2>
+                        <?php _e( 'B2B Products', 'dc-product-manager' ); ?>
+                        <span class="dc-list-count"><?php echo esc_html( (string) $dc_b2b_product_count ); ?></span>
+                    </h2>
+                    <p class="dc-list-subtitle"><?php _e( 'Products marked for the Monte B2B wholesale channel. Toggle B2B on any product to add or remove it here.', 'dc-product-manager' ); ?></p>
+                <?php else : ?>
+                    <h2><?php _e('Manage Products', 'dc-product-manager'); ?></h2>
+                <?php endif; ?>
                 <div class="dc-bulk-actions">
                     <!--<button id="dc-bulk-edit-toggle" class="button"><?php //_e('Bulk Edit', 'dc-product-manager'); ?></button>-->
                     <div class="dc-bulk-filters">

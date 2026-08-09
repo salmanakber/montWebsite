@@ -11,6 +11,8 @@ if (!defined('ABSPATH')) {
 // Get current page/tab
 $current_page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
 $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'dashboard';
+$current_channel = isset($_GET['channel']) ? sanitize_text_field(wp_unslash($_GET['channel'])) : '';
+$is_b2b_products_tab = ($current_tab === 'products' && $current_channel === 'b2b');
 ?>
 
 <div class="dc-sidebar">
@@ -27,10 +29,17 @@ $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'dashbo
                 </a>
             </li>
             
-            <li class="<?php echo ($current_tab === 'products') ? 'active' : ''; ?>">
+            <li class="<?php echo ($current_tab === 'products' && ! $is_b2b_products_tab) ? 'active' : ''; ?>">
                 <a href="<?php echo esc_url(admin_url('admin.php?page=dc-product-manager&tab=products')); ?>">
                     <span class="dashicons dashicons-products"></span>
                     <?php _e('Products', 'dc-product-manager'); ?>
+                </a>
+            </li>
+
+            <li class="<?php echo $is_b2b_products_tab ? 'active' : ''; ?>">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=dc-product-manager&tab=products&channel=b2b')); ?>">
+                    <span class="dashicons dashicons-store"></span>
+                    <?php _e('B2B', 'dc-product-manager'); ?>
                 </a>
             </li>
             
