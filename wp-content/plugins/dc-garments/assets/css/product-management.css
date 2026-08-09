@@ -587,14 +587,16 @@
 /* Product Edit Layout */
 .dc-product-edit-layout {
     display: grid;
-    grid-template-columns: minmax(240px, 0.95fr) minmax(0, 2.05fr);
-    gap: 28px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 24px;
     margin-top: 12px;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
-    padding: 28px;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
     align-items: start;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Product Images Section */
@@ -693,7 +695,8 @@
 .dc-form-columns--top > .dc-form-section,
 .dc-form-columns--top > .dc-supplier-section {
     margin: 0;
-    height: 100%;
+    min-width: 0;
+    height: auto;
 }
 
 .dc-form-row--split {
@@ -1606,173 +1609,186 @@ content: '';
 }
 
 /* =========================================================
-   Product Edit — editorial CRM refinement
-   Scoped to .dc-product-edit-shell so list CRM stays untouched
+   Product Edit — clean CRM blue/white (brand-safe)
+   Fixes: horizontal scroll, top 2-col layout, section stacking
    ========================================================= */
 body.dc-product-edit-page {
-    background: #f3f1ed;
-}
-
-body.dc-product-edit-page .site-footer,
-body.dc-product-edit-page footer.site-footer {
-    margin-top: 0;
+    background: #f0f0f1;
+    overflow-x: hidden;
 }
 
 .dc-product-edit-shell.dc-crm-wrap {
-    width: min(1240px, 96%);
-    margin: 96px auto 72px;
+    width: min(1180px, calc(100% - 32px));
+    max-width: 100%;
+    margin: 96px auto 64px;
     background: transparent;
     box-shadow: none;
     overflow: visible;
+    box-sizing: border-box;
+}
+
+.dc-product-edit-shell *,
+.dc-product-edit-shell *::before,
+.dc-product-edit-shell *::after {
+    box-sizing: border-box;
 }
 
 .dc-product-edit-shell .dc-product-edit-header {
-    background: transparent;
-    border: 0;
-    padding: 8px 4px 22px;
+    display: flex;
+    justify-content: space-between;
     align-items: flex-start;
-    gap: 20px;
+    gap: 16px;
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
 }
 
 .dc-product-edit-shell .dc-product-edit-header__left {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
     min-width: 0;
+    flex: 1 1 auto;
 }
 
 .dc-product-edit-shell .dc-edit-back {
     display: inline-flex;
-    align-items: center;
     width: fit-content;
-    color: #6b645c;
+    color: #646970;
     text-decoration: none;
     font-size: 13px;
-    letter-spacing: 0.02em;
-    transition: color 0.2s ease;
 }
 
 .dc-product-edit-shell .dc-edit-back:hover {
-    color: #111;
+    color: #2271b1;
 }
 
 .dc-product-edit-shell .dc-product-edit-kicker {
-    margin: 0 0 6px;
+    margin: 0 0 4px;
     font-size: 11px;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #8a8278;
+    color: #787c82;
     font-weight: 600;
 }
 
 .dc-product-edit-shell .dc-product-edit-header h1 {
     margin: 0;
-    font-size: clamp(1.55rem, 2.4vw, 2.1rem);
-    line-height: 1.15;
+    font-size: clamp(1.25rem, 2vw, 1.7rem);
+    line-height: 1.25;
     font-weight: 500;
-    color: #171412;
-    letter-spacing: -0.02em;
-    max-width: 34ch;
+    color: #1d2327;
+    word-break: break-word;
 }
 
 .dc-product-edit-shell .dc-product-edit-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 10px;
 }
 
 .dc-product-edit-shell .dc-meta-chip {
     display: inline-flex;
     align-items: center;
-    padding: 5px 10px;
+    padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(23, 20, 18, 0.08);
-    color: #3f3a35;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    color: #3c434a;
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.02em;
 }
 
 .dc-product-edit-shell .dc-meta-chip--good {
-    background: #eef7f0;
-    border-color: #c8e4d0;
-    color: #1f6b3a;
+    background: #edfaef;
+    border-color: #b8e6bf;
+    color: #007017;
 }
 
 .dc-product-edit-shell .dc-meta-chip--low {
-    background: #fff6e8;
-    border-color: #f0d7a8;
-    color: #8a5a12;
+    background: #fcf9e8;
+    border-color: #f0e0a2;
+    color: #996800;
 }
 
 .dc-product-edit-shell .dc-meta-chip--out {
-    background: #fdecec;
-    border-color: #f0c4c4;
-    color: #a12626;
+    background: #fcf0f1;
+    border-color: #f1b8bc;
+    color: #b32d2e;
 }
 
 .dc-product-edit-shell .dc-meta-chip--b2b {
-    background: #eaf1f8;
-    border-color: #c5d7ea;
-    color: #1f4e79;
+    background: #f0f6fc;
+    border-color: #c5d9ed;
+    color: #135e96;
 }
 
 .dc-product-edit-shell .dc-meta-chip--b2c {
-    background: #f4f4f2;
-    color: #6b645c;
+    background: #f6f7f7;
+    color: #646970;
 }
 
 .dc-product-edit-shell .dc-header-save.button-primary,
 .dc-product-edit-shell .dc-form-actions .button-primary {
-    background: #171412 !important;
+    background: #2271b1 !important;
     border: 0 !important;
     color: #fff !important;
-    border-radius: 999px !important;
-    padding: 12px 22px !important;
-    min-height: 46px;
+    border-radius: 8px !important;
+    padding: 10px 18px !important;
+    min-height: 42px;
     font-size: 13px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.02em;
-    box-shadow: 0 10px 24px rgba(23, 20, 18, 0.14);
-    transition: transform 0.18s ease, background 0.18s ease;
+    box-shadow: none;
+    white-space: nowrap;
 }
 
 .dc-product-edit-shell .dc-header-save.button-primary:hover,
 .dc-product-edit-shell .dc-form-actions .button-primary:hover {
-    background: #000 !important;
-    transform: translateY(-1px);
+    background: #135e96 !important;
+    transform: none;
 }
 
-.dc-product-edit-shell .dc-product-edit-content {
-    display: block;
+.dc-product-edit-shell .dc-product-edit-content.dc-crm-content {
+    display: block !important;
     min-height: 0;
     padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
 }
 
 .dc-product-edit-shell .dc-product-edit-layout {
-    display: grid;
-    grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.55fr);
-    gap: 22px;
+    display: grid !important;
+    grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+    gap: 16px;
     margin: 0;
     padding: 0;
     background: transparent;
     box-shadow: none;
     border-radius: 0;
     align-items: start;
+    width: 100%;
+    max-width: 100%;
+}
+
+.dc-product-edit-shell .dc-product-images-section,
+.dc-product-edit-shell .dc-product-edit-form {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .dc-product-edit-shell .dc-product-images-section {
     position: sticky;
     top: 92px;
-    padding: 18px;
-    border-radius: 22px;
-    border: 1px solid rgba(23, 20, 18, 0.08);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)),
-        #f7f4ef;
-    box-shadow: 0 18px 40px rgba(48, 38, 28, 0.06);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e4e7;
+    background: #fff;
+    box-shadow: none;
 }
 
 .dc-product-edit-shell .dc-media-panel-head {
@@ -1780,7 +1796,9 @@ body.dc-product-edit-page footer.site-footer {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e4e7;
 }
 
 .dc-product-edit-shell .dc-media-panel-head h2 {
@@ -1789,21 +1807,21 @@ body.dc-product-edit-page footer.site-footer {
     border: 0 !important;
     font-size: 13px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #6b645c;
+    color: #1d2327;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .dc-product-edit-shell .dc-media-panel-hint {
     font-size: 11px;
-    color: #9a9187;
+    color: #787c82;
 }
 
 .dc-product-edit-shell .dc-product-featured-image {
-    margin: 0 0 14px;
-    border-radius: 16px;
+    margin: 0 0 12px;
+    border-radius: 10px;
     overflow: hidden;
-    background: #ece7df;
+    background: #f6f7f7;
     aspect-ratio: 3 / 4;
 }
 
@@ -1814,11 +1832,11 @@ body.dc-product-edit-page footer.site-footer {
     border-radius: 0;
     box-shadow: none;
     display: block;
-    transition: transform 0.45s ease;
+    transition: none;
 }
 
 .dc-product-edit-shell .dc-product-featured-image:hover img {
-    transform: scale(1.02);
+    transform: none;
 }
 
 .dc-product-edit-shell .dc-product-gallery-grid {
@@ -1828,159 +1846,212 @@ body.dc-product-edit-page footer.site-footer {
 }
 
 .dc-product-edit-shell .dc-product-gallery-image {
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     border: 2px solid transparent;
-    transition: border-color 0.18s ease, transform 0.18s ease;
 }
 
 .dc-product-edit-shell .dc-product-gallery-image.is-active,
 .dc-product-edit-shell .dc-product-gallery-image:hover {
-    border-color: #171412;
+    border-color: #2271b1;
 }
 
 .dc-product-edit-shell .dc-product-gallery-image img {
-    height: 70px;
+    width: 100%;
+    height: 64px;
+    object-fit: cover;
     border: 0;
     border-radius: 0;
 }
 
 .dc-product-edit-shell .dc-product-images-note {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(23, 20, 18, 0.08);
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e4e7;
 }
 
 .dc-product-edit-shell .dc-product-images-note p {
+    margin: 0;
     font-size: 12px;
-    color: #8a8278;
-    line-height: 1.5;
+    color: #646970;
+    line-height: 1.45;
 }
 
 .dc-product-edit-shell .dc-product-edit-form {
     padding: 0;
     background: transparent;
+    display: block;
 }
 
-.dc-product-edit-shell .dc-form-columns--top {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+.dc-product-edit-shell .dc-product-form {
+    display: flex;
+    flex-direction: column;
     gap: 16px;
-    margin-bottom: 16px;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Top row: Basic | Supplier — locked two-column, then full-width sections below */
+.dc-product-edit-shell .dc-form-columns,
+.dc-product-edit-shell .dc-form-columns--top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    align-items: stretch;
+}
+
+.dc-product-edit-shell .dc-form-columns--top > .dc-form-section,
+.dc-product-edit-shell .dc-form-columns--top > .dc-supplier-section {
+    margin: 0 !important;
+    height: auto !important;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
 }
 
 .dc-product-edit-shell .dc-form-section,
 .dc-product-edit-shell .dc-supplier-section {
-    margin: 0 0 16px;
-    padding: 22px 22px 20px;
-    border-radius: 20px;
-    border: 1px solid rgba(23, 20, 18, 0.08);
-    background: rgba(255, 255, 255, 0.88);
-    box-shadow: 0 10px 28px rgba(48, 38, 28, 0.045);
-    backdrop-filter: blur(6px);
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #e2e4e7;
+    background: #fff;
+    box-shadow: none;
+    position: relative;
+    float: none !important;
+    clear: none;
+}
+
+.dc-product-edit-shell .dc-product-form > .dc-form-section,
+.dc-product-edit-shell .dc-product-form > .dc-supplier-section,
+.dc-product-edit-shell .dc-product-form > .dc-form-actions {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
 }
 
 .dc-product-edit-shell .dc-supplier-section {
-    background: linear-gradient(180deg, #faf7f2 0%, #ffffff 100%);
+    background: #fff;
+    border-top: 1px solid #e2e4e7;
+    padding-top: 18px;
+}
+
+.dc-product-edit-shell .dc-supplier-section::before {
+    display: none;
 }
 
 .dc-product-edit-shell .dc-section-head {
-    display: grid;
-    grid-template-columns: auto 1fr;
+    display: flex;
+    align-items: flex-start;
     gap: 12px;
-    align-items: start;
-    margin-bottom: 18px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(23, 20, 18, 0.08);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e4e7;
 }
 
 .dc-product-edit-shell .dc-section-index {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 11px;
-    background: #171412;
-    color: #f7f4ef;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #2271b1;
+    color: #fff;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    flex: 0 0 auto;
 }
 
 .dc-product-edit-shell .dc-section-head h3,
 .dc-product-edit-shell .dc-form-section h3,
 .dc-product-edit-shell .dc-supplier-section h3 {
-    margin: 0 0 4px !important;
+    margin: 0 0 2px !important;
     padding: 0 !important;
     border: 0 !important;
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
-    color: #171412 !important;
-    letter-spacing: -0.01em;
+    color: #1d2327 !important;
 }
 
 .dc-product-edit-shell .dc-section-head p,
 .dc-product-edit-shell .dc-b2b-channel-help {
     margin: 0;
-    color: #8a8278;
+    color: #646970;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.4;
 }
 
 .dc-product-edit-shell .dc-form-row {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+}
+
+.dc-product-edit-shell .dc-form-row:last-child {
+    margin-bottom: 0;
 }
 
 .dc-product-edit-shell .dc-form-row--split {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 12px;
 }
 
+.dc-product-edit-shell .dc-form-group {
+    min-width: 0;
+}
+
 .dc-product-edit-shell .dc-form-group label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #7a7268;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #50575e;
 }
 
 .dc-product-edit-shell .dc-form-group input[type="text"],
 .dc-product-edit-shell .dc-form-group input[type="number"],
 .dc-product-edit-shell .dc-form-group select,
 .dc-product-edit-shell .dc-form-group textarea {
-    padding: 12px 14px;
-    border: 1px solid rgba(23, 20, 18, 0.12);
-    border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
     background: #fff;
-    font-size: 14px;
-    color: #171412;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    color: #1d2327;
+    box-shadow: none;
 }
 
 .dc-product-edit-shell .dc-form-group input:focus,
 .dc-product-edit-shell .dc-form-group select:focus,
 .dc-product-edit-shell .dc-form-group textarea:focus {
-    border-color: #171412;
-    box-shadow: 0 0 0 4px rgba(23, 20, 18, 0.08);
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
 }
 
 .dc-product-edit-shell .dc-title-preview {
-    background: #f7f4ef;
-    border: 1px solid rgba(23, 20, 18, 0.08);
-    border-radius: 14px;
-    padding: 16px 18px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    padding: 14px 16px;
     margin: 0;
 }
 
 .dc-product-edit-shell #dc-product-title-preview {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
-    letter-spacing: -0.02em;
-    color: #171412;
+    color: #1d2327;
     line-height: 1.35;
     margin-bottom: 10px;
+    word-break: break-word;
 }
 
 .dc-product-edit-shell .dc-custom-title-toggle {
@@ -1991,7 +2062,7 @@ body.dc-product-edit-page footer.site-footer {
     letter-spacing: 0 !important;
     font-size: 13px !important;
     font-weight: 500 !important;
-    color: #5c564e !important;
+    color: #50575e !important;
     cursor: pointer;
 }
 
@@ -1999,13 +2070,15 @@ body.dc-product-edit-page footer.site-footer {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+    width: 100%;
 }
 
 .dc-product-edit-shell .dc-price-card {
-    padding: 14px;
-    border-radius: 14px;
-    background: #f7f4ef;
-    border: 1px solid rgba(23, 20, 18, 0.06);
+    padding: 12px;
+    border-radius: 8px;
+    background: #f6f7f7;
+    border: 1px solid #e2e4e7;
+    min-width: 0;
 }
 
 .dc-product-edit-shell .dc-price-card label {
@@ -2013,85 +2086,84 @@ body.dc-product-edit-page footer.site-footer {
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    text-transform: none;
-    letter-spacing: 0;
-    margin-bottom: 2px;
+    margin-bottom: 6px;
 }
 
 .dc-product-edit-shell .dc-price-card__region {
     font-size: 12px;
     font-weight: 600;
-    color: #3f3a35;
+    color: #1d2327;
 }
 
 .dc-product-edit-shell .dc-price-card__code {
     font-size: 11px;
-    font-weight: 700;
-    color: #8a8278;
-    letter-spacing: 0.04em;
+    font-weight: 600;
+    color: #646970;
 }
 
 .dc-product-edit-shell .dc-price-card input {
     background: #fff;
-    font-size: 16px !important;
+    font-size: 14px !important;
     font-weight: 500;
 }
 
 .dc-product-edit-shell .dc-b2b-channel-section {
-    background: linear-gradient(135deg, #f4f7fb 0%, #ffffff 55%);
-    border-color: #d5e0ec;
-    padding: 22px;
+    background: #f0f6fc;
+    border-color: #c5d9ed;
+    padding: 18px;
 }
 
 .dc-product-edit-shell .dc-b2b-channel-section.is-b2b-active {
-    background: linear-gradient(135deg, #eaf2fa 0%, #ffffff 60%);
-    border-color: #1f4e79;
-    box-shadow: 0 12px 30px rgba(31, 78, 121, 0.08);
+    background: #eaf2fa;
+    border-color: #2271b1;
+    box-shadow: none;
 }
 
 .dc-product-edit-shell .dc-b2b-channel-header {
+    display: flex;
     align-items: flex-start;
-    margin-bottom: 18px;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
 }
 
 .dc-product-edit-shell .dc-b2b-channel-header .dc-section-head {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: 0;
-    flex: 1;
-}
-
-.dc-product-edit-shell .dc-b2b-badge {
-    border-radius: 999px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .dc-product-edit-shell .dc-form-actions--sticky {
     position: sticky;
-    bottom: 16px;
+    bottom: 12px;
     z-index: 20;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: 8px 0 0;
-    padding: 14px 16px;
-    border: 1px solid rgba(23, 20, 18, 0.08);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 16px 36px rgba(48, 38, 28, 0.12);
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid #e2e4e7;
+    border-radius: 12px;
+    background: #fff;
+    backdrop-filter: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 100%;
 }
 
 .dc-product-edit-shell .dc-form-actions__note {
     font-size: 12px;
-    color: #8a8278;
+    color: #646970;
     line-height: 1.4;
-    max-width: 34ch;
+    max-width: 36ch;
 }
 
 @media (max-width: 1100px) {
     .dc-product-edit-shell .dc-product-edit-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 
     .dc-product-edit-shell .dc-product-images-section {
@@ -2100,14 +2172,23 @@ body.dc-product-edit-page footer.site-footer {
 
     .dc-product-edit-shell .dc-product-featured-image {
         aspect-ratio: 4 / 5;
-        max-height: 480px;
+        max-height: 420px;
+    }
+}
+
+@media (max-width: 820px) {
+    .dc-product-edit-shell .dc-form-columns,
+    .dc-product-edit-shell .dc-form-columns--top,
+    .dc-product-edit-shell .dc-form-row--split,
+    .dc-product-edit-shell .dc-multicurrency-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 }
 
 @media (max-width: 768px) {
     .dc-product-edit-shell.dc-crm-wrap {
-        width: 94%;
-        margin: 84px auto 48px;
+        width: calc(100% - 20px);
+        margin: 84px auto 40px;
     }
 
     .dc-product-edit-shell .dc-product-edit-header {
@@ -2115,24 +2196,14 @@ body.dc-product-edit-page footer.site-footer {
         align-items: stretch;
     }
 
-    .dc-product-edit-shell .dc-crm-actions {
-        width: 100%;
-    }
-
     .dc-product-edit-shell .dc-header-save {
         width: 100%;
-    }
-
-    .dc-product-edit-shell .dc-form-columns--top,
-    .dc-product-edit-shell .dc-form-row--split,
-    .dc-product-edit-shell .dc-multicurrency-grid {
-        grid-template-columns: 1fr;
     }
 
     .dc-product-edit-shell .dc-form-actions--sticky {
         flex-direction: column;
         align-items: stretch;
-        bottom: 10px;
+        bottom: 8px;
     }
 
     .dc-product-edit-shell .dc-form-actions .button-primary {
