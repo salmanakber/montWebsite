@@ -62,73 +62,97 @@ wp_add_inline_script('dc-product-management', 'console.log("dc_product_manager l
 
 // Get header
 get_header();
+
+$product_id   = isset( $product_data['id'] ) ? (int) $product_data['id'] : 0;
+$is_b2b       = in_array( (string) ( $product_data['b2b_product'] ?? '' ), array( 'yes', '1' ), true );
+$stock        = intval( $product_data['stock'] ?? 0 );
+$stock_class  = 'good';
+$stock_label  = __( 'In stock', 'dc-product-manager' );
+if ( $stock <= 0 ) {
+	$stock_class = 'out';
+	$stock_label = __( 'Out of stock', 'dc-product-manager' );
+} elseif ( $stock <= 10 ) {
+	$stock_class = 'low';
+	$stock_label = __( 'Low stock', 'dc-product-manager' );
+}
+$display_title = ! empty( $product_data['title'] ) ? $product_data['title'] : ( $product_data['generated_title'] ?? '' );
+$supplier_sku  = $product_data['supplier_sku'] ?? '';
 ?>
 <style>
     div#sticky-popup-btn {
         display: none !important;
     }
 </style>
-<div class="dc-crm-wrap">
-    <div class="dc-crm-header">
-        <h1><?php _e('Edit Product', 'dc-product-manager'); ?></h1>
+<div class="dc-crm-wrap dc-product-edit-shell">
+    <div class="dc-crm-header dc-product-edit-header">
+        <div class="dc-product-edit-header__left">
+            <a href="<?php echo esc_url( add_query_arg( 'tab', 'products', home_url( '/crm/' ) ) ); ?>" class="dc-edit-back">
+                <?php _e( '← Products', 'dc-product-manager' ); ?>
+            </a>
+            <div class="dc-product-edit-heading">
+                <p class="dc-product-edit-kicker"><?php _e( 'Stock Management', 'dc-product-manager' ); ?></p>
+                <h1><?php echo esc_html( $display_title ? $display_title : __( 'Edit Product', 'dc-product-manager' ) ); ?></h1>
+                <div class="dc-product-edit-meta">
+                    <?php if ( $supplier_sku ) : ?>
+                        <span class="dc-meta-chip">SKU <?php echo esc_html( $supplier_sku ); ?></span>
+                    <?php endif; ?>
+                    <span class="dc-meta-chip dc-meta-chip--stock dc-meta-chip--<?php echo esc_attr( $stock_class ); ?>">
+                        <?php echo esc_html( $stock_label ); ?> · <?php echo esc_html( (string) $stock ); ?>
+                    </span>
+                    <span class="dc-meta-chip <?php echo $is_b2b ? 'dc-meta-chip--b2b' : 'dc-meta-chip--b2c'; ?>">
+                        <?php echo $is_b2b ? esc_html__( 'B2B enabled', 'dc-product-manager' ) : esc_html__( 'B2C only', 'dc-product-manager' ); ?>
+                    </span>
+                </div>
+            </div>
+        </div>
         <div class="dc-crm-actions">
-            <a href="<?php echo esc_url( add_query_arg( 'tab', 'products', home_url( '/crm/' ) ) ); ?>" class="button"><?php _e('Back to Products', 'dc-product-manager'); ?></a>
+            <button type="button" class="button button-primary dc-header-save" id="dc-save-product-top"><?php _e( 'Update Product', 'dc-product-manager' ); ?></button>
         </div>
     </div>
     
-    <div class="dc-crm-content">
+    <div class="dc-crm-content dc-product-edit-content">
         <div class="dc-product-edit-layout">
             <!-- Product Images Section (Left Side) -->
-            <div class="dc-product-images-section">
-                <h2><?php _e('Product Images', 'dc-product-manager'); ?></h2>
+            <aside class="dc-product-images-section">
+                <div class="dc-media-panel-head">
+                    <h2><?php _e( 'Media', 'dc-product-manager' ); ?></h2>
+                    <span class="dc-media-panel-hint"><?php _e( 'Preview only', 'dc-product-manager' ); ?></span>
+                </div>
                 <div class="dc-product-images">
-					<input type="hidden" value="<?php echo get_post_meta($product_id, '_dc_product_image', true); ?>" id="dc-product-image"/>
+					<input type="hidden" value="<?php echo esc_attr( get_post_meta( $product_id, '_dc_product_image', true ) ); ?>" id="dc-product-image"/>
 					 <input type="hidden" value="" id="dc-product-image-id"/>
                     <?php
-                    // Get product images
-                    $product_id = $product_data['id'];
-                    $product = wc_get_product($product_id);
+                    $product = wc_get_product( $product_id );
                     
-                    if ($product) {
-                        // Get featured image
-                        $featured_image_id = $product->get_image_id();
-	$featured_image_url = get_post_meta($product_id, '_dc_product_image', true);
+                    if ( $product ) {
+                        $featured_image_id  = $product->get_image_id();
+                        $featured_image_url = get_post_meta( $product_id, '_dc_product_image', true );
 
-if ($featured_image_url) {
-    echo '<div class="dc-product-featured-image">';
-    echo '<h3>' . esc_html__('Featured Image', 'dc-product-manager') . '</h3>';
-    echo '<img id="featured-image" src="' . esc_url($featured_image_url) . '" alt="' . esc_attr($product->get_name()) . '">';
-    echo '</div>';
-}
-						else{
-                        if ($featured_image_id) {
-                            $featured_image_url = wp_get_attachment_image_url($featured_image_id, 'large');
+                        if ( $featured_image_url ) {
                             echo '<div class="dc-product-featured-image">';
-                            echo '<h3>' . __('Featured Image', 'dc-product-manager') . '</h3>';
-                            echo '<img id="featured-image" src="' . esc_url($featured_image_url) . '" alt="' . esc_attr($product->get_name()) . '">';
+                            echo '<img id="featured-image" src="' . esc_url( $featured_image_url ) . '" alt="' . esc_attr( $product->get_name() ) . '">';
+                            echo '</div>';
+                        } elseif ( $featured_image_id ) {
+                            $featured_image_url = wp_get_attachment_image_url( $featured_image_id, 'large' );
+                            echo '<div class="dc-product-featured-image">';
+                            echo '<img id="featured-image" src="' . esc_url( $featured_image_url ) . '" alt="' . esc_attr( $product->get_name() ) . '">';
                             echo '</div>';
                         }
-						}
 
-                        
-                        // Get gallery images
                         $gallery_image_ids = $product->get_gallery_image_ids();
-                        if (!empty($gallery_image_ids)) {
+                        if ( ! empty( $gallery_image_ids ) || $featured_image_id ) {
                             echo '<div class="dc-product-gallery-images">';
-                            echo '<h3>' . __('Gallery Images', 'dc-product-manager') . '</h3>';
                             echo '<div class="dc-product-gallery-grid">';
 
-    // Include the featured image in gallery
-                            if ($product->get_image_id()) {
-                                echo '<div class="dc-product-gallery-image">';
-                                echo '<img class="thumbnail-clickable" src="' . esc_url(wp_get_attachment_image_url($featured_image_id, 'medium')) . '" data-large="' . esc_url(wp_get_attachment_image_url($featured_image_id, 'large')) . '" data-imageId="'.($image_id).'" alt="' . esc_attr($product->get_name()) . '">';
+                            if ( $featured_image_id ) {
+                                echo '<div class="dc-product-gallery-image is-active">';
+                                echo '<img class="thumbnail-clickable" src="' . esc_url( wp_get_attachment_image_url( $featured_image_id, 'medium' ) ) . '" data-large="' . esc_url( wp_get_attachment_image_url( $featured_image_id, 'large' ) ) . '" data-imageId="' . esc_attr( (string) $featured_image_id ) . '" alt="' . esc_attr( $product->get_name() ) . '">';
                                 echo '</div>';
                             }
 
-    // Other gallery images
-                            foreach ($gallery_image_ids as $image_id) {
+                            foreach ( $gallery_image_ids as $image_id ) {
                                 echo '<div class="dc-product-gallery-image">';
-                                echo '<img class="thumbnail-clickable" src="' . esc_url(wp_get_attachment_image_url($image_id, 'medium')) . '" data-large="' . esc_url(wp_get_attachment_image_url($image_id, 'large')) . '" data-imageId="'.($image_id).'" alt="' . esc_attr($product->get_name()) . '">';
+                                echo '<img class="thumbnail-clickable" src="' . esc_url( wp_get_attachment_image_url( $image_id, 'medium' ) ) . '" data-large="' . esc_url( wp_get_attachment_image_url( $image_id, 'large' ) ) . '" data-imageId="' . esc_attr( (string) $image_id ) . '" alt="' . esc_attr( $product->get_name() ) . '">';
                                 echo '</div>';
                             }
 
@@ -136,34 +160,29 @@ if ($featured_image_url) {
                         }
 
                     } else {
-                        echo '<div class="dc-no-images">' . __('No images available for this product', 'dc-product-manager') . '</div>';
+                        echo '<div class="dc-no-images">' . esc_html__( 'No images available for this product', 'dc-product-manager' ) . '</div>';
                     }
                     ?>
                 </div>
                 <div class="dc-product-images-note">
-                    <p><?php _e('Note: Images are for display only and cannot be updated from this page.', 'dc-product-manager'); ?></p>
+                    <p><?php _e( 'Images are display-only and cannot be updated from this page.', 'dc-product-manager' ); ?></p>
                 </div>
-            </div>
+            </aside>
             
             <!-- Product Edit Form (Right Side) -->
             <div class="dc-product-edit-form">
                 <form id="dc-product-edit-form" class="dc-product-form">
-                    <input type="hidden" id="dc-product-id" value="<?php echo esc_attr($product_data['id']); ?>">
-
-                    <?php
-                    $is_b2b = in_array( (string) $product_data['b2b_product'], array( 'yes', '1' ), true );
-                    $stock = intval($product_data['stock']);
-                    $stock_class = 'good';
-                    if ($stock <= 0) {
-                        $stock_class = 'out';
-                    } elseif ($stock <= 10) {
-                        $stock_class = 'low';
-                    }
-                    ?>
+                    <input type="hidden" id="dc-product-id" value="<?php echo esc_attr( (string) $product_data['id'] ); ?>">
 
                     <div class="dc-form-columns dc-form-columns--top">
-                        <div class="dc-form-section">
-                            <h3><?php _e( 'Basic Information', 'dc-product-manager' ); ?></h3>
+                        <section class="dc-form-section">
+                            <div class="dc-section-head">
+                                <span class="dc-section-index">01</span>
+                                <div>
+                                    <h3><?php _e( 'Basic Information', 'dc-product-manager' ); ?></h3>
+                                    <p><?php _e( 'Colour, category and stock basics.', 'dc-product-manager' ); ?></p>
+                                </div>
+                            </div>
                             <div class="dc-form-row">
                                 <div class="dc-form-group">
                                     <label for="dc-product-fabric-color" class="required"><?php _e('Fabric Color', 'dc-product-manager'); ?></label>
@@ -207,10 +226,16 @@ if ($featured_image_url) {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <div class="dc-form-section dc-supplier-section">
-                            <h3><?php _e( 'Supplier Information', 'dc-product-manager' ); ?></h3>
+                        <section class="dc-form-section dc-supplier-section">
+                            <div class="dc-section-head">
+                                <span class="dc-section-index">02</span>
+                                <div>
+                                    <h3><?php _e( 'Supplier Information', 'dc-product-manager' ); ?></h3>
+                                    <p><?php _e( 'Vendor, SKU and fabric specs.', 'dc-product-manager' ); ?></p>
+                                </div>
+                            </div>
                             <div class="dc-form-row">
                                 <div class="dc-form-group">
                                     <label for="dc-product-supplier"><?php _e('Supplier', 'dc-product-manager'); ?></label>
@@ -260,17 +285,23 @@ if ($featured_image_url) {
                                     <input type="number" id="dc-product-supplier-price" value="<?php echo esc_attr($product_data['supplier_price']); ?>" step="0.01">
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
                     
-                    <div class="dc-form-section">
-                        <h3><?php _e( 'Product Details', 'dc-product-manager' ); ?></h3>
+                    <section class="dc-form-section">
+                        <div class="dc-section-head">
+                            <span class="dc-section-index">03</span>
+                            <div>
+                                <h3><?php _e( 'Product Details', 'dc-product-manager' ); ?></h3>
+                                <p><?php _e( 'Storefront title used on the website.', 'dc-product-manager' ); ?></p>
+                            </div>
+                        </div>
                         <div class="dc-form-row">
                             <div class="dc-form-group">
                                 <label for="dc-product-title"><?php _e('Product Title', 'dc-product-manager'); ?></label>
                                 <div class="dc-title-preview">
                                     <div id="dc-product-title-preview"><?php echo esc_html($product_data['generated_title']); ?></div>
-                                    <label>
+                                    <label class="dc-custom-title-toggle">
                                         <input type="checkbox" id="dc-product-custom-title">
                                         <?php _e('Use custom title', 'dc-product-manager'); ?>
                                     </label>
@@ -278,11 +309,16 @@ if ($featured_image_url) {
                                 <input type="text" id="dc-product-custom-title-input" value="<?php echo esc_attr($product_data['title']); ?>" style="display: none;">
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    <div class="dc-form-section dc-prices-section">
-                        <h3><?php _e( 'Prices by Region', 'dc-product-manager' ); ?></h3>
-                        <p class="description"><?php _e('Set a price for each currency. If a currency is empty, the default NOK price is used on the storefront.', 'dc-product-manager'); ?></p>
+                    <section class="dc-form-section dc-prices-section">
+                        <div class="dc-section-head">
+                            <span class="dc-section-index">04</span>
+                            <div>
+                                <h3><?php _e( 'Prices by Region', 'dc-product-manager' ); ?></h3>
+                                <p><?php _e('If a currency is empty, the default NOK price is used on the storefront.', 'dc-product-manager'); ?></p>
+                            </div>
+                        </div>
                         <div class="dc-multicurrency-grid">
                             <?php
                             $mc_prices = isset($product_data['multicurrency_prices']) ? $product_data['multicurrency_prices'] : array();
@@ -290,9 +326,10 @@ if ($featured_image_url) {
                                 $code = $region['currency'];
                                 $val = isset($mc_prices[$code]) ? $mc_prices[$code] : '';
                             ?>
-                            <div class="dc-form-group">
+                            <div class="dc-form-group dc-price-card">
                                 <label for="dc-price-<?php echo esc_attr(strtolower($code)); ?>">
-                                    <?php echo esc_html($region['label'] . ' (' . $region['display'] . ')'); ?>
+                                    <span class="dc-price-card__region"><?php echo esc_html($region['label']); ?></span>
+                                    <span class="dc-price-card__code"><?php echo esc_html($region['display']); ?></span>
                                 </label>
                                 <input
                                     type="number"
@@ -307,15 +344,18 @@ if ($featured_image_url) {
                             <?php endforeach; ?>
                         </div>
                         <input type="hidden" id="dc-product-price" value="<?php echo esc_attr($product_data['price']); ?>">
-                    </div>
+                    </section>
 
-                    <div class="dc-form-section dc-b2b-channel-section <?php echo $is_b2b ? 'is-b2b-active' : ''; ?>">
+                    <section class="dc-form-section dc-b2b-channel-section <?php echo $is_b2b ? 'is-b2b-active' : ''; ?>">
                         <div class="dc-b2b-channel-header">
-                            <div>
-                                <h3><?php _e( 'B2B / Wholesale Channel', 'dc-product-manager' ); ?></h3>
-                                <p class="dc-b2b-channel-help">
-                                    <?php _e( 'Turn this on if this fabric/product should appear in the Monte B2B wholesale portal (not only the regular shop).', 'dc-product-manager' ); ?>
-                                </p>
+                            <div class="dc-section-head">
+                                <span class="dc-section-index">05</span>
+                                <div>
+                                    <h3><?php _e( 'B2B / Wholesale Channel', 'dc-product-manager' ); ?></h3>
+                                    <p class="dc-b2b-channel-help">
+                                        <?php _e( 'Show this product in the Monte B2B wholesale portal.', 'dc-product-manager' ); ?>
+                                    </p>
+                                </div>
                             </div>
                             <span class="dc-b2b-badge <?php echo $is_b2b ? 'dc-b2b-badge--on' : 'dc-b2b-badge--off'; ?>">
                                 <?php echo $is_b2b ? esc_html__( 'B2B', 'dc-product-manager' ) : esc_html__( 'B2C only', 'dc-product-manager' ); ?>
@@ -343,9 +383,10 @@ if ($featured_image_url) {
                                 <small class="dc-field-hint"><?php _e( 'Wholesale customers must order at least this many shirts for this product.', 'dc-product-manager' ); ?></small>
                             </div>
                         </div>
-                    </div>
+                    </section>
                     
-                    <div class="dc-form-actions">
+                    <div class="dc-form-actions dc-form-actions--sticky">
+                        <div class="dc-form-actions__note"><?php _e( 'Changes apply to storefront and B2B immediately after update.', 'dc-product-manager' ); ?></div>
                         <button type="button" id="dc-save-product" class="button button-primary"><?php _e('Update Product', 'dc-product-manager'); ?></button>
                     </div>
                 </form>
@@ -358,16 +399,29 @@ if ($featured_image_url) {
     document.addEventListener('DOMContentLoaded', function () {
         const thumbnails = document.querySelectorAll('.thumbnail-clickable');
         const featuredImage = document.getElementById('featured-image');
+        const topSave = document.getElementById('dc-save-product-top');
+        const mainSave = document.getElementById('dc-save-product');
+
+        if (topSave && mainSave) {
+            topSave.addEventListener('click', function () {
+                mainSave.click();
+            });
+        }
 
         thumbnails.forEach(thumbnail => {
             thumbnail.addEventListener('click', function () {
                 const largeImage = this.getAttribute('data-large');
 				 const imageid = this.getAttribute('data-imageId');
-                if (largeImage) {
+                if (largeImage && featuredImage) {
                     featuredImage.src = largeImage;
 					 document.getElementById('dc-product-image').value = largeImage ;
 					 document.getElementById('dc-product-image-id').value = imageid ;
-					
+                    document.querySelectorAll('.dc-product-gallery-image').forEach(function (el) {
+                        el.classList.remove('is-active');
+                    });
+                    if (this.parentElement) {
+                        this.parentElement.classList.add('is-active');
+                    }
                 }
             });
         });
