@@ -82,6 +82,7 @@ class Catalog_Search {
 
 	/**
 	 * Whether to run catalog browse.
+	 * Only when the customer clearly wants to see products — not for chat Q&A.
 	 *
 	 * @param string $message Message.
 	 * @param array  $history History.
@@ -89,53 +90,50 @@ class Catalog_Search {
 	 */
 	public function should_browse( $message, array $history = array() ) {
 		$text = strtolower( trim( (string) $message ) );
-
-		// FAQ / advice — send to AI (natural language), not product browse.
-		$advice = array(
-			'ship', 'shipping', 'delivery', 'deliver', 'arrive', 'arrival', 'when will',
-			'frakt', 'levering', 'leveringstid', 'når kommer', 'nar kommer',
-			'spedizione', 'consegna', 'quando arriva',
-			'giao hàng', 'giao hang', 'khi nào', 'khi nao',
-			'return', 'retur', 'refund', 'refunds',
-			'how long', 'how much is shipping', 'track',
-			'moq', 'minimum order',
-		);
-		foreach ( $advice as $needle ) {
-			if ( false !== strpos( $text, $needle ) ) {
-				return false;
-			}
-		}
-
-		// Size/fit questions without browse intent → AI (use product facts).
-		$size_only = preg_match( '/\b(size|sizes|størrelse|storrelse|taglia|size\s*\d{2}|fit|passform|slim|regular|classic)\b/i', $text );
-		$browse_verb = preg_match( '/\b(show|list|see|browse|find|looking for|which shirts|what shirts)\b/i', $text );
-		if ( $size_only && ! $browse_verb ) {
+		if ( '' === $text ) {
 			return false;
 		}
 
-		$patterns = array(
-			'show', 'list', 'see', 'browse', 'options', 'choose', 'which',
-			'shirt', 'shirts', 'skjorte', 'camicia',
-			'business', 'classic', 'casual', 'oxford', 'linen', 'wedding',
-			'blue', 'white', 'black', 'formal', 'office',
-			'looking for', 'need', 'want', 'find',
-			'wholesale', 'b2b', 'fabric', 'moq',
+		// Explicit "show me products" intent.
+		$explicit = array(
+			'show me', 'show shirts', 'show shirt', 'show fabrics', 'show products',
+			'list shirts', 'list products', 'list fabrics',
+			'browse', 'see shirts', 'see products', 'see fabrics',
+			'what shirts do you have', 'which shirts do you have',
+			'show me some', 'any shirts', 'recommend shirts', 'recommend a shirt',
+			'vis skjorter', 'vis meg', 'se skjorter', 'finn skjorter',
+			'mostra camicie', 'mostrami', 'vediamo camicie',
+			'xem áo', 'cho xem', 'liệt kê', 'liet ke',
+			'show fabrics', 'show wholesale', 'b2b fabrics',
 		);
-		foreach ( $patterns as $p ) {
-			if ( false !== strpos( $text, $p ) ) {
+		foreach ( $explicit as $phrase ) {
+			if ( false !== strpos( $text, $phrase ) ) {
 				return true;
 			}
 		}
-		foreach ( array_reverse( $history ) as $h ) {
-			if ( ! isset( $h['role'] ) || 'assistant' !== $h['role'] ) {
-				continue;
-			}
-			$prev = strtolower( (string) ( isset( $h['content'] ) ? $h['content'] : '' ) );
-			if ( false !== strpos( $prev, 'shirt' ) || false !== strpos( $prev, 'looking for' ) || false !== strpos( $prev, 'occasion' ) || false !== strpos( $prev, 'b2b' ) ) {
-				return true;
-			}
-			break;
+
+		// Short browse commands.
+		if ( preg_match( '/^(show|list|browse|see)\b.{0,40}$/i', $text ) ) {
+			return true;
 		}
+
+		// "looking for / need / want" + product type, but NOT size/shipping/advice questions.
+		$advice = '/(ship|shipping|deliver|arrival|arrive|frakt|levering|return|retur|price|cost|how long|when |size\s*\d|størrelse|taglia|passform|fit|moq|测量|measure)/i';
+		if ( preg_match( $advice, $text ) ) {
+			return false;
+		}
+
+		if ( preg_match( '/\b(looking for|need|want|find|search for)\b.{0,40}\b(shirt|shirts|skjorte|camicia|linen|oxford|fabric|fabrics)\b/i', $text ) ) {
+			return true;
+		}
+
+		// Colour/style shopping shorthand: "blue linen shirts", "business shirts".
+		if ( preg_match( '/\b(blue|white|black|linen|oxford|business|casual|wedding|formal)\b.{0,20}\b(shirt|shirts|skjorte|camicia|fabric)\b/i', $text ) ) {
+			return true;
+		}
+
+		// Do NOT browse just because history mentioned shirts.
+		unset( $history );
 		return false;
 	}
 

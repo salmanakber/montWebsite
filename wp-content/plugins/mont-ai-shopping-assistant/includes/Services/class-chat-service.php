@@ -76,9 +76,10 @@ class Chat_Service {
 		$picked_id = $this->extract_product_id( $message );
 		$catalog   = new Catalog_Search();
 		$channel   = ( isset( $context['channel'] ) && 'b2b' === $context['channel'] ) ? 'b2b' : 'b2c';
+		$is_advice = $this->is_advice_question( $message );
 
-		// 2) Browse / show shirts — WooCommerce only. Never call AI here.
-		if ( ! $picked_id && $catalog->should_browse( $message, $history ) && ! $this->is_followup_option_answer( $message, $history ) ) {
+		// 2) Browse / show shirts — only on explicit browse intent.
+		if ( ! $picked_id && ! $is_advice && $catalog->should_browse( $message, $history ) && ! $this->is_followup_option_answer( $message, $history ) ) {
 			$found = $catalog->search( $message, $history, 6, $channel );
 			return $this->response(
 				$catalog->browse_message( $language, isset( $found['count'] ) ? (int) $found['count'] : 0, $message, $channel ),
@@ -111,22 +112,59 @@ class Chat_Service {
 			);
 		}
 
-		$builder = new Order_Builder();
-		$local   = $builder->maybe_handle( $message, $history, $language );
-		if ( is_array( $local ) ) {
-			return $this->response(
-				isset( $local['message'] ) ? $local['message'] : '',
-				isset( $local['cards'] ) ? $local['cards'] : array(),
-				isset( $local['choices'] ) ? $local['choices'] : null,
-				! empty( $local['cart_updated'] ),
-				isset( $local['provider'] ) ? $local['provider'] : 'local',
-				false,
-				$language
-			);
+		// Skip option/cart builder for shipping/size advice — answer naturally via AI.
+		if ( ! $is_advice ) {
+			$builder = new Order_Builder();
+			$local   = $builder->maybe_handle( $message, $history, $language );
+			if ( is_array( $local ) ) {
+				return $this->response(
+					isset( $local['message'] ) ? $local['message'] : '',
+					isset( $local['cards'] ) ? $local['cards'] : array(),
+					isset( $local['choices'] ) ? $local['choices'] : null,
+					! empty( $local['cart_updated'] ),
+					isset( $local['provider'] ) ? $local['provider'] : 'local',
+					false,
+					$language
+				);
+			}
 		}
 
-		// 4) Free-form questions only → AI providers.
+		// 4) Free-form questions → natural AI answers grounded in store/product facts.
 		return $this->handle_with_ai( $message, $history, $language, $context );
+	}
+
+	/**
+	 * True for Q&A that should stay conversational (not catalog / not forced option steps).
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	private function is_advice_question( $message ) {
+		$text = strtolower( trim( (string) $message ) );
+		if ( '' === $text ) {
+			return false;
+		}
+
+		// Shipping / delivery / returns / timing.
+		if ( preg_match( '/(ship|shipping|deliver|delivery|arrive|arrival|frakt|levering|leveringstid|n[åa]r\s+kommer|spedizione|consegna|quando\s+arriva|giao\s*h[aà]ng|khi\s+n[aà]o|return|retur|refund|how\s+long|when\s+will|track\s*order)/i', $text ) ) {
+			return true;
+		}
+
+		// Size / fit questions that are not an exact option tap.
+		if ( preg_match( '/(size|sizes|st[øo]rrelse|taglia|passform|body\s*fit|slim\s*fit|classic\s*fit|does\s+it\s+fit|what\s+size|which\s+size|hvilken\s+st)/i', $text ) ) {
+			// Exact short choice labels (e.g. "39", "Slim") are for the option builder.
+			if ( preg_match( '/^(slim|regular|classic|extra\s*slim|\d{2}|xxs|xs|s|m|l|xl|xxl)$/i', $text ) ) {
+				return false;
+			}
+			return true;
+		}
+
+		// Price / fabric / care questions.
+		if ( preg_match( '/(how\s+much|price|pris|cost|material|fabric|quality|wash|care|return\s+policy|can\s+i\s+return)/i', $text ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -212,15 +250,17 @@ class Chat_Service {
 			$used_fallback = ! empty( $result['used_fallback'] );
 			$content       = trim( (string) $result['content'] );
 
-			if ( empty( $cards ) && $this->mentions_products( $content ) ) {
+			// Only attach product cards if the customer clearly asked to browse —
+			// never hijack a normal answer with a surprise product grid.
+			if ( $catalog->should_browse( $message, $history ) ) {
 				$found = $catalog->search( $message, $history, 6, $channel );
 				if ( ! empty( $found['count'] ) ) {
 					return $this->response(
-						$catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
+						$content ? $content : $catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
 						$found['cards'],
 						$found['choices'],
 						false,
-						'catalog',
+						$provider_used ? $provider_used : 'catalog',
 						$used_fallback,
 						$language
 					);
@@ -231,25 +271,27 @@ class Chat_Service {
 		} catch ( \Throwable $e ) {
 			Plugin::log( 'Chat AI failed', array( 'error' => $e->getMessage() ) );
 
-			// Prefer showing products over a fake rate-limit message.
-			try {
-				$found = $catalog->search( $message, $history, 6, $channel );
-				if ( ! empty( $found['count'] ) ) {
-					return $this->response(
-						$catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
-						$found['cards'],
-						$found['choices'],
-						false,
-						'catalog',
-						true,
-						$language
-					);
+			// Only fall back to a product list when they were browsing.
+			if ( $catalog->should_browse( $message, $history ) ) {
+				try {
+					$found = $catalog->search( $message, $history, 6, $channel );
+					if ( ! empty( $found['count'] ) ) {
+						return $this->response(
+							$catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
+							$found['cards'],
+							$found['choices'],
+							false,
+							'catalog',
+							true,
+							$language
+						);
+					}
+				} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
 				}
-			} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
 			}
 
 			$error_code = 'provider_error';
-			$friendly   = __( 'Sorry — I could not reach the assistant just now. You can still ask me to show shirts (e.g. “show business shirts”) and I will list products from the shop.', 'mont-ai-assistant' );
+			$friendly   = __( 'Sorry — I could not reach the assistant just now. Try again in a moment, or ask me to “show shirts” if you want to browse.', 'mont-ai-assistant' );
 
 			if ( preg_match( '/HTTP 429/', $e->getMessage() ) ) {
 				$error_code = 'rate_limit';
