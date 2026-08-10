@@ -285,25 +285,30 @@ div#mont_backButton { z-index: 999; }
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         gap: 0 !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         grid-template-columns: none !important;
         grid-template-rows: none !important;
+        /* Width set in px by JS — never 100% (traps slides / blanks 2+) */
+        width: max-content !important;
+        max-width: none !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_item,
     .mont_gallery_wrapper-unified .mont_gallery_item.video-trigger,
     .mont_gallery_wrapper-unified .mont_gallery_item.initially-hidden,
     #mont_gallery_track > .mont_gallery_item {
         display: block !important;
-        flex: 0 0 100% !important;
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
+        flex: 0 0 var(--mont-slide-w, 100%) !important;
+        width: var(--mont-slide-w, 100%) !important;
+        min-width: var(--mont-slide-w, 100%) !important;
+        max-width: var(--mont-slide-w, 100%) !important;
         box-sizing: border-box !important;
         aspect-ratio: 3 / 4 !important;
         position: relative !important;
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_item video,
     .mont_gallery_wrapper-unified .mont_gallery_item img,
@@ -320,6 +325,8 @@ div#mont_backButton { z-index: 999; }
         margin: 0 !important;
         padding: 0 !important;
         border: 0 !important;
+        transform: none !important;
+        transition: none !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_item video {
         pointer-events: none;

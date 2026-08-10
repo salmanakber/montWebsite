@@ -1135,8 +1135,11 @@ a.custom-add-to-cart {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         gap: 0 !important;
-        width: 100% !important;
-        overflow: hidden !important;
+        /* Must NOT be width:100% — that trapped slides inside one viewport and blanked 2+ */
+        width: max-content !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        overflow: visible !important;
         grid-template-columns: none !important;
         grid-template-rows: none !important;
     }
@@ -1146,16 +1149,19 @@ a.custom-add-to-cart {
     .mont_gallery_wrapper-unified .mont_gallery_item.initially-hidden,
     #mont_gallery_track > .mont_gallery_item {
         display: block !important;
-        flex: 0 0 100% !important;
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
+        /* --mont-slide-w set in px by product-gallery-slider.js (fallback: wrapper width) */
+        flex: 0 0 var(--mont-slide-w, 100%) !important;
+        width: var(--mont-slide-w, 100%) !important;
+        min-width: var(--mont-slide-w, 100%) !important;
+        max-width: var(--mont-slide-w, 100%) !important;
         box-sizing: border-box !important;
         aspect-ratio: 3 / 4 !important;
         position: relative !important;
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_item video,

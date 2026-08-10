@@ -599,8 +599,8 @@ justify-content: space-between;
     height: 100vh;
     height: 100dvh;
     background: white;
-    /* Above sticky category tabs (≈1002) so tabs never paint over the drawer */
-    z-index: 100050;
+    /* Above sticky tabs + promo banner; only channel switcher sits higher when open */
+    z-index: 100100;
     overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -706,8 +706,36 @@ body.menu-open .mont_header_mobile_footer {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 
+/* While menu is open: only the channel switcher stays above the drawer */
 body.menu-open .mont-channel-bar {
-    z-index: 100060;
+    z-index: 100110 !important;
+}
+
+/* Promo + site chrome under the drawer; channel switcher stays on top (see above) */
+body.menu-open #sticky-popup-btn,
+body.menu-open div#sticky-popup-btn,
+body.menu-open #sticky-popup-icon,
+body.menu-open .mont_header_sticky-header,
+body.menu-open .category-slider-container,
+body.menu-open .category-slider-container.ssds,
+body.menu-open .mont-cat-tabs,
+body.menu-open .category-slider-container.mont-cat-tabs,
+body.menu-open .mont-mobile-sticky-cta,
+body.menu-open .mont-b2b-sticky-cta,
+body.menu-open #tidio-chat,
+body.menu-open #tidio-chat-iframe,
+body.menu-open iframe#tidio-chat-iframe,
+body.menu-open .mont-ai-fab,
+body.menu-open #mont-ai-shopping-assistant,
+body.menu-open .mont-ai-shopping-assistant {
+    z-index: 1 !important;
+}
+
+@media (max-width: 1024px) {
+    body.menu-open div#sticky-popup-btn,
+    body.has-sticky-discount.menu-open div#sticky-popup-btn {
+        z-index: 1 !important;
+    }
 }
 
 .mont_header_mobile_footer__link {
@@ -800,13 +828,25 @@ body.menu-open .mont-channel-bar {
         overflow: hidden;
     }
 
-    /* Sticky shop tabs must never paint above the open drawer */
+    /* Sticky shop tabs / chrome must never paint above the open drawer */
     body.menu-open .category-slider-container,
     body.menu-open .category-slider-container.ssds,
     body.menu-open .mont-cat-tabs,
-    body.menu-open .category-slider-container.mont-cat-tabs {
+    body.menu-open .category-slider-container.mont-cat-tabs,
+    body.menu-open #sticky-popup-btn,
+    body.menu-open .mont_header_sticky-header {
         z-index: 1 !important;
         pointer-events: none;
+    }
+
+    body.menu-open .mont_header_mobile_menu_container,
+    body.menu-open .mont_header_mobile_menu_container * {
+        pointer-events: auto;
+    }
+
+    body.menu-open .mont-channel-bar,
+    body.menu-open .mont-channel-bar * {
+        pointer-events: auto;
     }
 }
 
