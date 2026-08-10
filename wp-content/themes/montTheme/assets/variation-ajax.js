@@ -997,11 +997,11 @@ jQuery(document).ready(function ($) {
         $option.parents('.mont_variation-group').find('.skname b').html(selectedValue);
 
         var wasFactoryDefault = $option.find('input[type="radio"]').prop('defaultChecked');
-        if (!wasFactoryDefault && typeof showMontCustomAlert === 'function') {
-            showMontCustomAlert($option.closest('.mont_variation-group').get(0));
+        if (!wasFactoryDefault && typeof showMontCustomAlertOnce === 'function') {
+            showMontCustomAlertOnce($option.closest('.mont_variation-group').get(0));
         } else if (wasFactoryDefault && typeof closeAlert === 'function') {
             var hasCustomSize = $('input.mont_sizes-hidden-input[clicked="true"]').length > 0;
-            if (!hasCustomSize) closeAlert();
+            if (!hasCustomSize && !window.__montCustomAlertShown) closeAlert();
         }
     });
 });

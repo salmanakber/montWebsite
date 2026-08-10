@@ -183,13 +183,40 @@ jQuery(document).ready(function($) {
             return window.matchMedia('(max-width: 991px)').matches;
         }
 
+        function warmSlide(si) {
+            var $img = $items.eq(si).find('img').first();
+            if (!$img.length) return;
+            var el = $img.get(0);
+            el.loading = 'eager';
+            el.removeAttribute('loading');
+            var src = $img.attr('data-gallerysrc') || $img.attr('data-src') || $img.attr('src');
+            if (src && $img.attr('src') !== src) {
+                $img.attr('src', src);
+            }
+            if (src) {
+                var warm = new Image();
+                warm.src = src;
+            }
+            if (el && typeof el.decode === 'function') {
+                el.decode().catch(function () {});
+            }
+        }
+
         function goTo(i) {
             if (!isMobile()) return;
             index = Math.max(0, Math.min(i, $items.length - 1));
-            var el = $items.get(index);
-            if (el && el.scrollIntoView) {
-                el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            var gridEl = $grid.get(0);
+            var width = gridEl ? gridEl.clientWidth : 0;
+            if (gridEl && width) {
+                gridEl.scrollTo({ left: index * width, behavior: 'smooth' });
+            } else {
+                var el = $items.get(index);
+                if (el && el.scrollIntoView) {
+                    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
             }
+            // Prefetch current + neighbours so next slides aren't blank.
+            [index - 1, index, index + 1, index + 2].forEach(warmSlide);
             $prev.prop('disabled', index <= 0);
             $next.prop('disabled', index >= $items.length - 1);
         }
@@ -210,9 +237,18 @@ jQuery(document).ready(function($) {
             var scrollLeft = $grid[0].scrollLeft;
             var width = $grid[0].clientWidth || 1;
             index = Math.round(scrollLeft / width);
+            [index - 1, index, index + 1, index + 2].forEach(warmSlide);
             $prev.prop('disabled', index <= 0);
             $next.prop('disabled', index >= $items.length - 1);
         });
+
+        // Eager-load every gallery image up front on mobile.
+        if (isMobile()) {
+            $items.find('img').each(function () {
+                this.loading = 'eager';
+                this.removeAttribute('loading');
+            });
+        }
 
         goTo(0);
     }

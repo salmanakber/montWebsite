@@ -483,7 +483,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                                      alt="Product Image"
                                      data-media-type="image"
                                      data-src="<?php echo esc_url($image_url); ?>"
-                                     loading="<?php echo $index < 2 ? 'eager' : 'lazy'; ?>"
+                                     loading="eager"
                                      decoding="async"
                                      <?php echo $index === 0 ? 'fetchpriority="high"' : ''; ?>>
                             </div>
@@ -734,7 +734,11 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 				?>
 			<div class="mont_alerts">
 				<div class="mont_alert mont_alert--popover" id="mont_alert" hidden role="dialog" aria-labelledby="mont_alert_title_1" aria-modal="false">
-					<button type="button" class="mont_alert_close" onclick="closeAlert()" aria-label="Lukk">×</button>
+					<button type="button" class="mont_alert_close" onclick="closeAlert()" aria-label="Lukk">
+						<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+							<path d="M6 6l12 12M18 6L6 18"/>
+						</svg>
+					</button>
 					<h2 class="mont_alert_title" id="mont_alert_title_1">KANSELLERING OG RETUR FOR SKREDDERSYDDE SKJORTER.</h2>
 					<p class="mont_alert_text">
 						Alle skreddersydde skjorter er 100% individuelt tilpasset etter kundens preferanser. Derfor aksepterer vi IKKE returer av noen grunn bortsett fra produksjonsfeil.

@@ -626,7 +626,7 @@ public function getProductDetails($pid, $remoteURL = '')
         alt="' . esc_attr( $pname . ' ' . ( $index + 1 ) ) . '" 
         data-index="' . $index . '" 
         data-gallerysrc="' . esc_url( $url ) . '"'
-        . ( $index === 0 ? ' loading="eager"' : ' loading="lazy"' ) . '>';
+        . ( $index === 0 ? ' loading="eager" fetchpriority="high"' : ' loading="eager"' ) . '>';
         $rightColumn .= '</div>';
     }
     $rightColumn .= '</div>';
@@ -639,7 +639,7 @@ public function getProductDetails($pid, $remoteURL = '')
 
     $rightColumn .= '<div class="mobile-view-b2b loop owl-carousel owl-theme">';
     foreach ( $image_urls as $url ) {
-        $rightColumn .= '<div class="item"><img src="' . esc_url( $url ) . '" class="b2b-img" loading="lazy" alt="' . esc_attr( $pname ) . '"></div>';
+        $rightColumn .= '<div class="item"><img src="' . esc_url( $url ) . '" class="b2b-img" loading="eager" alt="' . esc_attr( $pname ) . '"></div>';
     }
     $rightColumn .= '</div>';
     $rightColumn .= '</div>';

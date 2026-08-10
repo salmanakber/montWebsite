@@ -180,14 +180,13 @@
                 </ul>
 
                 <div class="mont_header_mobile_footer">
-                    <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
-
                     <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
                         <div class="mont_header_mobile_footer__region">
                             <?php echo do_shortcode('[dc_region_switcher context="mobile-footer"]'); ?>
                         </div>
                     <?php endif; ?>
 
+                    <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
                     <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $about_url ); ?>">About us</a>
                 </div>
             </div>

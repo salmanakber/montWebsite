@@ -599,7 +599,8 @@ justify-content: space-between;
     height: 100vh;
     height: 100dvh;
     background: white;
-    z-index: 1000;
+    /* Above sticky category tabs (≈1002) so tabs never paint over the drawer */
+    z-index: 100050;
     overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -694,10 +695,19 @@ justify-content: space-between;
 .mont_header_mobile_footer {
     margin-top: auto;
     flex-shrink: 0;
-    padding: 20px 24px max(108px, env(safe-area-inset-bottom));
+    padding: 16px 24px 24px;
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+/* Leave room for the fixed B2B/B2C switcher when the drawer is open */
+body.menu-open .mont_header_mobile_footer {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+body.menu-open .mont-channel-bar {
+    z-index: 100060;
 }
 
 .mont_header_mobile_footer__link {
@@ -788,6 +798,15 @@ justify-content: space-between;
 
     body.menu-open {
         overflow: hidden;
+    }
+
+    /* Sticky shop tabs must never paint above the open drawer */
+    body.menu-open .category-slider-container,
+    body.menu-open .category-slider-container.ssds,
+    body.menu-open .mont-cat-tabs,
+    body.menu-open .category-slider-container.mont-cat-tabs {
+        z-index: 1 !important;
+        pointer-events: none;
     }
 }
 
@@ -898,6 +917,69 @@ justify-content: space-between;
     padding-bottom: 11px;
     font-size: 22px;
     font-weight: 200;
+}
+
+.mont_related_products_slider,
+.mont_bottom_layout {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.mont_slider_single_product_page {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .mont_related_products_slider {
+        padding: 8px 0 24px;
+    }
+
+    .mont_related_products_slider h3 {
+        font-size: 18px;
+        padding: 0 16px 14px;
+    }
+
+    .mont_related_products_slider .custom-product-grid,
+    .mont_slider_single_product_page .custom-product-grid {
+        grid-template-columns: 1fr !important;
+        gap: 22px;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 16px;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .mont_related_products_slider .product-item,
+    .mont_slider_single_product_page .product-item {
+        width: 100%;
+        margin: 0;
+    }
+
+    .mont_related_products_slider .product-image-wrapper,
+    .mont_slider_single_product_page .product-image-wrapper {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 3 / 4;
+        border-radius: 0;
+    }
+
+    .mont_related_products_slider .product-title,
+    .mont_slider_single_product_page .product-title {
+        margin: 12px 0 4px;
+        padding: 0 2px;
+        font-size: 15px;
+        line-height: 1.35;
+    }
+
+    .mont_related_products_slider .product-price,
+    .mont_slider_single_product_page .product-price {
+        padding: 0 2px 4px;
+    }
 }
 
 .product-item {

@@ -44,6 +44,21 @@ function closeAlert() {
 }
 
 /**
+ * Show custom-options notice at most once per page view
+ * (first change among collar / cuff / measurements).
+ * @param {Element|jQuery|null} anchorEl
+ * @returns {boolean} whether the alert was shown
+ */
+function showMontCustomAlertOnce(anchorEl) {
+    if (window.__montCustomAlertShown) {
+        return false;
+    }
+    window.__montCustomAlertShown = true;
+    showMontCustomAlert(anchorEl);
+    return true;
+}
+
+/**
  * Show custom-options notice next to an anchor (desktop popover / mobile sheet).
  * @param {Element|jQuery|null} anchorEl
  */

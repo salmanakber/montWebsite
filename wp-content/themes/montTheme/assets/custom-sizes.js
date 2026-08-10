@@ -30,8 +30,8 @@ jQuery(document).ready(function($) {
         const measurementItem = $(this).closest('.mont_sizes-measurement-item');
         const measurementValue = measurementItem.find('.mont_sizes-measurement-value');
         const hiddenInput = measurementItem.find('.mont_sizes-hidden-input');
-        if (typeof showMontCustomAlert === 'function') {
-            showMontCustomAlert(measurementItem.get(0));
+        if (typeof showMontCustomAlertOnce === 'function') {
+            showMontCustomAlertOnce(measurementItem.get(0));
         }
 
         if (measurementItem.data('mont-size') === 'sleeve_length') {

@@ -128,13 +128,17 @@
             }
 
             ensureDots();
-            // Warm first few slides into browser cache on mobile enter.
-            slides.slice(0, 3).forEach(function (slide) {
+            // Warm all slides into cache on mobile (lazy often fails in transform sliders).
+            slides.forEach(function (slide) {
                 var media = slide.querySelector('img');
                 if (!media) return;
                 media.loading = 'eager';
+                media.removeAttribute('loading');
                 var src = media.getAttribute('data-src') || media.currentSrc || media.src;
                 if (src) {
+                    if (!media.getAttribute('src')) {
+                        media.setAttribute('src', src);
+                    }
                     var warm = new Image();
                     warm.src = src;
                 }
@@ -184,14 +188,21 @@
                 }
             });
 
-            // Eager-load current + next (+ prev) images so slides feel instant.
-            [index - 1, index, index + 1].forEach(function (si) {
+            // Eager-load current + neighbours. Force decode so slides aren't blank on iOS.
+            [index - 1, index, index + 1, index + 2].forEach(function (si) {
                 if (si < 0 || si >= slides.length) return;
                 var media = slides[si].querySelector('img');
                 if (!media) return;
                 media.loading = 'eager';
-                var src = media.getAttribute('data-src') || media.currentSrc || media.src;
-                if (src && !media.complete) {
+                media.removeAttribute('loading');
+                var src = media.getAttribute('data-src') || media.getAttribute('src') || media.currentSrc;
+                if (src) {
+                    if (media.getAttribute('src') !== src) {
+                        media.setAttribute('src', src);
+                    }
+                    if (typeof media.decode === 'function') {
+                        media.decode().catch(function () {});
+                    }
                     var warm = new Image();
                     warm.src = src;
                 }
