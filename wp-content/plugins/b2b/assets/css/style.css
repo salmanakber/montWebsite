@@ -118,7 +118,8 @@ li.nav-item-b2b button {
 
 .size-name {
     color: #8f8e8e;
-    width: 36px !important;
+    width: auto !important;
+    min-width: 3.5em;
     font-weight: 400;
 }
 .b2b-size-list ul {
@@ -129,11 +130,11 @@ li.nav-item-b2b button {
 .b2b-size-list ul li {
     list-style: none;
     display: flex;
-    width: 50%;
-    font-size: 10px !important;
+    width: auto;
+    font-size: 12px !important;
     align-items: center;
-    justify-content: space-around;
-    float: left;
+    justify-content: space-between;
+    float: none;
     padding-top: 15px;
     font-family: "Rubik", sans-serif;
     font-weight: 100;
@@ -985,7 +986,8 @@ ul#b2bmenu {
   width: 100%;
 }
 .b2b-size-list {
-    width: 231px;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* =========================================================

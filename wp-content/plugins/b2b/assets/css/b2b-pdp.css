@@ -204,34 +204,66 @@
 
 .b2b-pdp .b2b-size-list {
 	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box;
+	overflow: visible;
+	padding-top: 0;
 }
 
 .b2b-pdp .b2b-size-list ul {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+	display: grid !important;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 16px;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .b2b-pdp .b2b-size-list li {
-	display: flex;
+	display: flex !important;
 	align-items: center;
 	justify-content: space-between;
-	gap: 10px;
+	gap: 8px;
 	padding: 7px 0;
 	border-bottom: 1px solid #f2f2f2;
+	/* Kill legacy float/50% rules from style.css that shove labels off-screen */
+	float: none !important;
+	width: auto !important;
+	max-width: none !important;
+	min-width: 0 !important;
+	box-sizing: border-box;
+	font-size: 13px !important;
 }
 
 .b2b-pdp .b2b-size-list li:last-child {
 	border-bottom: 0;
 }
 
+.b2b-pdp .b2b-input-container {
+	flex: 0 0 auto;
+	min-width: 0;
+}
+
 .b2b-pdp .size-name {
-	font-size: 13px;
+	font-size: 13px !important;
+	font-weight: 500;
 	color: var(--b2b-ink);
+	/* Legacy style.css forces width:36px — clips "47(3XL)" and shifts left */
+	width: auto !important;
+	min-width: 0 !important;
+	max-width: none !important;
+	flex: 1 1 auto;
+	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip;
+	line-height: 1.3;
 }
 
 .b2b-pdp .b2b-size-input {
-	width: 72px;
+	width: 64px;
+	max-width: 100%;
 	min-height: 34px;
 	border: 0;
 	border-bottom: 1px solid #cfcfcf;
@@ -239,6 +271,12 @@
 	text-align: center;
 	font-size: 15px !important;
 	background: transparent;
+	position: static !important;
+	top: auto !important;
+	left: auto !important;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	-moz-appearance: textfield;
 }
 
 .b2b-pdp .b2b-size-input:focus {
@@ -608,23 +646,73 @@
 		margin-bottom: 8px;
 	}
 
+	.b2b-pdp .b2b-size-list {
+		width: 100% !important;
+		max-width: 100% !important;
+		overflow: visible;
+	}
+
 	.b2b-pdp .b2b-size-list ul {
 		display: grid !important;
 		grid-template-columns: 1fr 1fr;
-		gap: 0 12px;
+		gap: 0 14px;
+		width: 100% !important;
 	}
 
 	.b2b-pdp .b2b-size-list li {
-		padding: 8px 0;
+		float: none !important;
+		width: auto !important;
+		padding: 10px 0;
+		gap: 6px;
+		font-size: 13px !important;
+	}
+
+	.b2b-pdp .size-name {
+		width: auto !important;
+		min-width: 0 !important;
+		font-size: 13px !important;
+		white-space: nowrap;
+	}
+
+	.b2b-pdp .b2b-size-input {
+		width: 56px;
+		min-height: 36px;
+		font-size: 15px !important;
+		position: static !important;
+		top: auto !important;
+		left: auto !important;
+	}
+
+	.b2b-pdp .size-type h4 {
+		margin-bottom: 8px;
 	}
 
 	.b2b-pdp .b2b-ul-list li {
 		padding: 14px 0;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.b2b-pdp .b2b-left-text-inner {
+		flex: 1 1 auto;
+		min-width: 0;
+		white-space: normal;
 	}
 
 	.b2b-pdp .b2b-right-text-inner {
+		width: auto !important;
+		max-width: 100%;
+		right: auto !important;
+		left: auto !important;
+		gap: 10px;
 		align-items: center;
-		gap: 12px;
+		flex: 0 0 auto;
+	}
+
+	.b2b-pdp .b2b-right-text-inner input {
+		position: static !important;
+		left: auto !important;
+		bottom: auto !important;
 	}
 
 	.b2b-pdp .b2b-right-text-inner p {
@@ -784,10 +872,33 @@
 
 	.b2b-pdp .b2b-pdp__panel {
 		padding: 18px 16px 0 !important;
+		overflow-x: hidden;
+	}
+
+	.b2b-pdp .b2b-pdp__grid > .column-top,
+	.b2b-pdp .b2b-pdp__grid > .col-md-6 {
+		padding: 0 0 18px !important;
+		overflow: visible;
 	}
 
 	.b2b-pdp .b2b-size-list ul {
 		grid-template-columns: 1fr 1fr;
+		gap: 0 10px;
+	}
+
+	.b2b-pdp .b2b-size-list li {
+		padding: 9px 0;
+	}
+
+	.b2b-pdp .size-name {
+		font-size: 12px !important;
+		letter-spacing: -0.01em;
+	}
+
+	.b2b-pdp .b2b-size-input {
+		width: 52px;
+		min-height: 34px;
+		font-size: 14px !important;
 	}
 }
 
@@ -809,17 +920,26 @@
 	.b2b-pdp .b2b-size-list ul {
 		display: grid !important;
 		grid-template-columns: 1fr 1fr;
-		gap: 0 8px;
+		gap: 0 10px;
+		width: 100% !important;
 	}
 
 	.b2b-pdp .b2b-size-list li {
-		padding: 3px 0;
+		float: none !important;
+		width: auto !important;
+		padding: 4px 0;
+	}
+
+	.b2b-pdp .size-name {
+		width: auto !important;
+		font-size: 12px !important;
 	}
 
 	.b2b-pdp .b2b-size-input {
 		width: 52px;
 		min-height: 28px;
 		font-size: 13px !important;
+		position: static !important;
 	}
 
 	.b2b-pdp .moq,

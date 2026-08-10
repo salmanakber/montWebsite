@@ -706,16 +706,35 @@ body.menu-open .mont_header_mobile_footer {
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 
-/* While menu is open: only the channel switcher stays above the drawer */
+/* While menu is open: elevate the header (menu lives inside it) so the drawer
+   beats page chrome. Only the channel switcher sits above the drawer.
+   Do NOT drop .mont_header_sticky-header to z-index:1 — that puts the menu
+   under the promo bar (footer DOM order). */
+body.menu-open .mont_header_sticky-header {
+    z-index: 100100 !important;
+    pointer-events: auto !important;
+}
+
+body.menu-open .mont_header_mobile_menu_container {
+    z-index: 100100 !important;
+}
+
 body.menu-open .mont-channel-bar {
     z-index: 100110 !important;
 }
 
-/* Promo + site chrome under the drawer; channel switcher stays on top (see above) */
+/* Promo + other chrome: fully hidden under the open drawer */
 body.menu-open #sticky-popup-btn,
 body.menu-open div#sticky-popup-btn,
-body.menu-open #sticky-popup-icon,
-body.menu-open .mont_header_sticky-header,
+body.has-sticky-discount.menu-open #sticky-popup-btn,
+body.has-sticky-discount.menu-open div#sticky-popup-btn,
+body.menu-open #sticky-popup-icon {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
 body.menu-open .category-slider-container,
 body.menu-open .category-slider-container.ssds,
 body.menu-open .mont-cat-tabs,
@@ -734,7 +753,10 @@ body.menu-open .mont-ai-shopping-assistant {
 @media (max-width: 1024px) {
     body.menu-open div#sticky-popup-btn,
     body.has-sticky-discount.menu-open div#sticky-popup-btn {
-        z-index: 1 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
     }
 }
 
@@ -828,15 +850,22 @@ body.menu-open .mont-ai-shopping-assistant {
         overflow: hidden;
     }
 
-    /* Sticky shop tabs / chrome must never paint above the open drawer */
+    /* Sticky shop tabs / chrome under drawer — never demote the sticky header
+       (it hosts the mobile menu stacking context). */
     body.menu-open .category-slider-container,
     body.menu-open .category-slider-container.ssds,
     body.menu-open .mont-cat-tabs,
-    body.menu-open .category-slider-container.mont-cat-tabs,
-    body.menu-open #sticky-popup-btn,
-    body.menu-open .mont_header_sticky-header {
+    body.menu-open .category-slider-container.mont-cat-tabs {
         z-index: 1 !important;
         pointer-events: none;
+    }
+
+    body.menu-open #sticky-popup-btn,
+    body.menu-open div#sticky-popup-btn {
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
     }
 
     body.menu-open .mont_header_mobile_menu_container,
