@@ -2,8 +2,11 @@
 /**
  * Polylang-style language URL prefixes: /en/, /it/, /nb/, /vi/
  *
- * Controlled by Mont DeepL setting `polylang_style` (works even when DeepL
- * translation itself is disabled).
+ * Controlled by Mont DeepL setting `polylang_style`.
+ *
+ * Important: we intentionally do NOT filter `home_url` and we cancel
+ * `redirect_canonical` when a language prefix was stripped — otherwise
+ * WordPress redirects / ↔ /en/ in an infinite loop.
  *
  * @package DC_Product_Manager
  */
@@ -22,28 +25,23 @@ class DC_Language_Urls {
 	/** @var bool Whether this request originally had a lang prefix */
 	private static $had_prefix = false;
 
-	/** @var bool Guard against recursive home_url filtering */
+	/** @var string Original REQUEST_URI before stripping */
+	private static $original_uri = '';
+
+	/** @var bool Guard against recursive URL filtering */
 	private static $filtering = false;
 
 	public static function init() {
-		// After all plugins load (DeepL settings available), strip /{lang}/ before WP routing.
 		add_action( 'plugins_loaded', array( __CLASS__, 'bootstrap_request' ), 1 );
-		add_action( 'init', array( __CLASS__, 'maybe_redirect_unprefixed' ), 1 );
+		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect_unprefixed' ), 0 );
 
-		add_filter( 'home_url', array( __CLASS__, 'filter_home_url' ), 20, 4 );
-		add_filter( 'post_link', array( __CLASS__, 'filter_link' ), 20, 2 );
-		add_filter( 'page_link', array( __CLASS__, 'filter_link' ), 20, 2 );
-		add_filter( 'post_type_link', array( __CLASS__, 'filter_link' ), 20, 2 );
-		add_filter( 'term_link', array( __CLASS__, 'filter_link' ), 20, 2 );
-		add_filter( 'attachment_link', array( __CLASS__, 'filter_link' ), 20, 2 );
-		add_filter( 'author_link', array( __CLASS__, 'filter_link' ), 20, 2 );
-		add_filter( 'year_link', array( __CLASS__, 'filter_link' ), 20, 1 );
-		add_filter( 'month_link', array( __CLASS__, 'filter_link' ), 20, 1 );
-		add_filter( 'day_link', array( __CLASS__, 'filter_link' ), 20, 1 );
-		add_filter( 'search_link', array( __CLASS__, 'filter_link' ), 20, 1 );
-		add_filter( 'redirect_canonical', array( __CLASS__, 'filter_redirect_canonical' ), 20, 2 );
-
-		add_action( 'update_option_mont_deepl_settings', array( __CLASS__, 'on_settings_saved' ), 10, 2 );
+		// Do NOT filter home_url — that causes redirect loops with canonical.
+		add_filter( 'post_link', array( __CLASS__, 'filter_link' ), 20 );
+		add_filter( 'page_link', array( __CLASS__, 'filter_link' ), 20 );
+		add_filter( 'post_type_link', array( __CLASS__, 'filter_link' ), 20 );
+		add_filter( 'term_link', array( __CLASS__, 'filter_link' ), 20 );
+		add_filter( 'attachment_link', array( __CLASS__, 'filter_link' ), 20 );
+		add_filter( 'redirect_canonical', array( __CLASS__, 'filter_redirect_canonical' ), 1, 2 );
 	}
 
 	public static function enabled() {
@@ -65,12 +63,13 @@ class DC_Language_Urls {
 		return $codes ? $codes : array( 'en', 'it', 'nb', 'vi' );
 	}
 
-	/** Unfiltered site path prefix (no /en/ injected). */
+	/** Unfiltered site path (subdirectory installs). */
 	private static function site_home_path() {
 		self::$filtering = true;
 		$path            = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
 		self::$filtering = false;
-		return untrailingslashit( $path );
+		$path            = untrailingslashit( $path );
+		return ( $path === '' ) ? '' : $path;
 	}
 
 	public static function get_request_lang() {
@@ -81,6 +80,10 @@ class DC_Language_Urls {
 			return DC_Region_Currency::get_current_lang();
 		}
 		return 'en';
+	}
+
+	public static function had_prefix() {
+		return self::$had_prefix;
 	}
 
 	/**
@@ -97,12 +100,12 @@ class DC_Language_Urls {
 			return;
 		}
 
-		$uri  = wp_unslash( $_SERVER['REQUEST_URI'] );
-		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
-		$query = wp_parse_url( $uri, PHP_URL_QUERY );
+		self::$original_uri = wp_unslash( $_SERVER['REQUEST_URI'] );
+		$uri                = self::$original_uri;
+		$path               = (string) wp_parse_url( $uri, PHP_URL_PATH );
+		$query              = wp_parse_url( $uri, PHP_URL_QUERY );
 
 		$home_path = self::site_home_path();
-		$home_path = untrailingslashit( $home_path );
 		if ( $home_path && $home_path !== '/' && strpos( $path, $home_path ) === 0 ) {
 			$rel = substr( $path, strlen( $home_path ) );
 		} else {
@@ -111,7 +114,7 @@ class DC_Language_Urls {
 		$rel = '/' . ltrim( (string) $rel, '/' );
 
 		$codes = self::get_lang_codes();
-		$re    = '#^/(' . implode( '|', array_map( 'preg_quote', $codes ) ) . ')(/|$|\?)#i';
+		$re    = '#^/(' . implode( '|', array_map( 'preg_quote', $codes ) ) . ')(/|$)#i';
 
 		if ( ! preg_match( $re, $rel, $m ) ) {
 			self::$had_prefix   = false;
@@ -119,11 +122,10 @@ class DC_Language_Urls {
 			return;
 		}
 
-		$lang = strtolower( $m[1] );
-		self::$had_prefix   = true;
-		self::$request_lang = $lang;
+		$lang                   = strtolower( $m[1] );
+		self::$had_prefix       = true;
+		self::$request_lang     = $lang;
 
-		// Persist region from URL language.
 		if ( class_exists( __NAMESPACE__ . '\\DC_Region_Currency' ) ) {
 			$slug = DC_Region_Currency::lang_to_region( $lang );
 			if ( $slug ) {
@@ -131,20 +133,20 @@ class DC_Language_Urls {
 			}
 		}
 
-		// Path without language segment.
 		$stripped_rel = preg_replace( $re, '/', $rel, 1 );
-		if ( $stripped_rel === '' || $stripped_rel === false ) {
+		if ( ! is_string( $stripped_rel ) || $stripped_rel === '' ) {
 			$stripped_rel = '/';
 		}
-		// Collapse duplicate slashes.
 		$stripped_rel = preg_replace( '#/+#', '/', $stripped_rel );
 
 		$new_path = ( $home_path && $home_path !== '/' )
-			? untrailingslashit( $home_path ) . $stripped_rel
+			? $home_path . ( $stripped_rel === '/' ? '/' : $stripped_rel )
 			: $stripped_rel;
 		$new_path = preg_replace( '#/+#', '/', $new_path );
-		if ( $new_path !== '/' ) {
-			$new_path = untrailingslashit( $new_path ) . ( substr( $path, -1 ) === '/' ? '/' : '' );
+
+		// Preserve trailing slash only when useful (not bare home).
+		if ( $new_path !== '/' && substr( $path, -1 ) === '/' ) {
+			$new_path = trailingslashit( $new_path );
 		}
 
 		$new_uri = $new_path;
@@ -156,7 +158,8 @@ class DC_Language_Urls {
 	}
 
 	/**
-	 * Redirect bare URLs → /{lang}/… so language is always visible in the path.
+	 * Optional: send bare front URLs to /{lang}/… once.
+	 * Runs late and only when we did NOT already strip a prefix.
 	 */
 	public static function maybe_redirect_unprefixed() {
 		if ( ! self::enabled() || is_admin() || wp_doing_ajax() || wp_doing_cron() || headers_sent() ) {
@@ -165,48 +168,69 @@ class DC_Language_Urls {
 		if ( self::$had_prefix ) {
 			return;
 		}
-		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		if ( is_feed() || is_robots() || is_trackback() ) {
 			return;
 		}
 
-		$uri  = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/';
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) : 'GET';
+		if ( $method !== 'GET' && $method !== 'HEAD' ) {
+			return;
+		}
+
+		$uri  = self::$original_uri ? self::$original_uri : ( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/' );
 		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
 
 		if ( self::should_skip_path( $path ) ) {
 			return;
 		}
 
-		// ?lang=xx → pretty /xx/...
+		// Legacy ?lang=xx → /xx/...
 		if ( isset( $_GET['lang'] ) ) {
 			$lang = sanitize_key( wp_unslash( $_GET['lang'] ) );
 			if ( in_array( $lang, self::get_lang_codes(), true ) ) {
-				$clean = remove_query_arg( 'lang', home_url( $uri ) );
-				$target = self::add_lang_prefix( $clean, $lang );
-				wp_safe_redirect( $target, 302 );
-				exit;
+				$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+				$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+				$clean   = remove_query_arg( 'lang', $current );
+				$target  = self::add_lang_prefix( $clean, $lang );
+				if ( self::urls_differ( $current, $target ) ) {
+					wp_safe_redirect( $target, 302 );
+					exit;
+				}
 			}
+			return;
 		}
 
 		$lang = self::get_request_lang();
-		if ( ! $lang ) {
+		if ( ! $lang || ! in_array( $lang, self::get_lang_codes(), true ) ) {
 			return;
 		}
 
-		$current = ( is_ssl() ? 'https://' : 'http://' ) . ( $_SERVER['HTTP_HOST'] ?? '' ) . $uri;
+		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
 		$target  = self::add_lang_prefix( $current, $lang );
 
-		// Avoid redirect loops.
-		if ( untrailingslashit( $target ) === untrailingslashit( $current ) ) {
-			return;
-		}
-		// Only redirect GET.
-		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( $_SERVER['REQUEST_METHOD'] ) : 'GET';
-		if ( $method !== 'GET' && $method !== 'HEAD' ) {
+		if ( ! self::urls_differ( $current, $target ) ) {
 			return;
 		}
 
 		wp_safe_redirect( $target, 302 );
 		exit;
+	}
+
+	private static function urls_differ( $a, $b ) {
+		$norm = static function ( $url ) {
+			$parts = wp_parse_url( $url );
+			if ( ! is_array( $parts ) ) {
+				return untrailingslashit( (string) $url );
+			}
+			$path = isset( $parts['path'] ) ? untrailingslashit( $parts['path'] ) : '';
+			if ( $path === '' ) {
+				$path = '/';
+			}
+			$host = isset( $parts['host'] ) ? strtolower( $parts['host'] ) : '';
+			return $host . $path;
+		};
+		return $norm( $a ) !== $norm( $b );
 	}
 
 	public static function should_skip_path( $path ) {
@@ -230,7 +254,6 @@ class DC_Language_Urls {
 				return true;
 			}
 		}
-		// File-like requests.
 		if ( preg_match( '/\.(css|js|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|map|txt|xml)$/i', $path ) ) {
 			return true;
 		}
@@ -238,10 +261,8 @@ class DC_Language_Urls {
 	}
 
 	/**
-	 * Prepend /{lang} to a full URL or path.
-	 *
-	 * @param string $url
-	 * @param string $lang
+	 * @param string      $url
+	 * @param string|null $lang
 	 * @return string
 	 */
 	public static function add_lang_prefix( $url, $lang = null ) {
@@ -264,32 +285,26 @@ class DC_Language_Urls {
 		}
 
 		$home_path = self::site_home_path();
-
 		if ( $home_path && $home_path !== '/' && strpos( $path, $home_path ) === 0 ) {
-			$rel = substr( $path, strlen( $home_path ) );
+			$rel         = substr( $path, strlen( $home_path ) );
 			$prefix_base = $home_path;
 		} else {
-			$rel = $path;
+			$rel         = $path;
 			$prefix_base = '';
 		}
 		$rel = '/' . ltrim( (string) $rel, '/' );
 
-		// Already prefixed?
 		$codes = self::get_lang_codes();
 		$re    = '#^/(' . implode( '|', array_map( 'preg_quote', $codes ) ) . ')(/|$)#i';
 		if ( preg_match( $re, $rel ) ) {
-			// Replace existing lang segment.
 			$rel = preg_replace( $re, '/' . $lang . '$2', $rel, 1 );
+		} elseif ( $rel === '/' ) {
+			$rel = '/' . $lang . '/';
 		} else {
-			if ( $rel === '/' ) {
-				$rel = '/' . $lang . '/';
-			} else {
-				$rel = '/' . $lang . $rel;
-			}
+			$rel = '/' . $lang . $rel;
 		}
 
-		$new_path = $prefix_base . $rel;
-		$new_path = preg_replace( '#/+#', '/', $new_path );
+		$new_path = preg_replace( '#/+#', '/', $prefix_base . $rel );
 
 		$out = '';
 		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
@@ -300,7 +315,6 @@ class DC_Language_Urls {
 		}
 		$out .= $new_path;
 		if ( ! empty( $parts['query'] ) ) {
-			// Drop legacy ?lang=
 			parse_str( $parts['query'], $q );
 			unset( $q['lang'], $q['dc_region'] );
 			if ( $q ) {
@@ -313,12 +327,8 @@ class DC_Language_Urls {
 		return $out;
 	}
 
-	/**
-	 * Swap language prefix on a URL (used by region switcher).
-	 */
 	public static function convert_url_lang( $url, $lang ) {
-		$url = self::strip_lang_prefix( $url );
-		return self::add_lang_prefix( $url, $lang );
+		return self::add_lang_prefix( self::strip_lang_prefix( $url ), $lang );
 	}
 
 	public static function strip_lang_prefix( $url ) {
@@ -330,10 +340,10 @@ class DC_Language_Urls {
 
 		$home_path = self::site_home_path();
 		if ( $home_path && $home_path !== '/' && strpos( $path, $home_path ) === 0 ) {
-			$rel = substr( $path, strlen( $home_path ) );
+			$rel         = substr( $path, strlen( $home_path ) );
 			$prefix_base = $home_path;
 		} else {
-			$rel = $path;
+			$rel         = $path;
 			$prefix_base = '';
 		}
 		$rel = '/' . ltrim( (string) $rel, '/' );
@@ -341,13 +351,12 @@ class DC_Language_Urls {
 		$codes = self::get_lang_codes();
 		$re    = '#^/(' . implode( '|', array_map( 'preg_quote', $codes ) ) . ')(/|$)#i';
 		$rel   = preg_replace( $re, '/', $rel, 1 );
-		$rel   = preg_replace( '#/+#', '/', $rel );
+		$rel   = preg_replace( '#/+#', '/', (string) $rel );
 		if ( $rel === '' ) {
 			$rel = '/';
 		}
 
-		$new_path = $prefix_base . $rel;
-		$new_path = preg_replace( '#/+#', '/', $new_path );
+		$new_path = preg_replace( '#/+#', '/', $prefix_base . $rel );
 
 		$out = '';
 		if ( ! empty( $parts['scheme'] ) && ! empty( $parts['host'] ) ) {
@@ -356,7 +365,6 @@ class DC_Language_Urls {
 				$out .= ':' . $parts['port'];
 			}
 		} elseif ( strpos( $url, '/' ) === 0 ) {
-			// Relative — return path only.
 			$out = $new_path;
 			if ( ! empty( $parts['query'] ) ) {
 				$out .= '?' . $parts['query'];
@@ -373,43 +381,27 @@ class DC_Language_Urls {
 		return $out;
 	}
 
-	public static function filter_home_url( $url, $path, $scheme, $blog_id ) {
-		if ( ! self::enabled() || self::$filtering || is_admin() ) {
-			return $url;
-		}
-		// Don’t prefix admin / rest home_url quirks.
-		if ( is_string( $path ) && self::should_skip_path( '/' . ltrim( $path, '/' ) ) ) {
-			return $url;
-		}
-		self::$filtering = true;
-		$url = self::add_lang_prefix( $url, self::get_request_lang() );
-		self::$filtering = false;
-		return $url;
-	}
-
 	public static function filter_link( $url ) {
 		if ( ! self::enabled() || self::$filtering || ( is_admin() && ! wp_doing_ajax() ) ) {
 			return $url;
 		}
 		self::$filtering = true;
-		$url = self::add_lang_prefix( $url, self::get_request_lang() );
+		$url             = self::add_lang_prefix( $url, self::get_request_lang() );
 		self::$filtering = false;
 		return $url;
 	}
 
+	/**
+	 * Critical loop breaker: after stripping /en/, WP sees "/" and tries to
+	 * canonical-redirect to home_url('/en/') → infinite redirects.
+	 */
 	public static function filter_redirect_canonical( $redirect_url, $requested_url ) {
-		if ( ! self::enabled() || ! $redirect_url ) {
+		if ( ! self::enabled() ) {
 			return $redirect_url;
 		}
-		// Keep language prefix on canonical redirects.
-		return self::add_lang_prefix( $redirect_url, self::get_request_lang() );
-	}
-
-	public static function on_settings_saved( $old, $new ) {
-		$old_on = is_array( $old ) && ! empty( $old['polylang_style'] );
-		$new_on = is_array( $new ) && ! empty( $new['polylang_style'] );
-		if ( $old_on !== $new_on ) {
-			update_option( 'dc_lang_urls_needs_flush', 1 );
+		if ( self::$had_prefix ) {
+			return false;
 		}
+		return $redirect_url;
 	}
 }
