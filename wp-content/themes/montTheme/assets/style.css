@@ -644,7 +644,7 @@ justify-content: space-between;
 /* Mobile Menu List Styling */
 .mont_header_menu_mobile {
     list-style: none;
-    padding: 12px 24px 24px;
+    padding: 8px 24px 12px;
     margin: 0;
     flex: 1 1 auto;
     min-height: 0;
@@ -691,14 +691,13 @@ justify-content: space-between;
     pointer-events: none;
 }
 
-/* Footer utility links at bottom of mobile sidebar */
+/* Spacer only — keeps channel switcher clear of scroll content */
 .mont_header_mobile_footer {
     margin-top: auto;
     flex-shrink: 0;
-    padding: 8px 24px calc(24px + env(safe-area-inset-bottom, 0px));
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+    padding: 0 0 calc(88px + env(safe-area-inset-bottom, 0px));
+    display: block;
+    min-height: 1px;
 }
 
 /* Free-shipping strip inside the open drawer (promo bar is hidden) */
@@ -763,8 +762,8 @@ justify-content: space-between;
 
 .mont_header_mobile_lang {
     flex-shrink: 0;
-    padding: 4px 24px 10px;
-    border-bottom: 1px solid #eee;
+    padding: 0 24px 4px;
+    border-bottom: 0;
 }
 
 .mont_header_mobile_lang .dc-region-switcher--mobile-footer .dc-region-trigger {
@@ -774,9 +773,14 @@ justify-content: space-between;
     background: transparent;
     font-size: 15px;
     font-weight: 500;
-    text-decoration: underline;
-    text-underline-offset: 4px;
+    text-decoration: none !important;
     color: #111;
+}
+
+.mont_header_mobile_lang .dc-region-switcher--mobile-footer .dc-region-trigger:hover,
+.mont_header_mobile_lang .dc-region-switcher--mobile-footer .dc-region-trigger:focus {
+    text-decoration: none !important;
+    opacity: 0.7;
 }
 
 /* Leave room for the fixed B2B/B2C switcher when the drawer is open */

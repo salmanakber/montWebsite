@@ -22,24 +22,32 @@ class DC_Product_Descriptions {
 	public static function get_languages() {
 		return array(
 			'nb' => array(
-				'label'  => 'Norwegian',
-				'native' => 'Norsk (nb)',
-				'region' => 'no',
+				'label'    => 'Norwegian',
+				'native'   => 'Norsk',
+				'region'   => 'Norway',
+				'currency' => 'kr NOK',
+				'code'     => 'nb',
 			),
 			'en' => array(
-				'label'  => 'English',
-				'native' => 'English (en)',
-				'region' => 'intl',
+				'label'    => 'English',
+				'native'   => 'English',
+				'region'   => 'International',
+				'currency' => '$ USD',
+				'code'     => 'en',
 			),
 			'it' => array(
-				'label'  => 'Italian',
-				'native' => 'Italiano (it)',
-				'region' => 'it',
+				'label'    => 'Italian',
+				'native'   => 'Italiano',
+				'region'   => 'Italy',
+				'currency' => '€ EUR',
+				'code'     => 'it',
 			),
 			'vi' => array(
-				'label'  => 'Vietnamese',
-				'native' => 'Tiếng Việt (vi)',
-				'region' => 'vn',
+				'label'    => 'Vietnamese',
+				'native'   => 'Tiếng Việt',
+				'region'   => 'Việt Nam',
+				'currency' => '₫ VND',
+				'code'     => 'vi',
 			),
 		);
 	}

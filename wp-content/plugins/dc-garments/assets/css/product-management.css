@@ -2221,28 +2221,91 @@ body.dc-product-edit-page {
 }
 
 .dc-desc-lang-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 12px 0 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0 12px;
 }
 
 .dc-desc-lang-tab {
     appearance: none;
     border: 1px solid #d7d7d7;
     background: #fff;
-    color: #333;
-    border-radius: 999px;
-    padding: 7px 12px;
-    font-size: 12px;
-    font-weight: 500;
+    color: #222;
+    border-radius: 10px;
+    padding: 12px 12px 12px 10px;
     cursor: pointer;
-    line-height: 1.2;
+    line-height: 1.25;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+    min-height: 68px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.dc-desc-lang-tab:hover {
+    border-color: #bdbdbd;
+}
+
+.dc-desc-lang-tab__code {
+    flex: 0 0 auto;
+    min-width: 34px;
+    height: 28px;
+    border-radius: 6px;
+    background: #f2f2f2;
+    color: #444;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dc-desc-lang-tab__main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.dc-desc-lang-tab__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+}
+
+.dc-desc-lang-tab__meta {
+    font-size: 11px;
+    color: #777;
+    font-weight: 400;
+}
+
+.dc-desc-lang-tab__status {
+    flex: 0 0 auto;
+    width: 18px;
+    color: #2f9e44;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
 }
 
 .dc-desc-lang-tab.is-active {
     background: #111;
     border-color: #111;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.dc-desc-lang-tab.is-active .dc-desc-lang-tab__code {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}
+
+.dc-desc-lang-tab.is-active .dc-desc-lang-tab__name,
+.dc-desc-lang-tab.is-active .dc-desc-lang-tab__meta,
+.dc-desc-lang-tab.is-active .dc-desc-lang-tab__status {
     color: #fff;
 }
 
@@ -2252,6 +2315,27 @@ body.dc-product-edit-page {
 
 .dc-desc-lang-panel.is-active {
     display: block;
+}
+
+.dc-desc-active-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0 0 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #f6f6f6;
+    border: 1px solid #ececec;
+}
+
+.dc-desc-active-banner strong {
+    font-size: 13px;
+    color: #111;
+}
+
+.dc-desc-active-banner span {
+    font-size: 12px;
+    color: #666;
 }
 
 .dc-product-description {
@@ -2271,4 +2355,10 @@ body.dc-product-edit-page {
     outline: none;
     border-color: #111;
     box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.08);
+}
+
+@media (max-width: 640px) {
+    .dc-desc-lang-tabs {
+        grid-template-columns: 1fr;
+    }
 }

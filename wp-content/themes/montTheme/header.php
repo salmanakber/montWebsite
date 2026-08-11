@@ -207,12 +207,15 @@
                         ) );
                     }
                     ?>
+                    <li class="mont_header_menu_mobile__item">
+                        <a href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
+                    </li>
+                    <li class="mont_header_menu_mobile__item">
+                        <a href="<?php echo esc_url( $about_url ); ?>">About us</a>
+                    </li>
                 </ul>
 
-                <div class="mont_header_mobile_footer">
-                    <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
-                    <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $about_url ); ?>">About us</a>
-                </div>
+                <div class="mont_header_mobile_footer" aria-hidden="true"></div>
             </div>
 
             <div class="mont_header_mobile_mega_menu">

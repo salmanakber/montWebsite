@@ -49,6 +49,15 @@ jQuery(document).ready(function($) {
         $('.dc-desc-lang-panel').removeClass('is-active').attr('hidden', true);
         $('.dc-desc-lang-panel[data-lang-panel="' + lang + '"]').addClass('is-active').removeAttr('hidden');
     });
+
+    $(document).on('input blur', '.dc-product-description', function() {
+        var lang = $(this).data('lang');
+        if (!lang) return;
+        var $tab = $('.dc-desc-lang-tab[data-lang="' + lang + '"]');
+        var filled = $.trim($(this).val()).length > 0;
+        $tab.toggleClass('has-content', filled);
+        $tab.find('.dc-desc-lang-tab__status').text(filled ? '✓' : '');
+    });
     var $productFabricColor = $('#dc-product-fabric-color');
 	var $productFabricColorEnglish = $('#dc-product-fabric-color-english');
     var $productCategory = $('#dc-product-category');

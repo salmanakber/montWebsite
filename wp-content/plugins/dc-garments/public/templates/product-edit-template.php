@@ -318,20 +318,27 @@ $supplier_sku  = $product_data['supplier_sku'] ?? '';
                         ?>
                         <div class="dc-form-row dc-descriptions-block">
                             <div class="dc-form-group" style="width:100%;">
-                                <label><?php _e( 'Long description (by language)', 'dc-product-manager' ); ?></label>
+                                <label><?php _e( 'Long description by store language', 'dc-product-manager' ); ?></label>
                                 <p class="dc-field-hint" style="margin-top:0;">
-                                    <?php _e( 'Storefront shows the text for the customer’s region language. Norwegian is also saved as the WooCommerce product description.', 'dc-product-manager' ); ?>
+                                    <?php _e( 'Write one description for each storefront language. Shoppers see the text that matches their region language. Norwegian is also saved as the default WooCommerce description.', 'dc-product-manager' ); ?>
                                 </p>
-                                <div class="dc-desc-lang-tabs" role="tablist">
-                                    <?php foreach ( $desc_langs as $code => $meta ) : ?>
+                                <div class="dc-desc-lang-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Description languages', 'dc-product-manager' ); ?>">
+                                    <?php foreach ( $desc_langs as $code => $meta ) :
+                                        $filled = ! empty( $desc_map[ $code ] );
+                                        ?>
                                         <button
                                             type="button"
-                                            class="dc-desc-lang-tab<?php echo $code === $first_lang ? ' is-active' : ''; ?>"
+                                            class="dc-desc-lang-tab<?php echo $code === $first_lang ? ' is-active' : ''; ?><?php echo $filled ? ' has-content' : ''; ?>"
                                             data-lang="<?php echo esc_attr( $code ); ?>"
                                             role="tab"
                                             aria-selected="<?php echo $code === $first_lang ? 'true' : 'false'; ?>"
                                         >
-                                            <?php echo esc_html( $meta['native'] ); ?>
+                                            <span class="dc-desc-lang-tab__code"><?php echo esc_html( strtoupper( $code ) ); ?></span>
+                                            <span class="dc-desc-lang-tab__main">
+                                                <span class="dc-desc-lang-tab__name"><?php echo esc_html( $meta['label'] ); ?></span>
+                                                <span class="dc-desc-lang-tab__meta"><?php echo esc_html( $meta['region'] . ' · ' . $meta['currency'] ); ?></span>
+                                            </span>
+                                            <span class="dc-desc-lang-tab__status" aria-hidden="true"><?php echo $filled ? '✓' : ''; ?></span>
                                         </button>
                                     <?php endforeach; ?>
                                 </div>
@@ -342,12 +349,26 @@ $supplier_sku  = $product_data['supplier_sku'] ?? '';
                                         role="tabpanel"
                                         <?php echo $code === $first_lang ? '' : 'hidden'; ?>
                                     >
+                                        <div class="dc-desc-active-banner">
+                                            <strong><?php echo esc_html( sprintf( __( 'Editing: %s', 'dc-product-manager' ), $meta['label'] ) ); ?></strong>
+                                            <span><?php echo esc_html( sprintf(
+                                                /* translators: 1: region name, 2: currency display, 3: language code */
+                                                __( 'Shown to customers in %1$s (%2$s) · language code %3$s', 'dc-product-manager' ),
+                                                $meta['region'],
+                                                $meta['currency'],
+                                                strtoupper( $code )
+                                            ) ); ?></span>
+                                        </div>
                                         <textarea
                                             class="dc-product-description"
                                             id="dc-product-description-<?php echo esc_attr( $code ); ?>"
                                             data-lang="<?php echo esc_attr( $code ); ?>"
                                             rows="8"
-                                            placeholder="<?php echo esc_attr( sprintf( __( 'Product description in %s…', 'dc-product-manager' ), $meta['label'] ) ); ?>"
+                                            placeholder="<?php echo esc_attr( sprintf(
+                                                __( 'Type the product long description in %1$s for the %2$s store…', 'dc-product-manager' ),
+                                                $meta['label'],
+                                                $meta['region']
+                                            ) ); ?>"
                                         ><?php echo esc_textarea( isset( $desc_map[ $code ] ) ? $desc_map[ $code ] : '' ); ?></textarea>
                                     </div>
                                 <?php endforeach; ?>
