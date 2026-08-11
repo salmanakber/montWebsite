@@ -268,10 +268,10 @@ class DC_Region_Currency {
      * Whether Mont DeepL polylang_style mode is on.
      */
     public static function polylang_style_enabled() {
-        if (!class_exists('Mont_DeepL_Plugin')) {
+        if (!class_exists('\\Mont_DeepL_Plugin')) {
             return false;
         }
-        $settings = Mont_DeepL_Plugin::settings();
+        $settings = \Mont_DeepL_Plugin::settings();
         return !empty($settings['polylang_style']);
     }
 
