@@ -196,6 +196,9 @@ class DC_Product_Manager {
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-region-currency.php';
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-multi-currency.php';
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-product-descriptions.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-dc-language-urls.php';
+        \DC_Product_Manager\DC_Product_Descriptions::init();
+        \DC_Product_Manager\DC_Language_Urls::init();
 
         /**
          * Order portal (B2C + B2B) and B2B extension bridge.
@@ -477,6 +480,7 @@ class DC_Product_Manager {
                 'supplier_price' => get_post_meta($product->ID, '_supplier_price', true),
                 'custom_title' => get_post_meta($product->ID, '_custom_title', true),
                 'descriptions' => \DC_Product_Manager\DC_Product_Descriptions::get_map($product->ID),
+                'titles' => \DC_Product_Manager\DC_Product_Descriptions::get_title_map($product->ID),
             );
             
             // Get category name

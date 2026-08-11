@@ -227,16 +227,20 @@ class Mont_DeepL_Plugin {
         $settings = self::settings();
         $diag     = self::diagnostics();
 
-        if (empty($settings['api_key'])) {
-            return;
-        }
-
-        if (empty($settings['enabled'])) {
-            if (!empty($settings['disable_google'])) {
-                wp_register_script('mont-deepl-bridge', false, array(), MONT_DEEPL_VERSION, true);
-                wp_enqueue_script('mont-deepl-bridge');
-                wp_add_inline_script('mont-deepl-bridge', 'window.montDeepL = window.montDeepL || { disableGoogle: true, enabled: false };', 'before');
-            }
+        // Polylang-style URLs work without DeepL translation / API key.
+        if (empty($settings['enabled']) || empty($settings['api_key'])) {
+            wp_register_script('mont-deepl-bridge', false, array(), MONT_DEEPL_VERSION, true);
+            wp_enqueue_script('mont-deepl-bridge');
+            wp_add_inline_script(
+                'mont-deepl-bridge',
+                'window.montDeepL = window.montDeepL || ' . wp_json_encode(array(
+                    'disableGoogle' => !empty($settings['disable_google']),
+                    'enabled'       => false,
+                    'polylangStyle' => !empty($settings['polylang_style']),
+                    'forceAll'      => false,
+                )) . ';',
+                'before'
+            );
             return;
         }
 

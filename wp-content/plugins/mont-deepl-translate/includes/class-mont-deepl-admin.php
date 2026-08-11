@@ -247,14 +247,14 @@ class Mont_DeepL_Admin {
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php esc_html_e('Polylang-style string mode', 'mont-deepl'); ?></th>
+                        <th scope="row"><?php esc_html_e('Polylang-style language URLs', 'mont-deepl'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[polylang_style]" value="1" <?php checked(!empty($settings['polylang_style'])); ?> />
-                                <?php esc_html_e('Force string translation on included selectors (skip English heuristics). Also exposes language codes (en, it, nb, vi) on the region switcher URL via ?lang=.', 'mont-deepl'); ?>
+                                <?php esc_html_e('Add language codes to URLs like /en/, /it/, /nb/, /vi/ (works even when DeepL translation is disabled). Region switcher navigates between these prefixes.', 'mont-deepl'); ?>
                             </label>
                             <p class="description">
-                                <?php esc_html_e('Use with CRM curated product descriptions (notranslate). Pair with “Disable Google Translate” for DeepL-only behaviour.', 'mont-deepl'); ?>
+                                <?php esc_html_e('Example: https://montenapoleone1974.com/en/product/my-shirt/. Curated CRM titles/descriptions still follow the active language. Disable “Enable DeepL” if you only want URL + CRM languages without machine translation.', 'mont-deepl'); ?>
                             </p>
                         </td>
                     </tr>

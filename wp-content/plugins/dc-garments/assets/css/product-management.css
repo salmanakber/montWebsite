@@ -2215,127 +2215,129 @@ body.dc-product-edit-page {
     }
 }
 
-/* Multi-language long description tabs (CRM) */
-.dc-descriptions-block {
-    margin-top: 8px;
+/* Multi-language title + description editor (CRM) */
+.dc-i18n-block {
+    margin-top: 18px;
+    padding-top: 8px;
 }
 
-.dc-desc-lang-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin: 14px 0 12px;
-}
-
-.dc-desc-lang-tab {
-    appearance: none;
-    border: 1px solid #d7d7d7;
-    background: #fff;
-    color: #222;
-    border-radius: 10px;
-    padding: 12px 12px 12px 10px;
-    cursor: pointer;
-    line-height: 1.25;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    text-align: left;
-    min-height: 68px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-
-.dc-desc-lang-tab:hover {
-    border-color: #bdbdbd;
-}
-
-.dc-desc-lang-tab__code {
-    flex: 0 0 auto;
-    min-width: 34px;
-    height: 28px;
-    border-radius: 6px;
-    background: #f2f2f2;
-    color: #444;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dc-desc-lang-tab__main {
-    flex: 1 1 auto;
-    min-width: 0;
+.dc-i18n-toolbar {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 12px;
+    margin: 8px 0 16px;
 }
 
-.dc-desc-lang-tab__name {
+.dc-i18n-lang-select {
+    width: 100%;
+    max-width: 560px;
+    min-height: 44px;
+    border: 1px solid #d0d0d0;
+    border-radius: 8px;
+    padding: 10px 12px;
     font-size: 14px;
-    font-weight: 600;
+    background: #fff;
     color: #111;
 }
 
-.dc-desc-lang-tab__meta {
+.dc-i18n-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.dc-i18n-pill {
+    appearance: none;
+    border: 1px solid #d5d5d5;
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 96px;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.dc-i18n-pill strong {
+    font-size: 13px;
+    letter-spacing: .04em;
+    color: #111;
+}
+
+.dc-i18n-pill span {
     font-size: 11px;
     color: #777;
-    font-weight: 400;
 }
 
-.dc-desc-lang-tab__status {
-    flex: 0 0 auto;
-    width: 18px;
-    color: #2f9e44;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1.4;
+.dc-i18n-pill:hover {
+    border-color: #111;
 }
 
-.dc-desc-lang-tab.is-active {
+.dc-i18n-pill.is-active {
     background: #111;
     border-color: #111;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
-.dc-desc-lang-tab.is-active .dc-desc-lang-tab__code {
-    background: rgba(255, 255, 255, 0.14);
+.dc-i18n-pill.is-active strong,
+.dc-i18n-pill.is-active span {
     color: #fff;
 }
 
-.dc-desc-lang-tab.is-active .dc-desc-lang-tab__name,
-.dc-desc-lang-tab.is-active .dc-desc-lang-tab__meta,
-.dc-desc-lang-tab.is-active .dc-desc-lang-tab__status {
-    color: #fff;
+.dc-i18n-panel {
+    border: 1px solid #e6e6e6;
+    border-radius: 12px;
+    padding: 16px;
+    background: #fafafa;
 }
 
-.dc-desc-lang-panel {
-    display: none;
-}
-
-.dc-desc-lang-panel.is-active {
-    display: block;
-}
-
-.dc-desc-active-banner {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin: 0 0 10px;
+.dc-i18n-banner {
+    margin-bottom: 14px;
     padding: 12px 14px;
     border-radius: 8px;
-    background: #f6f6f6;
+    background: #fff;
     border: 1px solid #ececec;
 }
 
-.dc-desc-active-banner strong {
-    font-size: 13px;
+.dc-i18n-banner__title {
+    font-size: 14px;
+    font-weight: 700;
     color: #111;
+    margin-bottom: 3px;
 }
 
-.dc-desc-active-banner span {
+.dc-i18n-banner__meta {
     font-size: 12px;
     color: #666;
+    line-height: 1.4;
+}
+
+.dc-i18n-field-label {
+    display: block;
+    margin: 12px 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+}
+
+.dc-product-title-i18n {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #d7d7d7;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.dc-product-title-i18n:focus,
+.dc-product-description:focus {
+    outline: none;
+    border-color: #111;
+    box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.08);
 }
 
 .dc-product-description {
@@ -2349,16 +2351,11 @@ body.dc-product-edit-page {
     box-sizing: border-box;
     resize: vertical;
     font-family: inherit;
-}
-
-.dc-product-description:focus {
-    outline: none;
-    border-color: #111;
-    box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.08);
+    background: #fff;
 }
 
 @media (max-width: 640px) {
-    .dc-desc-lang-tabs {
-        grid-template-columns: 1fr;
+    .dc-i18n-pill {
+        flex: 1 1 calc(50% - 8px);
     }
 }

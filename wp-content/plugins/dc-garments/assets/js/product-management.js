@@ -39,24 +39,38 @@ jQuery(document).ready(function($) {
     var $saveProduct = $('#dc-save-product');
     var $productTitle = $('#dc-product-title');
 
-    // CRM long-description language tabs
-    $(document).on('click', '.dc-desc-lang-tab', function(e) {
-        e.preventDefault();
-        var lang = $(this).data('lang');
+    // CRM i18n language switcher (also covered by inline script in template)
+    function dcSwitchI18nLang(lang) {
         if (!lang) return;
-        $('.dc-desc-lang-tab').removeClass('is-active').attr('aria-selected', 'false');
-        $(this).addClass('is-active').attr('aria-selected', 'true');
-        $('.dc-desc-lang-panel').removeClass('is-active').attr('hidden', true);
-        $('.dc-desc-lang-panel[data-lang-panel="' + lang + '"]').addClass('is-active').removeAttr('hidden');
+        var $root = $('#dc-i18n-editor');
+        if (!$root.length) return;
+        var $select = $('#dc-i18n-lang-select');
+        if ($select.length && $select.val() !== lang) $select.val(lang);
+        $root.find('.dc-i18n-pill').each(function() {
+            $(this).toggleClass('is-active', $(this).data('lang') === lang);
+        });
+        $root.find('.dc-i18n-panel').each(function() {
+            var on = $(this).attr('data-lang-panel') === lang;
+            $(this).toggleClass('is-active', on).css('display', on ? 'block' : 'none');
+        });
+    }
+
+    $(document).on('change', '#dc-i18n-lang-select', function() {
+        dcSwitchI18nLang($(this).val());
+    });
+    $(document).on('click', '.dc-i18n-pill', function(e) {
+        e.preventDefault();
+        dcSwitchI18nLang($(this).data('lang'));
     });
 
-    $(document).on('input blur', '.dc-product-description', function() {
-        var lang = $(this).data('lang');
-        if (!lang) return;
-        var $tab = $('.dc-desc-lang-tab[data-lang="' + lang + '"]');
-        var filled = $.trim($(this).val()).length > 0;
-        $tab.toggleClass('has-content', filled);
-        $tab.find('.dc-desc-lang-tab__status').text(filled ? '✓' : '');
+    // Copy auto title preview into Norwegian title field
+    $(document).on('change', '#dc-product-custom-title', function() {
+        if (!$(this).is(':checked')) return;
+        var preview = ($('#dc-product-title-preview').text() || '').trim();
+        if (preview) {
+            $('#dc-product-title-nb').val(preview);
+            dcSwitchI18nLang('nb');
+        }
     });
     var $productFabricColor = $('#dc-product-fabric-color');
 	var $productFabricColorEnglish = $('#dc-product-fabric-color-english');
@@ -606,15 +620,17 @@ function formatPrice(price, currency) {
     }
     
     function initProductEditPage() {
-        // Event Listeners
+        // Event Listeners — copy auto-title into Norwegian title field
         $productCustomTitle.on('change', function() {
             if ($(this).is(':checked')) {
-                $productCustomTitleInput.show();
-                $productTitlePreview.hide();
-                } else {
-                $productCustomTitleInput.hide();
-                $productTitlePreview.show();
-                updateTitlePreview();
+                var preview = ($productTitlePreview.text() || '').trim();
+                if (preview && preview !== (dc_product_manager.i18n.titlePreview || '')) {
+                    $('#dc-product-title-nb').val(preview);
+                    $productCustomTitleInput.val(preview);
+                    if (typeof dcSwitchI18nLang === 'function') {
+                        dcSwitchI18nLang('nb');
+                    }
+                }
             }
         });
         
@@ -679,6 +695,19 @@ function formatPrice(price, currency) {
                 }
             });
 
+            var titles = {};
+            $('.dc-product-title-i18n').each(function() {
+                var lang = $(this).data('lang');
+                if (lang) {
+                    titles[lang] = $(this).val();
+                }
+            });
+            // Prefer NB field as canonical post_title; fallback to preview / custom.
+            var nbTitle = (titles.nb || '').trim();
+            var saveTitle = nbTitle
+                ? nbTitle
+                : ($productCustomTitle.is(':checked') ? $productCustomTitleInput.val() : $productTitlePreview.text());
+
             var formData = {
             action: 'dc_update_product',
                 nonce: dc_product_manager.nonce,
@@ -687,10 +716,12 @@ function formatPrice(price, currency) {
             fabric_color: $productFabricColor.val(),
             category_id: $productCategory.val(),
             fabric_no: $productFabricNo.val(),
-                title: $productCustomTitle.is(':checked') ? $productCustomTitleInput.val() : $productTitlePreview.text(),
+                title: saveTitle,
             price: $productPrice.val(),
             multicurrency_prices: multicurrencyPrices,
             multicurrency_prices_json: JSON.stringify(multicurrencyPrices),
+            titles: titles,
+            titles_json: JSON.stringify(titles),
             descriptions: descriptions,
             descriptions_json: JSON.stringify(descriptions),
             stock: $productStock.val(),

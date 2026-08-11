@@ -166,6 +166,7 @@ class Endpoint_Handler {
                 'supplier_price' => get_post_meta($product->ID, '_supplier_price', true),
                 'custom_title' => get_post_meta($product->ID, '_custom_title', true),
                 'descriptions' => \DC_Product_Manager\DC_Product_Descriptions::get_map($product->ID),
+                'titles' => \DC_Product_Manager\DC_Product_Descriptions::get_title_map($product->ID),
             );
             
             // Get category name

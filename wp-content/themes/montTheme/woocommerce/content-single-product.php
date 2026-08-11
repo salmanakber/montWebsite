@@ -528,8 +528,8 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
         <!-- RIGHT: PRODUCT DETAILS     -->
         <!-- ========================== -->
         <div class="mont_layout_fourty">	
-			<div class="mont_product-title">
-				<?php echo $product->get_title(); ?>
+			<div class="mont_product-title<?php echo class_exists( 'DC_Product_Manager\\DC_Product_Descriptions' ) && \DC_Product_Manager\DC_Product_Descriptions::has_curated_title_for_lang( $product->get_id() ) ? ' notranslate' : ''; ?>">
+				<?php echo esc_html( $product->get_name() ); ?>
 			</div>
 			<div class="mont_product-info">
 				<div class="mont_product-price">

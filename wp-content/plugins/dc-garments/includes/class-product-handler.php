@@ -183,6 +183,7 @@ public function dc_product_manager_redirect() {
                 'supplier_price' => get_post_meta($product->ID, '_supplier_price', true),
                 'custom_title' => get_post_meta($product->ID, '_custom_title', true),
                 'descriptions' => DC_Product_Descriptions::get_map($product->ID),
+                'titles' => DC_Product_Descriptions::get_title_map($product->ID),
 				 
             );
             
@@ -388,7 +389,14 @@ public function dc_product_manager_redirect() {
 			    $productImage = isset($_POST['product_image']) ? sanitize_text_field($_POST['product_image']) : '';
 			$productImageid = isset($_POST['product_imageid']) ? sanitize_text_field($_POST['product_imageid']) : '';
 			$fabric_color_english = isset($_POST['fabric_color_english']) ? sanitize_text_field($_POST['fabric_color_english']) : '';
-            $descriptions_map = DC_Product_Descriptions::parse_from_request($_POST);
+            $descriptions_map = DC_Product_Descriptions::parse_field_from_request($_POST, 'descriptions');
+            $titles_map = DC_Product_Descriptions::parse_field_from_request($_POST, 'titles');
+            if (empty($titles_map['nb']) && $title !== '') {
+                $titles_map['nb'] = $title;
+            }
+            if (!empty($titles_map['nb'])) {
+                $title = $titles_map['nb'];
+            }
             
             
             // Update post
@@ -417,6 +425,7 @@ public function dc_product_manager_redirect() {
             update_post_meta($product_id, '_supplier_price', $supplier_price);
 			update_post_meta($product_id, '_dc_product_image', $productImage);
 			update_post_meta($product_id, '_fabric_color_english', $fabric_color_english);
+			DC_Product_Descriptions::save_title_map($product_id, $titles_map);
 			DC_Product_Descriptions::save_map($product_id, $descriptions_map);
 			if(!empty($productImageid))
 			{

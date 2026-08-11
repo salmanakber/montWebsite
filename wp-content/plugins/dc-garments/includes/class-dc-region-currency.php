@@ -256,9 +256,10 @@ class DC_Region_Currency {
 
         $url = remove_query_arg(self::QUERY_VAR, $url);
 
-        // DeepL “Polylang-style” mode: expose language codes in the URL.
-        if (self::polylang_style_enabled()) {
-            return add_query_arg('lang', $lang, $url);
+        // DeepL “Polylang-style” mode: /en/product/… path prefixes.
+        if (self::polylang_style_enabled() && class_exists(__NAMESPACE__ . '\\DC_Language_Urls')) {
+            $url = remove_query_arg('lang', $url);
+            return \DC_Product_Manager\DC_Language_Urls::convert_url_lang($url, $lang);
         }
 
         return remove_query_arg('lang', $url);
@@ -266,13 +267,15 @@ class DC_Region_Currency {
 
     /**
      * Whether Mont DeepL polylang_style mode is on.
+     * Reads the option directly so it works before the DeepL plugin class is loaded.
      */
     public static function polylang_style_enabled() {
-        if (!class_exists('\\Mont_DeepL_Plugin')) {
-            return false;
+        if (class_exists('\\Mont_DeepL_Plugin')) {
+            $settings = \Mont_DeepL_Plugin::settings();
+            return !empty($settings['polylang_style']);
         }
-        $settings = \Mont_DeepL_Plugin::settings();
-        return !empty($settings['polylang_style']);
+        $settings = get_option('mont_deepl_settings', array());
+        return is_array($settings) && !empty($settings['polylang_style']);
     }
 
     /**
@@ -328,14 +331,12 @@ class DC_Region_Currency {
         self::set_region_cookie($slug);
 
         // Clean URL: redirect once to same page without the query arg (cookie keeps region).
-        // Skip if WPML will own the language URL. Keep ?lang= when Polylang-style is on.
+        // Skip if WPML will own the language URL. Prefer /{lang}/… when Polylang-style is on.
         if (!defined('ICL_SITEPRESS_VERSION') && !headers_sent()) {
-            $clean = remove_query_arg(self::QUERY_VAR, self::get_current_page_url());
-            if (self::polylang_style_enabled()) {
+            $clean = remove_query_arg(array(self::QUERY_VAR, 'lang'), self::get_current_page_url());
+            if (self::polylang_style_enabled() && class_exists(__NAMESPACE__ . '\\DC_Language_Urls')) {
                 $region = self::get_region($slug);
-                $clean = add_query_arg('lang', $region['lang'], remove_query_arg('lang', $clean));
-            } else {
-                $clean = remove_query_arg('lang', $clean);
+                $clean  = DC_Language_Urls::convert_url_lang($clean, $region['lang']);
             }
             wp_safe_redirect($clean, 302);
             exit;
@@ -343,7 +344,7 @@ class DC_Region_Currency {
     }
 
     /**
-     * Polylang-style: ?lang=en|it|nb|vi maps to region cookie.
+     * Legacy ?lang=en|it|nb|vi → pretty /en/… when Polylang-style is on.
      */
     public function maybe_handle_lang_query() {
         if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
@@ -362,9 +363,13 @@ class DC_Region_Currency {
             return;
         }
 
-        $current = isset($_COOKIE[self::COOKIE_NAME]) ? sanitize_key(wp_unslash($_COOKIE[self::COOKIE_NAME])) : '';
-        if ($current !== $slug) {
-            self::set_region_cookie($slug);
+        self::set_region_cookie($slug);
+
+        if (!headers_sent() && class_exists(__NAMESPACE__ . '\\DC_Language_Urls')) {
+            $clean = remove_query_arg('lang', self::get_current_page_url());
+            $target = DC_Language_Urls::convert_url_lang($clean, $lang);
+            wp_safe_redirect($target, 302);
+            exit;
         }
     }
 
@@ -439,6 +444,11 @@ class DC_Region_Currency {
             'currentRegion' => self::get_current_region_slug(),
             'regions'       => $regions,
             'queryVar'      => self::QUERY_VAR,
+            'polylangStyle' => self::polylang_style_enabled(),
+            'currentLang'   => self::get_current_lang(),
+            'langCodes'     => class_exists(__NAMESPACE__ . '\\DC_Language_Urls')
+                ? DC_Language_Urls::get_lang_codes()
+                : array('en', 'it', 'nb', 'vi'),
         ));
     }
 

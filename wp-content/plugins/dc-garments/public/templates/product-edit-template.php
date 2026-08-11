@@ -23,11 +23,11 @@ add_filter('body_class', function($classes) {
 
 // Enqueue CRM styles
 wp_enqueue_style('dc-crm-styles', DC_PM_PLUGIN_URL . 'public/css/dc-crm.css', array(), DC_PM_VERSION);
-wp_enqueue_style('dc-product-management', DC_PM_PLUGIN_URL . 'assets/css/product-management.css', array(), DC_PM_VERSION);
+wp_enqueue_style('dc-product-management', DC_PM_PLUGIN_URL . 'assets/css/product-management.css', array(), filemtime(DC_PM_PLUGIN_DIR . 'assets/css/product-management.css') ?: DC_PM_VERSION);
 wp_enqueue_style('dc-region-switcher', DC_PM_PLUGIN_URL . 'assets/css/region-switcher.css', array(), DC_PM_VERSION);
 
 // Enqueue scripts
-wp_enqueue_script('dc-product-management', DC_PM_PLUGIN_URL . 'assets/js/product-management.js', array('jquery'), DC_PM_VERSION, true);
+wp_enqueue_script('dc-product-management', DC_PM_PLUGIN_URL . 'assets/js/product-management.js', array('jquery'), filemtime(DC_PM_PLUGIN_DIR . 'assets/js/product-management.js') ?: DC_PM_VERSION, true);
 
 // Localize script
 wp_localize_script('dc-product-management', 'dc_product_manager', array(
@@ -293,88 +293,120 @@ $supplier_sku  = $product_data['supplier_sku'] ?? '';
                             <span class="dc-section-index">03</span>
                             <div>
                                 <h3><?php _e( 'Product Details', 'dc-product-manager' ); ?></h3>
-                                <p><?php _e( 'Storefront title used on the website.', 'dc-product-manager' ); ?></p>
+                                <p><?php _e( 'Title and long description per store language. Customers see the matching language for their region.', 'dc-product-manager' ); ?></p>
                             </div>
                         </div>
+
                         <div class="dc-form-row">
                             <div class="dc-form-group">
-                                <label for="dc-product-title"><?php _e('Product Title', 'dc-product-manager'); ?></label>
+                                <label for="dc-product-title"><?php _e( 'Auto-generated title preview', 'dc-product-manager' ); ?></label>
                                 <div class="dc-title-preview">
                                     <div id="dc-product-title-preview"><?php echo esc_html($product_data['generated_title']); ?></div>
                                     <label class="dc-custom-title-toggle">
                                         <input type="checkbox" id="dc-product-custom-title">
-                                        <?php _e('Use custom title', 'dc-product-manager'); ?>
+                                        <?php _e( 'Copy preview into Norwegian title field', 'dc-product-manager' ); ?>
                                     </label>
                                 </div>
                                 <input type="text" id="dc-product-custom-title-input" value="<?php echo esc_attr($product_data['title']); ?>" style="display: none;">
                             </div>
                         </div>
+
                         <?php
+                        $title_map = isset( $product_data['titles'] ) && is_array( $product_data['titles'] )
+                            ? $product_data['titles']
+                            : \DC_Product_Manager\DC_Product_Descriptions::get_title_map( $product_data['id'] );
                         $desc_map = isset( $product_data['descriptions'] ) && is_array( $product_data['descriptions'] )
                             ? $product_data['descriptions']
                             : \DC_Product_Manager\DC_Product_Descriptions::get_map( $product_data['id'] );
-                        $desc_langs = \DC_Product_Manager\DC_Product_Descriptions::get_languages();
+                        $i18n_langs = \DC_Product_Manager\DC_Product_Descriptions::get_languages();
                         $first_lang = 'nb';
+                        if ( empty( $title_map['nb'] ) && ! empty( $product_data['title'] ) ) {
+                            $title_map['nb'] = $product_data['title'];
+                        }
                         ?>
-                        <div class="dc-form-row dc-descriptions-block">
+                        <div class="dc-form-row dc-i18n-block" id="dc-i18n-editor">
                             <div class="dc-form-group" style="width:100%;">
-                                <label><?php _e( 'Long description by store language', 'dc-product-manager' ); ?></label>
-                                <p class="dc-field-hint" style="margin-top:0;">
-                                    <?php _e( 'Write one description for each storefront language. Shoppers see the text that matches their region language. Norwegian is also saved as the default WooCommerce description.', 'dc-product-manager' ); ?>
-                                </p>
-                                <div class="dc-desc-lang-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Description languages', 'dc-product-manager' ); ?>">
-                                    <?php foreach ( $desc_langs as $code => $meta ) :
-                                        $filled = ! empty( $desc_map[ $code ] );
-                                        ?>
-                                        <button
-                                            type="button"
-                                            class="dc-desc-lang-tab<?php echo $code === $first_lang ? ' is-active' : ''; ?><?php echo $filled ? ' has-content' : ''; ?>"
-                                            data-lang="<?php echo esc_attr( $code ); ?>"
-                                            role="tab"
-                                            aria-selected="<?php echo $code === $first_lang ? 'true' : 'false'; ?>"
-                                        >
-                                            <span class="dc-desc-lang-tab__code"><?php echo esc_html( strtoupper( $code ) ); ?></span>
-                                            <span class="dc-desc-lang-tab__main">
-                                                <span class="dc-desc-lang-tab__name"><?php echo esc_html( $meta['label'] ); ?></span>
-                                                <span class="dc-desc-lang-tab__meta"><?php echo esc_html( $meta['region'] . ' · ' . $meta['currency'] ); ?></span>
-                                            </span>
-                                            <span class="dc-desc-lang-tab__status" aria-hidden="true"><?php echo $filled ? '✓' : ''; ?></span>
-                                        </button>
-                                    <?php endforeach; ?>
+                                <label for="dc-i18n-lang-select"><?php _e( 'Which store language are you editing?', 'dc-product-manager' ); ?></label>
+                                <div class="dc-i18n-toolbar">
+                                    <select id="dc-i18n-lang-select" class="dc-i18n-lang-select">
+                                        <?php foreach ( $i18n_langs as $code => $meta ) :
+                                            $has_title = ! empty( $title_map[ $code ] );
+                                            $has_desc  = ! empty( $desc_map[ $code ] );
+                                            $status    = ( $has_title && $has_desc ) ? 'complete' : ( ( $has_title || $has_desc ) ? 'partial' : 'empty' );
+                                            ?>
+                                            <option value="<?php echo esc_attr( $code ); ?>" <?php selected( $code, $first_lang ); ?>>
+                                                <?php echo esc_html( sprintf(
+                                                    '%s — %s · %s [%s]',
+                                                    strtoupper( $code ),
+                                                    $meta['label'],
+                                                    $meta['region'],
+                                                    $status
+                                                ) ); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <div class="dc-i18n-pills" role="tablist">
+                                        <?php foreach ( $i18n_langs as $code => $meta ) : ?>
+                                            <button type="button" class="dc-i18n-pill<?php echo $code === $first_lang ? ' is-active' : ''; ?>" data-lang="<?php echo esc_attr( $code ); ?>">
+                                                <strong><?php echo esc_html( strtoupper( $code ) ); ?></strong>
+                                                <span><?php echo esc_html( $meta['label'] ); ?></span>
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
-                                <?php foreach ( $desc_langs as $code => $meta ) : ?>
-                                    <div
-                                        class="dc-desc-lang-panel<?php echo $code === $first_lang ? ' is-active' : ''; ?>"
-                                        data-lang-panel="<?php echo esc_attr( $code ); ?>"
-                                        role="tabpanel"
-                                        <?php echo $code === $first_lang ? '' : 'hidden'; ?>
-                                    >
-                                        <div class="dc-desc-active-banner">
-                                            <strong><?php echo esc_html( sprintf( __( 'Editing: %s', 'dc-product-manager' ), $meta['label'] ) ); ?></strong>
-                                            <span><?php echo esc_html( sprintf(
-                                                /* translators: 1: region name, 2: currency display, 3: language code */
-                                                __( 'Shown to customers in %1$s (%2$s) · language code %3$s', 'dc-product-manager' ),
+
+                                <?php foreach ( $i18n_langs as $code => $meta ) : ?>
+                                    <div class="dc-i18n-panel<?php echo $code === $first_lang ? ' is-active' : ''; ?>" data-lang-panel="<?php echo esc_attr( $code ); ?>" style="<?php echo $code === $first_lang ? '' : 'display:none;'; ?>">
+                                        <div class="dc-i18n-banner">
+                                            <div class="dc-i18n-banner__title"><?php echo esc_html( sprintf( __( 'Now editing: %s', 'dc-product-manager' ), $meta['label'] ) ); ?></div>
+                                            <div class="dc-i18n-banner__meta"><?php echo esc_html( sprintf(
+                                                __( 'Shown to shoppers in %1$s when language is %2$s (%3$s).', 'dc-product-manager' ),
                                                 $meta['region'],
-                                                $meta['currency'],
-                                                strtoupper( $code )
-                                            ) ); ?></span>
-                                        </div>
-                                        <textarea
-                                            class="dc-product-description"
-                                            id="dc-product-description-<?php echo esc_attr( $code ); ?>"
-                                            data-lang="<?php echo esc_attr( $code ); ?>"
-                                            rows="8"
-                                            placeholder="<?php echo esc_attr( sprintf(
-                                                __( 'Type the product long description in %1$s for the %2$s store…', 'dc-product-manager' ),
                                                 $meta['label'],
-                                                $meta['region']
-                                            ) ); ?>"
-                                        ><?php echo esc_textarea( isset( $desc_map[ $code ] ) ? $desc_map[ $code ] : '' ); ?></textarea>
+                                                strtoupper( $code )
+                                            ) ); ?></div>
+                                        </div>
+
+                                        <label class="dc-i18n-field-label" for="dc-product-title-<?php echo esc_attr( $code ); ?>">
+                                            <?php echo esc_html( sprintf( __( 'Product title (%s)', 'dc-product-manager' ), $meta['label'] ) ); ?>
+                                        </label>
+                                        <input type="text" class="dc-product-title-i18n" id="dc-product-title-<?php echo esc_attr( $code ); ?>" data-lang="<?php echo esc_attr( $code ); ?>" value="<?php echo esc_attr( isset( $title_map[ $code ] ) ? $title_map[ $code ] : '' ); ?>" placeholder="<?php echo esc_attr( sprintf( __( 'Title in %s…', 'dc-product-manager' ), $meta['label'] ) ); ?>">
+
+                                        <label class="dc-i18n-field-label" for="dc-product-description-<?php echo esc_attr( $code ); ?>">
+                                            <?php echo esc_html( sprintf( __( 'Long description (%s)', 'dc-product-manager' ), $meta['label'] ) ); ?>
+                                        </label>
+                                        <textarea class="dc-product-description" id="dc-product-description-<?php echo esc_attr( $code ); ?>" data-lang="<?php echo esc_attr( $code ); ?>" rows="8" placeholder="<?php echo esc_attr( sprintf( __( 'Long description in %1$s for %2$s…', 'dc-product-manager' ), $meta['label'], $meta['region'] ) ); ?>"><?php echo esc_textarea( isset( $desc_map[ $code ] ) ? $desc_map[ $code ] : '' ); ?></textarea>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
                         </div>
                     </section>
+                    <script>
+                    (function(){
+                        function switchLang(lang){
+                            if(!lang) return;
+                            var root=document.getElementById('dc-i18n-editor');
+                            if(!root) return;
+                            var select=document.getElementById('dc-i18n-lang-select');
+                            if(select && select.value!==lang) select.value=lang;
+                            root.querySelectorAll('.dc-i18n-pill').forEach(function(btn){
+                                btn.classList.toggle('is-active', btn.getAttribute('data-lang')===lang);
+                            });
+                            root.querySelectorAll('.dc-i18n-panel').forEach(function(panel){
+                                var on=panel.getAttribute('data-lang-panel')===lang;
+                                panel.classList.toggle('is-active', on);
+                                panel.style.display=on?'block':'none';
+                            });
+                        }
+                        document.addEventListener('DOMContentLoaded', function(){
+                            var select=document.getElementById('dc-i18n-lang-select');
+                            if(select){ select.addEventListener('change', function(){ switchLang(select.value); }); }
+                            document.querySelectorAll('.dc-i18n-pill').forEach(function(btn){
+                                btn.addEventListener('click', function(e){ e.preventDefault(); switchLang(btn.getAttribute('data-lang')); });
+                            });
+                        });
+                    })();
+                    </script>
 
                     <section class="dc-form-section dc-prices-section">
                         <div class="dc-section-head">
