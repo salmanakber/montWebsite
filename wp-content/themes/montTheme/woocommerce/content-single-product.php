@@ -233,8 +233,12 @@ div#mont_backButton { z-index: 999; }
 .mont_gallery_close-btn_new {
     position: absolute;
     top: 20px; right: 30px;
-    color: #fff; font-size: 40px;
+    color: #111; font-size: 36px;
+    font-weight: 200;
     cursor: pointer; z-index: 10000;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 /* Responsive */
@@ -550,15 +554,26 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 			</style>
 			<div class="mont_product_des">
 				<div class="mon_long_desc">
-					<div class="desc_preview">
 					<?php
-					$content = apply_filters('the_content', $product->get_description());
-							$trimmed = mb_strimwidth(strip_tags($content, '<strong><em><b><i><ul><ol><li><br><h1><h2><h3><h4><h5><h6>'), 0, 300, '...');
+					$desc_html = '';
+					$desc_curated = false;
+					if ( class_exists( 'DC_Product_Manager\\DC_Product_Descriptions' ) ) {
+						$desc_html    = \DC_Product_Manager\DC_Product_Descriptions::get_for_lang( $product->get_id() );
+						$desc_curated = \DC_Product_Manager\DC_Product_Descriptions::has_curated_for_lang( $product->get_id() );
+					} else {
+						$desc_html = $product->get_description();
+					}
+					$desc_rendered = apply_filters( 'the_content', $desc_html );
+					$desc_class    = $desc_curated ? ' notranslate' : '';
+					?>
+					<div class="desc_preview<?php echo esc_attr( $desc_class ); ?>">
+					<?php
+							$trimmed = mb_strimwidth(strip_tags($desc_rendered, '<strong><em><b><i><ul><ol><li><br><h1><h2><h3><h4><h5><h6>'), 0, 300, '...');
 					echo wp_kses_post($trimmed);
 						?>
 					</div>
-					<div class="desc_full" style="display: none;">
-						<?php echo apply_filters('the_content', $product->get_description()); ?>
+					<div class="desc_full<?php echo esc_attr( $desc_class ); ?>" style="display: none;">
+						<?php echo wp_kses_post( $desc_rendered ); ?>
 					</div>
 					<span class="mont_show_hide_desc_text">Les mer...</span>
 				</div>

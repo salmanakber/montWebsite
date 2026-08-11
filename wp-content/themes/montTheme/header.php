@@ -153,12 +153,42 @@
 
     <!-- Mobile Menu Structure -->
     <div class="mont_header_mobile_menu_container">
+        <?php
+        $ship_lang = 'en';
+        if ( class_exists( 'DC_Product_Manager\\DC_Region_Currency' ) ) {
+            $ship_lang = \DC_Product_Manager\DC_Region_Currency::get_current_lang();
+        }
+        $ship_copy = array(
+            'en' => 'FREE SHIPPING WORLDWIDE',
+            'nb' => 'GRATIS FRAKT VERDEN OVER',
+            'it' => 'SPEDIZIONE GRATUITA IN TUTTO IL MONDO',
+            'vi' => 'MIỄN PHÍ VẬN CHUYỂN TOÀN CẦU',
+        );
+        $ship_text = isset( $ship_copy[ $ship_lang ] ) ? $ship_copy[ $ship_lang ] : $ship_copy['en'];
+        ?>
+        <div class="mont_header_mobile_ship" role="note">
+            <span class="mont_header_mobile_ship__text"><?php echo esc_html( $ship_text ); ?></span>
+        </div>
+
         <div class="mont_header_second_menu_header">
             <div class="mont_header_mobile_close" aria-label="Close menu"></div>
         </div>
 
         <div class="mont_header_mobile_menu_body">
             <div class="mont_header_mobile_main_menu">
+                <div class="mont_header_mobile_brand">
+                    <a class="mont_header_mobile_brand__logo" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+                        <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/images/logo.png' ); ?>" alt="Monte Napoleone">
+                    </a>
+                    <span class="mont_header_mobile_brand__year" aria-hidden="true">1974</span>
+                </div>
+
+                <?php if ( class_exists( 'DC_Product_Manager\\DC_Region_Currency' ) ) : ?>
+                    <div class="mont_header_mobile_lang">
+                        <?php echo do_shortcode( '[dc_region_switcher context="mobile-footer"]' ); ?>
+                    </div>
+                <?php endif; ?>
+
                 <ul class="mont_header_menu_mobile">
                     <li class="mont_header_menu_mobile__item mont_header_menu_mobile__item--shirts">
                         <a href="#" class="mont_mega">Skjorter</a>
@@ -166,26 +196,20 @@
                     </li>
                     <?php
                     $menu_name = 'MainMenu';
-                    $menu = wp_get_nav_menu_object($menu_name);
+                    $menu = wp_get_nav_menu_object( $menu_name );
 
-                    if ($menu) {
-                        wp_nav_menu([
-                        'menu'        => $menu->term_id,
-                        'container'   => false,
-                        'items_wrap'  => '%3$s',
-                        'depth'       => 2,
-                        ]);
+                    if ( $menu ) {
+                        wp_nav_menu( array(
+                            'menu'        => $menu->term_id,
+                            'container'   => false,
+                            'items_wrap'  => '%3$s',
+                            'depth'       => 2,
+                        ) );
                     }
                     ?>
                 </ul>
 
                 <div class="mont_header_mobile_footer">
-                    <?php if (class_exists('DC_Product_Manager\\DC_Region_Currency')) : ?>
-                        <div class="mont_header_mobile_footer__region">
-                            <?php echo do_shortcode('[dc_region_switcher context="mobile-footer"]'); ?>
-                        </div>
-                    <?php endif; ?>
-
                     <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
                     <a class="mont_header_mobile_footer__link" href="<?php echo esc_url( $about_url ); ?>">About us</a>
                 </div>
@@ -196,7 +220,7 @@
                     <span><i data-lucide="chevron-left"></i></span> Back
                 </div>
                 <div class="mont_header_mobile_mega_content">
-                    <?php echo do_shortcode('[custom_elementor_template id="20468"]'); ?>
+                    <?php echo do_shortcode( '[custom_elementor_template id="20468"]' ); ?>
                 </div>
             </div>
         </div>

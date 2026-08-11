@@ -26,7 +26,7 @@
         return;
     }
 
-    if (!cfg.shouldTranslate && !shouldNormalizeMixed) {
+    if (!cfg.shouldTranslate && !shouldNormalizeMixed && !cfg.forceAll) {
         return;
     }
 
@@ -153,8 +153,9 @@
     function collectEntries(root) {
         var scope = root || document.body;
         if (!scope) return [];
-        return collectTextEntries(scope, false)
-            .concat(collectAttributeEntries(scope, false))
+        var forceAll = !!cfg.forceAll;
+        return collectTextEntries(scope, forceAll)
+            .concat(collectAttributeEntries(scope, forceAll))
             .concat(collectSelectorEntries(scope));
     }
 

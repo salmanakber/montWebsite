@@ -309,6 +309,50 @@ $supplier_sku  = $product_data['supplier_sku'] ?? '';
                                 <input type="text" id="dc-product-custom-title-input" value="<?php echo esc_attr($product_data['title']); ?>" style="display: none;">
                             </div>
                         </div>
+                        <?php
+                        $desc_map = isset( $product_data['descriptions'] ) && is_array( $product_data['descriptions'] )
+                            ? $product_data['descriptions']
+                            : \DC_Product_Manager\DC_Product_Descriptions::get_map( $product_data['id'] );
+                        $desc_langs = \DC_Product_Manager\DC_Product_Descriptions::get_languages();
+                        $first_lang = 'nb';
+                        ?>
+                        <div class="dc-form-row dc-descriptions-block">
+                            <div class="dc-form-group" style="width:100%;">
+                                <label><?php _e( 'Long description (by language)', 'dc-product-manager' ); ?></label>
+                                <p class="dc-field-hint" style="margin-top:0;">
+                                    <?php _e( 'Storefront shows the text for the customer’s region language. Norwegian is also saved as the WooCommerce product description.', 'dc-product-manager' ); ?>
+                                </p>
+                                <div class="dc-desc-lang-tabs" role="tablist">
+                                    <?php foreach ( $desc_langs as $code => $meta ) : ?>
+                                        <button
+                                            type="button"
+                                            class="dc-desc-lang-tab<?php echo $code === $first_lang ? ' is-active' : ''; ?>"
+                                            data-lang="<?php echo esc_attr( $code ); ?>"
+                                            role="tab"
+                                            aria-selected="<?php echo $code === $first_lang ? 'true' : 'false'; ?>"
+                                        >
+                                            <?php echo esc_html( $meta['native'] ); ?>
+                                        </button>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php foreach ( $desc_langs as $code => $meta ) : ?>
+                                    <div
+                                        class="dc-desc-lang-panel<?php echo $code === $first_lang ? ' is-active' : ''; ?>"
+                                        data-lang-panel="<?php echo esc_attr( $code ); ?>"
+                                        role="tabpanel"
+                                        <?php echo $code === $first_lang ? '' : 'hidden'; ?>
+                                    >
+                                        <textarea
+                                            class="dc-product-description"
+                                            id="dc-product-description-<?php echo esc_attr( $code ); ?>"
+                                            data-lang="<?php echo esc_attr( $code ); ?>"
+                                            rows="8"
+                                            placeholder="<?php echo esc_attr( sprintf( __( 'Product description in %s…', 'dc-product-manager' ), $meta['label'] ) ); ?>"
+                                        ><?php echo esc_textarea( isset( $desc_map[ $code ] ) ? $desc_map[ $code ] : '' ); ?></textarea>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </section>
 
                     <section class="dc-form-section dc-prices-section">

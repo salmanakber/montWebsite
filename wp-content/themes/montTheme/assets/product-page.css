@@ -1886,15 +1886,27 @@ body.mont-fit-size-drawer-open {
         bottom: calc(90px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Lightbox close — clear promo banner on mobile */
+    /* Lightbox close — thin × only, no circle / white plate */
     .mont_gallery_lightbox .mont_gallery_close-btn,
     .mont_gallery_close-btn {
-        top: max(16px, env(safe-area-inset-top, 0px)) !important;
-        right: 14px !important;
+        top: max(12px, env(safe-area-inset-top, 0px)) !important;
+        right: 10px !important;
         z-index: 10020 !important;
         position: fixed !important;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 36px !important;
+        font-weight: 200 !important;
+        line-height: 1 !important;
+        color: #111 !important;
     }
 
     body.has-sticky-discount .mont_gallery_lightbox .mont_gallery_close-btn,
@@ -1904,6 +1916,6 @@ body.mont-fit-size-drawer-open {
 
     .mont_gallery_lightbox.active .mont_gallery_close-btn,
     .mont_gallery_lightbox[style*="block"] .mont_gallery_close-btn {
-        display: block !important;
+        display: flex !important;
     }
 }

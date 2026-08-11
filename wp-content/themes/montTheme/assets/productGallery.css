@@ -103,35 +103,41 @@ width: 6px;
 
 .mont_gallery_close-btn {
     position: absolute;
-    right: 20px;
-    top: 16px;
-    color: #000000;
+    right: 16px;
+    top: 14px;
+    color: #111;
     cursor: pointer;
-    border: 1px solid #00000038;
-    padding: 2px 4px 13px 9px;
-    border-radius: 50%;
-    height: 16px;
-    width: 18px;
-    font-family: system-ui;
-    font-weight: 100;
-    font-size: 21px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+    height: 40px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 200;
+    font-size: 34px;
+    line-height: 1;
     z-index: 10020;
 }
 
 @media (max-width: 1024px) {
     .mont_gallery_close-btn {
         position: fixed;
-        top: max(16px, env(safe-area-inset-top, 0px));
-        right: 14px;
-        height: 40px;
-        width: 40px;
+        top: max(12px, env(safe-area-inset-top, 0px));
+        right: 10px;
+        height: 44px;
+        width: 44px;
         padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        background: rgba(255, 255, 255, 0.96);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-size: 36px;
+        font-weight: 200;
+        color: #111;
     }
 
     body.has-sticky-discount .mont_gallery_close-btn {

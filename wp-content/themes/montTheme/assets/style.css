@@ -607,7 +607,7 @@ justify-content: space-between;
 
 .mont_header_mobile_menu_body {
     position: absolute;
-    top: 53px;
+    top: 86px; /* ship banner (~32) + close bar (~54) */
     left: 0;
     right: 0;
     bottom: 0;
@@ -695,10 +695,88 @@ justify-content: space-between;
 .mont_header_mobile_footer {
     margin-top: auto;
     flex-shrink: 0;
-    padding: 16px 24px 24px;
+    padding: 8px 24px calc(24px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
+}
+
+/* Free-shipping strip inside the open drawer (promo bar is hidden) */
+.mont_header_mobile_ship {
+    flex-shrink: 0;
+    background: #111;
+    color: #fff;
+    text-align: center;
+    padding: 9px 16px;
+    box-sizing: border-box;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mont_header_mobile_ship__text {
+    font-family: "Figtree", "Rubik", sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.3;
+}
+
+.mont_header_mobile_brand {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 28px 24px 18px;
+    gap: 10px;
+}
+
+.mont_header_mobile_brand__logo {
+    display: block;
+    line-height: 0;
+}
+
+.mont_header_mobile_brand__logo img {
+    display: block;
+    max-width: 196px;
+    width: auto;
+    height: auto;
+    max-height: 36px;
+    margin: 0 auto;
+    object-fit: contain;
+}
+
+.mont_header_mobile_brand__year {
+    display: block;
+    font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.42em;
+    color: #9a9a9a;
+    line-height: 1;
+    margin-left: 0.42em; /* optically center tracked type */
+}
+
+.mont_header_mobile_lang {
+    flex-shrink: 0;
+    padding: 4px 24px 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.mont_header_mobile_lang .dc-region-switcher--mobile-footer .dc-region-trigger {
+    justify-content: flex-start;
+    padding: 12px 0;
+    border: 0;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: #111;
 }
 
 /* Leave room for the fixed B2B/B2C switcher when the drawer is open */

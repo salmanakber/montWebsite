@@ -51,6 +51,7 @@ class Mont_DeepL_Plugin {
             'monthly_limit'  => 500000,
             'disable_google' => 1,
             'normalize_mixed_to_source' => 1,
+            'polylang_style' => 0,
             'include_selectors' => '',
         );
     }
@@ -91,8 +92,11 @@ class Mont_DeepL_Plugin {
             '.mont_sizes-change-btn',
             '.mont_sizes-close-btn',
             '.mont_sizes-control-label',
-            '.mont_straight_line',
-            '.mont_add_to_cart_button_and_alert',
+            '.mont_product_des',
+            '.mon_long_desc',
+            '.desc_preview',
+            '.desc_full',
+            '.mont_show_hide_desc_text',
             '.woocommerce-tabs',
             '.woocommerce-breadcrumb',
             '.woocommerce-message',
@@ -251,6 +255,8 @@ class Mont_DeepL_Plugin {
         wp_localize_script('mont-deepl-front', 'montDeepL', array(
             'enabled'         => true,
             'disableGoogle'   => !empty($settings['disable_google']),
+            'polylangStyle'   => !empty($settings['polylang_style']),
+            'forceAll'        => !empty($settings['polylang_style']),
             'ajaxUrl'         => admin_url('admin-ajax.php'),
             'nonce'           => wp_create_nonce('mont_deepl_translate'),
             'sourceLang'      => $diag['source_lang'],

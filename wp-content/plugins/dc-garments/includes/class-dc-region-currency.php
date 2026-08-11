@@ -234,7 +234,8 @@ class DC_Region_Currency {
     /**
      * Build a safe redirect URL after region change.
      * - With WPML: language-aware permalink
-     * - Without WPML: same page (cookie already set — no fake /en/ paths)
+     * - Polylang-style DeepL mode: keep ?lang=en|it|nb|vi visible
+     * - Default: same page (cookie carries the region)
      */
     public static function get_url_for_region($region_slug, $url = null) {
         if (!self::is_valid_region($region_slug)) {
@@ -249,12 +250,42 @@ class DC_Region_Currency {
         if (defined('ICL_SITEPRESS_VERSION') && has_filter('wpml_permalink')) {
             $wpml_url = apply_filters('wpml_permalink', $url, $lang, true);
             if (is_string($wpml_url) && $wpml_url !== '') {
-                return remove_query_arg(self::QUERY_VAR, $wpml_url);
+                return remove_query_arg(array(self::QUERY_VAR, 'lang'), $wpml_url);
             }
         }
 
-        // No WPML: stay on the same path. Cookie carries the region.
-        return remove_query_arg(self::QUERY_VAR, $url);
+        $url = remove_query_arg(self::QUERY_VAR, $url);
+
+        // DeepL “Polylang-style” mode: expose language codes in the URL.
+        if (self::polylang_style_enabled()) {
+            return add_query_arg('lang', $lang, $url);
+        }
+
+        return remove_query_arg('lang', $url);
+    }
+
+    /**
+     * Whether Mont DeepL polylang_style mode is on.
+     */
+    public static function polylang_style_enabled() {
+        if (!class_exists('Mont_DeepL_Plugin')) {
+            return false;
+        }
+        $settings = Mont_DeepL_Plugin::settings();
+        return !empty($settings['polylang_style']);
+    }
+
+    /**
+     * Map language code (en|it|nb|vi) → region slug.
+     */
+    public static function lang_to_region($lang) {
+        $lang = strtolower(sanitize_key($lang));
+        foreach (self::get_regions() as $slug => $region) {
+            if (!empty($region['lang']) && $region['lang'] === $lang) {
+                return $slug;
+            }
+        }
+        return '';
     }
 
     public static function get_current_page_url() {
@@ -268,6 +299,7 @@ class DC_Region_Currency {
 
     public function init() {
         add_action('init', array($this, 'maybe_handle_region_query'), 5);
+        add_action('init', array($this, 'maybe_handle_lang_query'), 6);
         add_action('init', array($this, 'maybe_auto_set_region'), 20);
         add_action('init', array($this, 'register_shortcode'), 20);
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
@@ -296,11 +328,43 @@ class DC_Region_Currency {
         self::set_region_cookie($slug);
 
         // Clean URL: redirect once to same page without the query arg (cookie keeps region).
-        // Skip if WPML will own the language URL.
+        // Skip if WPML will own the language URL. Keep ?lang= when Polylang-style is on.
         if (!defined('ICL_SITEPRESS_VERSION') && !headers_sent()) {
             $clean = remove_query_arg(self::QUERY_VAR, self::get_current_page_url());
+            if (self::polylang_style_enabled()) {
+                $region = self::get_region($slug);
+                $clean = add_query_arg('lang', $region['lang'], remove_query_arg('lang', $clean));
+            } else {
+                $clean = remove_query_arg('lang', $clean);
+            }
             wp_safe_redirect($clean, 302);
             exit;
+        }
+    }
+
+    /**
+     * Polylang-style: ?lang=en|it|nb|vi maps to region cookie.
+     */
+    public function maybe_handle_lang_query() {
+        if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+            return;
+        }
+        if (!self::polylang_style_enabled()) {
+            return;
+        }
+        if (!isset($_GET['lang'])) {
+            return;
+        }
+
+        $lang = sanitize_key(wp_unslash($_GET['lang']));
+        $slug = self::lang_to_region($lang);
+        if (!$slug) {
+            return;
+        }
+
+        $current = isset($_COOKIE[self::COOKIE_NAME]) ? sanitize_key(wp_unslash($_COOKIE[self::COOKIE_NAME])) : '';
+        if ($current !== $slug) {
+            self::set_region_cookie($slug);
         }
     }
 

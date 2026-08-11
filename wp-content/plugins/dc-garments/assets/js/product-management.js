@@ -38,6 +38,17 @@ jQuery(document).ready(function($) {
     var $productEditForm = $('#dc-product-edit-form');
     var $saveProduct = $('#dc-save-product');
     var $productTitle = $('#dc-product-title');
+
+    // CRM long-description language tabs
+    $(document).on('click', '.dc-desc-lang-tab', function(e) {
+        e.preventDefault();
+        var lang = $(this).data('lang');
+        if (!lang) return;
+        $('.dc-desc-lang-tab').removeClass('is-active').attr('aria-selected', 'false');
+        $(this).addClass('is-active').attr('aria-selected', 'true');
+        $('.dc-desc-lang-panel').removeClass('is-active').attr('hidden', true);
+        $('.dc-desc-lang-panel[data-lang-panel="' + lang + '"]').addClass('is-active').removeAttr('hidden');
+    });
     var $productFabricColor = $('#dc-product-fabric-color');
 	var $productFabricColorEnglish = $('#dc-product-fabric-color-english');
     var $productCategory = $('#dc-product-category');
@@ -651,6 +662,14 @@ function formatPrice(price, currency) {
                 $productPrice.val(Object.values(multicurrencyPrices)[0]);
             }
 
+            var descriptions = {};
+            $('.dc-product-description').each(function() {
+                var lang = $(this).data('lang');
+                if (lang) {
+                    descriptions[lang] = $(this).val();
+                }
+            });
+
             var formData = {
             action: 'dc_update_product',
                 nonce: dc_product_manager.nonce,
@@ -663,6 +682,8 @@ function formatPrice(price, currency) {
             price: $productPrice.val(),
             multicurrency_prices: multicurrencyPrices,
             multicurrency_prices_json: JSON.stringify(multicurrencyPrices),
+            descriptions: descriptions,
+            descriptions_json: JSON.stringify(descriptions),
             stock: $productStock.val(),
                 moq: $productMOQ.val(),
                 b2b_product: $productB2BStatus.val(),

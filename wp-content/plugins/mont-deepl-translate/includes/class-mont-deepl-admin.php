@@ -83,6 +83,7 @@ class Mont_DeepL_Admin {
         $out['monthly_limit']  = max(1000, (int) (isset($input['monthly_limit']) ? $input['monthly_limit'] : 500000));
         $out['disable_google'] = !empty($input['disable_google']) ? 1 : 0;
         $out['normalize_mixed_to_source'] = !empty($input['normalize_mixed_to_source']) ? 1 : 0;
+        $out['polylang_style'] = !empty($input['polylang_style']) ? 1 : 0;
         $out['include_selectors'] = isset($input['include_selectors'])
             ? (string) wp_unslash($input['include_selectors'])
             : $existing['include_selectors'];
@@ -243,6 +244,18 @@ class Mont_DeepL_Admin {
                                 <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[normalize_mixed_to_source]" value="1" <?php checked(!empty($settings['normalize_mixed_to_source'])); ?> />
                                 <?php esc_html_e('When target equals source (ex: Norway/NB), still translate likely English leftovers to source language', 'mont-deepl'); ?>
                             </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Polylang-style string mode', 'mont-deepl'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo esc_attr(Mont_DeepL_Plugin::OPTION_KEY); ?>[polylang_style]" value="1" <?php checked(!empty($settings['polylang_style'])); ?> />
+                                <?php esc_html_e('Force string translation on included selectors (skip English heuristics). Also exposes language codes (en, it, nb, vi) on the region switcher URL via ?lang=.', 'mont-deepl'); ?>
+                            </label>
+                            <p class="description">
+                                <?php esc_html_e('Use with CRM curated product descriptions (notranslate). Pair with “Disable Google Translate” for DeepL-only behaviour.', 'mont-deepl'); ?>
+                            </p>
                         </td>
                     </tr>
                     <tr>
