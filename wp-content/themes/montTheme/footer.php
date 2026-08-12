@@ -41,7 +41,7 @@ span.error-code {
         <div class="popup-right">
             <div class="overlay"></div>
             <div class="discount-text"><?php //echo $discount->discount_amount; ?></div>
-            <img src="<?php echo home_url() ?>/wp-content/uploads/2025/08/IMG_4560_4-5.jpg" alt="Monte Napoleone Exclusive Offer" class="popup-image">
+            <img src="<?php echo esc_url( content_url( 'uploads/2025/08/IMG_4560_4-5.jpg' ) ); ?>" alt="Monte Napoleone Exclusive Offer" class="popup-image">
         </div>
     </div>
     </div>

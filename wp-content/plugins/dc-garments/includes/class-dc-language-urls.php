@@ -40,7 +40,13 @@ class DC_Language_Urls {
 		add_filter( 'page_link', array( __CLASS__, 'filter_link' ), 20 );
 		add_filter( 'post_type_link', array( __CLASS__, 'filter_link' ), 20 );
 		add_filter( 'term_link', array( __CLASS__, 'filter_link' ), 20 );
-		add_filter( 'attachment_link', array( __CLASS__, 'filter_link' ), 20 );
+		// Never prefix attachment/file URLs.
+		add_filter( 'wp_get_attachment_url', array( __CLASS__, 'strip_lang_from_asset_url' ), 99 );
+		add_filter( 'wp_get_attachment_image_src', array( __CLASS__, 'filter_attachment_image_src' ), 99 );
+		add_filter( 'wp_calculate_image_srcset', array( __CLASS__, 'filter_image_srcset' ), 99 );
+		add_filter( 'wp_get_attachment_image_attributes', array( __CLASS__, 'filter_image_attributes' ), 99 );
+		add_filter( 'the_content', array( __CLASS__, 'filter_content_asset_urls' ), 99 );
+		add_filter( 'upload_dir', array( __CLASS__, 'filter_upload_dir' ), 99 );
 		add_filter( 'redirect_canonical', array( __CLASS__, 'filter_redirect_canonical' ), 1, 2 );
 	}
 
@@ -234,7 +240,7 @@ class DC_Language_Urls {
 	}
 
 	public static function should_skip_path( $path ) {
-		$path = (string) $path;
+		$path = '/' . ltrim( str_replace( '\\', '/', (string) $path ), '/' );
 		$skip = array(
 			'/wp-admin',
 			'/wp-json',
@@ -243,6 +249,7 @@ class DC_Language_Urls {
 			'/xmlrpc.php',
 			'/wp-content',
 			'/wp-includes',
+			'/uploads/',
 			'/favicon.ico',
 			'/robots.txt',
 			'/sitemap',
@@ -254,10 +261,91 @@ class DC_Language_Urls {
 				return true;
 			}
 		}
-		if ( preg_match( '/\.(css|js|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|map|txt|xml)$/i', $path ) ) {
+		if ( preg_match( '/\.(css|js|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|map|txt|xml|mp4|webm|pdf)$/i', $path ) ) {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Remove /en|/it|/nb|/vi in front of static asset paths.
+	 * Example: /it/wp-content/uploads/x.jpg → /wp-content/uploads/x.jpg
+	 */
+	public static function strip_lang_from_asset_url( $url ) {
+		if ( ! is_string( $url ) || $url === '' ) {
+			return $url;
+		}
+		$codes = self::get_lang_codes();
+		if ( ! $codes ) {
+			return $url;
+		}
+		$alt = implode( '|', array_map( 'preg_quote', $codes ) );
+		$fixed = preg_replace(
+			'#(^|://[^/]+)/(?:' . $alt . ')/(wp-content|wp-includes|wp-admin|wp-json|uploads)/#i',
+			'$1/$2/',
+			$url
+		);
+		return is_string( $fixed ) ? $fixed : $url;
+	}
+
+	public static function filter_attachment_image_src( $image ) {
+		if ( is_array( $image ) && ! empty( $image[0] ) ) {
+			$image[0] = self::strip_lang_from_asset_url( $image[0] );
+		}
+		return $image;
+	}
+
+	public static function filter_image_srcset( $sources ) {
+		if ( ! is_array( $sources ) ) {
+			return $sources;
+		}
+		foreach ( $sources as $width => $source ) {
+			if ( ! empty( $source['url'] ) ) {
+				$sources[ $width ]['url'] = self::strip_lang_from_asset_url( $source['url'] );
+			}
+		}
+		return $sources;
+	}
+
+	public static function filter_image_attributes( $attr ) {
+		if ( ! is_array( $attr ) ) {
+			return $attr;
+		}
+		foreach ( array( 'src', 'srcset', 'data-src', 'data-srcset', 'data-large_image' ) as $key ) {
+			if ( ! empty( $attr[ $key ] ) ) {
+				$attr[ $key ] = self::strip_lang_from_asset_url( $attr[ $key ] );
+			}
+		}
+		return $attr;
+	}
+
+	public static function filter_content_asset_urls( $content ) {
+		if ( ! is_string( $content ) || $content === '' ) {
+			return $content;
+		}
+		$codes = self::get_lang_codes();
+		if ( ! $codes ) {
+			return $content;
+		}
+		$alt = implode( '|', array_map( 'preg_quote', $codes ) );
+		$fixed = preg_replace(
+			'#(https?://[^/]+)/(?:' . $alt . ')/(wp-content|wp-includes)/#i',
+			'$1/$2/',
+			$content
+		);
+		return is_string( $fixed ) ? $fixed : $content;
+	}
+
+	public static function filter_upload_dir( $uploads ) {
+		if ( is_array( $uploads ) ) {
+			if ( ! empty( $uploads['url'] ) ) {
+				$uploads['url'] = self::strip_lang_from_asset_url( $uploads['url'] );
+			}
+			if ( ! empty( $uploads['baseurl'] ) ) {
+				$uploads['baseurl'] = self::strip_lang_from_asset_url( $uploads['baseurl'] );
+			}
+		}
+		return $uploads;
 	}
 
 	/**
@@ -383,6 +471,11 @@ class DC_Language_Urls {
 
 	public static function filter_link( $url ) {
 		if ( ! self::enabled() || self::$filtering || ( is_admin() && ! wp_doing_ajax() ) ) {
+			return $url;
+		}
+		$url = self::strip_lang_from_asset_url( $url );
+		$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		if ( self::should_skip_path( $path ) ) {
 			return $url;
 		}
 		self::$filtering = true;
