@@ -378,9 +378,11 @@ button.button {
 
 .mont_header_brand {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     text-decoration: none;
-    line-height: 0;
+    line-height: 1;
 }
 
 .mont_header_logo img,
@@ -388,29 +390,32 @@ button.button {
     max-height: 30px;
     width: auto;
     display: block;
+    flex-shrink: 0;
 }
 
-/* Desktop: 1974 beside logo, lifted toward top-right */
+/* Desktop: 1974 inline beside logo, same serif lockup style */
 .mont_header_brand__year {
-    position: absolute;
-    top: -1px;
-    left: calc(100% + 7px);
-    font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-    font-size: 10px;
+    position: static;
+    font-family: "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
+    font-size: 18px;
     font-weight: 400;
-    letter-spacing: 0.32em;
-    color: #9a9a9a;
+    letter-spacing: 0.12em;
+    color: #949598;
     line-height: 1;
     white-space: nowrap;
     pointer-events: none;
+    flex-shrink: 0;
+    transform: translateY(1px);
 }
 
 @media (min-width: 1025px) {
+    .mont_header_brand {
+        gap: 12px;
+    }
+
     .mont_header_brand__year {
-        font-size: 11px;
-        letter-spacing: 0.36em;
-        top: -2px;
-        left: calc(100% + 9px);
+        font-size: 20px;
+        letter-spacing: 0.14em;
     }
 }
 
