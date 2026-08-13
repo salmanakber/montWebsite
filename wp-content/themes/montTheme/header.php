@@ -107,8 +107,9 @@
                 </div>
             </div>
             <div class="mont_header_logo">
-                <a href="<?php echo home_url(); ?>">
-                    <img src="<?php echo get_template_directory_uri(); ?>/assets/images/logo.png" alt="Logo">
+                <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="mont_header_brand">
+                    <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/images/logo.png' ); ?>" alt="Monte Napoleone">
+                    <span class="mont_header_brand__year" aria-hidden="true">1974</span>
                 </a>
             </div>
             <style>
