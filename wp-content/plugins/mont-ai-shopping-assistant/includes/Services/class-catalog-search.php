@@ -121,6 +121,25 @@ class Catalog_Search {
 	}
 
 	/**
+	 * How many product cards to show for this turn.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return int 1-3
+	 */
+	public function card_limit( $message, array $history = array() ) {
+		$text = strtolower( trim( (string) $message ) );
+		if ( preg_match( '/\b(only one|just one|single (pick|one|shirt)|one pick|one shirt|pick one for me|choose one for me|your top pick|top pick for me|best one only)\b/i', $text ) ) {
+			return 1;
+		}
+		if ( $this->wants_recommendation( $message ) && preg_match( '/\b(pick|choose|one)\b/i', $text ) && ! preg_match( '/\b(options|shirts|more)\b/i', $text ) ) {
+			return 1;
+		}
+		unset( $history );
+		return 3;
+	}
+
+	/**
 	 * Whether to run catalog browse.
 	 * Only when the customer clearly wants to see products — not for chat Q&A.
 	 *

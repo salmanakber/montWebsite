@@ -22,6 +22,74 @@ defined( 'ABSPATH' ) || exit;
 class Order_Builder {
 
 	/**
+	 * Whether the customer is mid shirt configuration (picked product, options pending).
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return bool
+	 */
+	public static function is_configuring( $message, array $history ) {
+		if ( self::active_product_id( $history ) <= 0 ) {
+			return false;
+		}
+		// Explicit new browse intent cancels configuration.
+		$text = strtolower( trim( (string) $message ) );
+		if ( preg_match( '/\b(cancel|start over|different shirt|another shirt|new shirt|forget (it|that)|browse again)\b/i', $text ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Product id currently being configured from chat history.
+	 *
+	 * @param array $history History.
+	 * @return int
+	 */
+	public static function active_product_id( array $history ) {
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			if ( preg_match( '/(is in your cart|Cart updated|checkout whenever|ligger i handlekurven|nel carrello)/i', (string) $h['content'] ) ) {
+				return 0;
+			}
+		}
+
+		$pick = 0;
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			$role = isset( $h['role'] ) ? $h['role'] : 'user';
+			if ( 'user' === $role && preg_match( '/I want product\s*#?\s*(\d+)/i', (string) $h['content'], $m ) ) {
+				$pick = (int) $m[1];
+				break;
+			}
+		}
+		if ( $pick <= 0 ) {
+			return 0;
+		}
+
+		$after_pick = false;
+		foreach ( $history as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			$content = (string) $h['content'];
+			$role    = isset( $h['role'] ) ? $h['role'] : 'user';
+			if ( 'user' === $role && preg_match( '/I want product\s*#?\s*' . $pick . '\b/i', $content ) ) {
+				$after_pick = true;
+				continue;
+			}
+			if ( $after_pick && 'assistant' === $role && preg_match( '/(which fit|Which size|collar|cuff|passform|størrelse|details right|Love that pick|Almost there)/i', $content ) ) {
+				return $pick;
+			}
+		}
+		return 0;
+	}
+
+	/**
 	 * Try to handle a message locally. Returns response array or null to fall through.
 	 *
 	 * @param string $message  Message.
@@ -156,21 +224,35 @@ class Order_Builder {
 		if ( preg_match( '/product\s*#?\s*(\d+)/i', $message, $m ) ) {
 			return (int) $m[1];
 		}
-		// Only continue the option stepper when this looks like a tap (short choice).
-		$trim = trim( (string) $message );
-		if ( ! preg_match( '/^(slim|regular|classic|extra\s*slim|body\s*fit|\d{2}|xxs|xs|s|m|l|xl|xxl|1|2|3|5)$/i', $trim )
-			&& strlen( $trim ) > 24 ) {
-			return 0;
-		}
-		foreach ( array_reverse( $history ) as $h ) {
-			if ( empty( $h['content'] ) || ( isset( $h['role'] ) && 'assistant' === $h['role'] ) ) {
-				continue;
-			}
-			if ( preg_match( '/I want product\s*#?\s*(\d+)/i', (string) $h['content'], $m ) ) {
-				return (int) $m[1];
-			}
+		$active = self::active_product_id( $history );
+		if ( $active > 0 && self::looks_like_option_answer( $message ) ) {
+			return $active;
 		}
 		return 0;
+	}
+
+	/**
+	 * True when message is likely a fit/size/collar/cuff tap.
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	private static function looks_like_option_answer( $message ) {
+		$msg = strtolower( trim( (string) $message ) );
+		if ( preg_match( '/^\d{2}$/', $msg ) ) {
+			return true;
+		}
+		if ( preg_match( '/\b(slim\s*fit|regular\s*fit|classic\s*fit|extra\s*slim|slim|regular|classic)\b/i', $msg ) ) {
+			return true;
+		}
+		if ( preg_match( '/\b(collar|cuff|snipp|mansjett|collo|polsino|quantity|qty)\b/i', $msg ) ) {
+			return true;
+		}
+		// Short taps from choice buttons (usually under 40 chars, no product browse intent).
+		if ( strlen( $msg ) <= 40 && ! preg_match( '/\b(shirt|skjorte|camicia|show|browse|recommend|pick one|top pick|only one)\b/i', $msg ) ) {
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -204,7 +286,9 @@ class Order_Builder {
 					continue;
 				}
 				foreach ( $texts as $t ) {
-					if ( 0 === strcasecmp( $t, trim( $label ) ) ) {
+					$tn = $this->normalize_choice( $t );
+					$ln = $this->normalize_choice( $label );
+					if ( $tn === $ln || 0 === strcasecmp( trim( $t ), trim( $label ) ) ) {
 						$selection[ $key ] = $label;
 						break 2;
 					}
@@ -224,23 +308,39 @@ class Order_Builder {
 	 * @return array
 	 */
 	private function apply_latest_choice( $message, array $options, array $selection ) {
-		$msg = trim( $message );
+		$msg = $this->normalize_choice( $message );
 		foreach ( $options as $opt ) {
 			if ( empty( $opt['choices'] ) ) {
 				continue;
 			}
 			foreach ( $opt['choices'] as $c ) {
 				$label = is_array( $c ) ? ( isset( $c['label'] ) ? $c['label'] : '' ) : (string) $c;
-				if ( $label && 0 === strcasecmp( $msg, trim( $label ) ) ) {
+				$norm  = $this->normalize_choice( $label );
+				if ( ! $label ) {
+					continue;
+				}
+				if ( $msg === $norm || 0 === strcasecmp( trim( $message ), trim( $label ) ) ) {
 					$selection[ $opt['key'] ] = $label;
 					return $selection;
 				}
 			}
 		}
-		if ( preg_match( '/^\d+$/', $msg ) ) {
-			$selection['quantity'] = max( 1, (int) $msg );
+		if ( preg_match( '/^\d+$/', trim( $message ) ) ) {
+			$selection['quantity'] = max( 1, (int) trim( $message ) );
 		}
 		return $selection;
+	}
+
+	/**
+	 * Normalize option labels for fuzzy match (SLIM FIT ↔ Slim Fit).
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	private function normalize_choice( $text ) {
+		$text = strtolower( trim( (string) $text ) );
+		$text = preg_replace( '/\s+/', ' ', $text );
+		return $text;
 	}
 
 	/**

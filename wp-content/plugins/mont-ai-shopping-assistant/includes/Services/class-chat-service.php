@@ -97,8 +97,8 @@ class Chat_Service {
 			);
 		}
 
-		// Option taps / “I want product #123” — local builder (B2C).
-		if ( $picked_id || $this->is_followup_option_answer( $message, $history ) ) {
+		// Option taps / product configuration — always finish the shirt before browsing again.
+		if ( $picked_id || Order_Builder::is_configuring( $message, $history ) ) {
 			$builder = new Order_Builder();
 			$local   = $builder->maybe_handle( $message, $history, $language );
 			if ( is_array( $local ) ) {
@@ -110,7 +110,26 @@ class Chat_Service {
 					isset( $local['provider'] ) ? $local['provider'] : 'local',
 					false,
 					$language,
-					$picked_id
+					$picked_id ? $picked_id : Order_Builder::active_product_id( $history )
+				);
+			}
+			// Mid-configuration but builder couldn't parse — don't dump new products.
+			if ( Order_Builder::is_configuring( $message, $history ) ) {
+				return $this->response(
+					$this->copy_lang(
+						$language,
+						'Let’s finish this shirt first — tap one of the buttons above (fit, size, collar…) or tell me the size number.',
+						'La oss fullføre denne skjorten først — trykk på knappene over (passform, størrelse, snipp…) eller si størrelsesnummeret.',
+						'Finiamo prima questa camicia — tocca i pulsanti sopra (vestibilità, taglia, collo…) o dimmi la taglia.',
+						'Mình hoàn tất chiếc áo này trước nhé — chạm nút phía trên (form, size, cổ…) hoặc nói size.'
+					),
+					array(),
+					null,
+					false,
+					'local',
+					false,
+					$language,
+					Order_Builder::active_product_id( $history )
 				);
 			}
 		}
@@ -158,6 +177,9 @@ class Chat_Service {
 	 * @return bool
 	 */
 	private function should_attach_shop_cards( $message, $content, array $history ) {
+		if ( Order_Builder::is_configuring( $message, $history ) ) {
+			return false;
+		}
 		$blob = strtolower( trim( $message . ' ' . $content . ' ' . $this->history_text( $history ) ) );
 		if ( preg_match( '/\b(ship|shipping|deliver|delivery|return|refund|frakt|levering|policy only)\b/i', $message )
 			&& ! preg_match( '/\b(shirt|skjorte|camicia|product|colour|color|fit)\b/i', $message ) ) {
@@ -344,7 +366,11 @@ class Chat_Service {
 				)
 			);
 		}
-		$sys .= "\n\nIf the customer is shopping in any wording, call search_products (or get_product) before your final answer so cards appear.";
+		$sys .= "\n\nCard limit for this turn: " . $catalog->card_limit( $message, $history ) . ' (use search_products limit accordingly).';
+		if ( Order_Builder::is_configuring( $message, $history ) ) {
+			$sys .= "\nIMPORTANT: Customer is configuring a shirt (product #" . Order_Builder::active_product_id( $history ) . '). Do NOT search_products or show new shirts — help finish options or add_to_cart.';
+		}
+		$sys .= "\n\nIf the customer is shopping, call search_products or get_product before your final answer so cards appear.";
 		$messages[] = array(
 			'role'    => 'system',
 			'content' => $sys,
@@ -465,12 +491,13 @@ class Chat_Service {
 				$cards = $this->cards_mentioned_in_text( $content, $catalog, $channel );
 			}
 			if ( ! $cards && $this->should_attach_shop_cards( $message, $content, $history ) ) {
-				$found = $catalog->recommend( $message, $history, 3, $channel );
+				$limit = $catalog->card_limit( $message, $history );
+				$found = $catalog->recommend( $message, $history, $limit, $channel );
 				if ( ! empty( $found['cards'] ) ) {
 					$cards  = $found['cards'];
 					$rec_id = (int) ( $found['recommended_id'] ?? 0 );
 					if ( '' === trim( (string) $content ) ) {
-						$content = $this->recommend_copy( $language, $cards, $found['prefs'] ?? array(), true );
+						$content = $this->recommend_copy( $language, $cards, $found['prefs'] ?? array(), 1 === $limit );
 					}
 				}
 			}
@@ -478,7 +505,8 @@ class Chat_Service {
 				$rec_id = (int) $cards[0]['id'];
 			}
 
-			$cards = array_slice( $this->unique_cards( $cards ), 0, 3 );
+			$max_cards = $catalog->card_limit( $message, $history );
+			$cards     = array_slice( $this->unique_cards( $cards ), 0, $max_cards );
 			if ( '' === trim( (string) $content ) && $cards ) {
 				$content = $this->recommend_copy( $language, $cards, array(), false );
 			}
@@ -489,7 +517,8 @@ class Chat_Service {
 
 			// Always try a live catalog answer first — never strand the shopper.
 			try {
-				$found = $catalog->recommend( $message, $history, 3, $channel );
+				$limit = $catalog->card_limit( $message, $history );
+				$found = $catalog->recommend( $message, $history, $limit, $channel );
 				if ( ! empty( $found['count'] ) ) {
 					return $this->response(
 						$this->recommend_copy( $language, $found['cards'], $found['prefs'] ?? array(), true ),
@@ -599,23 +628,23 @@ VOICE
 - You CAN show photos in chat (product cards). Never claim you cannot show images.
 
 DATABASE / TOOLS (you have full shop access)
-- Always use tools for anything about products: search_products, get_product, get_variations, get_custom_options, get_cart, add_to_cart.
-- paraphrase does not matter — “need a shirt”, “something nice”, “what suits me”, “not red”, “that one again”, “why that?” are all valid intents. Call tools.
-- search_products query = natural keywords from what they want (colour, fabric, slim, casual, no red, etc.). Limit 1–3.
-- When they want ONE specific shirt you already mentioned, call get_product with that product id.
-- When they reject a colour/style, search again with exclusions (e.g. query “blue white oxford -red”).
-- For sizes/options after they pick a shirt, use get_custom_options then present_choices one step at a time.
-- Never invent product names, prices, stock, or sizes. Only tool / LIVE CATALOG facts.
+- Products: search_products, get_product, get_variations, get_custom_options, present_choices, validate_selection, add_to_cart, get_cart.
+- Orders & support: lookup_order (needs order # + billing email), submit_support_request (complaints / issues).
+- paraphrase does not matter — understand intent in any wording.
+- search_products limit: use "1" when they want ONE pick / top pick / only one shirt; "3" when browsing.
+- When they reject a colour, search again with exclusions (e.g. query “blue white oxford slim -red”).
+- After they tap Select on a shirt, help them finish fit → size → collar → cuff via present_choices — do NOT show new product lists mid-configuration.
+
+ORDERS & COMPLAINTS
+- If they ask about an order: ask for order number + email if missing, then lookup_order and explain status/items clearly like a human.
+- If they complain or need help: empathize briefly, gather email + what happened + order # if relevant, then submit_support_request.
+- Never invent order status — only tool results.
 
 SELLING STYLE
-- Prefer showing 1–3 real shirts over long interviews.
-- One clarifying question is ok; five in a row is not.
-- Remember earlier picks from chat. Don’t restart from zero.
-- If unsure, search the catalog and show options — don’t stall.
-
+- Prefer showing 1–3 real shirts over long interviews. ONE card when they asked for one pick only.
+- Remember earlier picks. Don’t restart from zero.
 PAYMENTS
-- Never ask for card numbers, expiry, CVC, Vipps PIN, or any secret.
-- Payment happens on website checkout (Visa / Mastercard / PayPal / Vipps). Guide them to Select → cart → checkout.
+- Never ask for card numbers, expiry, CVC, Vipps PIN. Checkout on site (Visa / PayPal / Vipps).
 PROMPT;
 
 		$parts   = array( $base );
@@ -996,6 +1025,15 @@ PROMPT;
 		$filter = $bits ? implode( ', ', $bits ) : '';
 
 		if ( $best ) {
+			if ( 1 === count( $cards ) ) {
+				return $this->copy_lang(
+					$language,
+					'If I had to pick just one' . ( $filter ? ' (' . $filter . ')' : '' ) . ', it’s “' . $fav . '”. Here it is — tap Select if you want it, or tell me what to change.',
+					'Må jeg velge én' . ( $filter ? ' (' . $filter . ')' : '' ) . ', er det «' . $fav . '». Her er den — trykk Velg, eller si hva du vil endre.',
+					'Se devo sceglierne una sola' . ( $filter ? ' (' . $filter . ')' : '' ) . ', è «' . $fav . '». Eccola — tocca Seleziona, o dimmi cosa cambiare.',
+					'Nếu chỉ chọn một' . ( $filter ? ' (' . $filter . ')' : '' ) . ', mình chọn “' . $fav . '”. Đây rồi — chạm Select, hoặc nói muốn đổi gì.'
+				);
+			}
 			return $this->copy_lang(
 				$language,
 				$filter

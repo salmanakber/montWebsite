@@ -117,6 +117,26 @@ class Tool_Executor {
 				array(),
 				array()
 			),
+			$this->fn(
+				'lookup_order',
+				'Look up a customer order by order number + billing email. Use when they ask about order status, delivery, what they ordered, tracking.',
+				array(
+					'order_number' => array( 'type' => 'string', 'description' => 'Order number from confirmation email' ),
+					'email'        => array( 'type' => 'string', 'description' => 'Billing email used at checkout' ),
+				),
+				array( 'order_number', 'email' )
+			),
+			$this->fn(
+				'submit_support_request',
+				'Submit a complaint or support message to the shop team. Use when they report a problem, wrong item, quality issue, or need human follow-up.',
+				array(
+					'email'    => array( 'type' => 'string', 'description' => 'Customer email for reply' ),
+					'message'  => array( 'type' => 'string', 'description' => 'Full description of the issue' ),
+					'name'     => array( 'type' => 'string', 'description' => 'Customer name if known' ),
+					'order_id' => array( 'type' => 'string', 'description' => 'Related order number if any' ),
+				),
+				array( 'email', 'message' )
+			),
 		);
 	}
 
@@ -145,6 +165,18 @@ class Tool_Executor {
 				return $this->add_to_cart( $args );
 			case 'get_cart':
 				return ( new Cart_Service() )->get_cart();
+			case 'lookup_order':
+				return ( new Order_Service() )->lookup(
+					isset( $args['order_number'] ) ? $args['order_number'] : '',
+					isset( $args['email'] ) ? $args['email'] : ''
+				);
+			case 'submit_support_request':
+				return ( new Order_Service() )->submit_complaint(
+					isset( $args['email'] ) ? $args['email'] : '',
+					isset( $args['message'] ) ? $args['message'] : '',
+					isset( $args['name'] ) ? $args['name'] : '',
+					isset( $args['order_id'] ) ? $args['order_id'] : ''
+				);
 			case 'get_variations':
 				return $this->get_variations( $args );
 			case 'update_cart_item':
@@ -267,11 +299,14 @@ class Tool_Executor {
 	 */
 	private function search_products( array $args ) {
 		$query   = isset( $args['query'] ) ? sanitize_text_field( $args['query'] ) : '';
-		$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 3;
-		$limit   = max( 1, min( 6, $limit ) );
+		$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 0;
 		$channel = isset( $args['channel'] ) && 'b2b' === $args['channel'] ? 'b2b' : 'b2c';
 
 		$catalog = new Catalog_Search();
+		if ( $limit < 1 ) {
+			$limit = $catalog->card_limit( $query, array() );
+		}
+		$limit = max( 1, min( 3, $limit ) );
 		$found   = $catalog->recommend( $query, array(), $limit, $channel );
 		$cards   = isset( $found['cards'] ) ? $found['cards'] : array();
 
