@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
  */
 class Chat_Service {
 
-	const MAX_TOOL_ROUNDS = 4;
+	const MAX_TOOL_ROUNDS = 5;
 
 	/**
 	 * Handle a user message.
@@ -74,47 +74,9 @@ class Chat_Service {
 		}
 
 		$picked_id = $this->extract_product_id( $message );
-		$catalog   = new Catalog_Search();
 		$channel   = ( isset( $context['channel'] ) && 'b2b' === $context['channel'] ) ? 'b2b' : 'b2c';
-		$is_advice = $this->is_advice_question( $message );
 
-		// 2a) “Show me THAT shirt” — one card, never a catalog dump.
-		if ( ! $picked_id && $catalog->wants_specific_show( $message ) ) {
-			return $this->show_focused_product( $message, $history, $language, $channel, $catalog );
-		}
-
-		// 2a2) Payment talk — never collect card details; show the shirt + send to checkout.
-		if ( ! $picked_id && $this->is_payment_message( $message ) ) {
-			$focus = $this->show_focused_product( $message, $history, $language, $channel, $catalog );
-			$focus['message'] = $this->copy_lang(
-				$language,
-				'Visa, Vipps and PayPal are all fine — but I never take card details in chat. Here’s the shirt; tap Select to put it in the cart, then pay securely at checkout.',
-				'Visa, Vipps og PayPal går fint — men jeg tar aldri kortdetaljer i chatten. Her er skjorten; trykk Velg, og betal trygt i kassen.',
-				'Visa, Vipps e PayPal vanno tutti bene — ma non chiedo i dati della carta in chat. Ecco la camicia; tocca Seleziona e paga al checkout.',
-				'Visa, Vipps và PayPal đều được — nhưng mình không lấy thông tin thẻ trong chat. Đây là áo; chạm Select rồi thanh toán ở checkout.'
-			);
-			return $focus;
-		}
-
-		// 2b) “Need a shirt / best one / show shirts” — 2–3 real products, pick a favourite.
-		if ( ! $picked_id && ! $is_advice && ! $this->is_followup_option_answer( $message, $history )
-			&& ( $catalog->should_browse( $message, $history ) || $catalog->wants_recommendation( $message ) || $this->is_shopping_pref_answer( $message, $history ) ) ) {
-			$found = $catalog->recommend( $message, $history, 3, $channel );
-			$cards = isset( $found['cards'] ) ? $found['cards'] : array();
-			$rec   = ! empty( $found['recommended_id'] ) ? (int) $found['recommended_id'] : 0;
-			return $this->response(
-				$this->recommend_copy( $language, $cards, $found['prefs'] ?? array(), $catalog->wants_recommendation( $message ) ),
-				$cards,
-				null,
-				false,
-				'catalog',
-				false,
-				$language,
-				$rec
-			);
-		}
-
-		// 3) Product picked / option taps — local order builder (B2C only).
+		// 2) Explicit product tap from a card → reliable local cart/options flow.
 		if ( 'b2b' === $channel && $picked_id ) {
 			$moq = get_post_meta( $picked_id, '_moq', true );
 			$msg = __( 'Nice pick for wholesale. Open the product here, fill in the size breakdown', 'mont-ai-assistant' );
@@ -122,20 +84,21 @@ class Chat_Service {
 				$msg .= ' ' . sprintf( __( '(MOQ is %s)', 'mont-ai-assistant' ), $moq );
 			}
 			$msg .= ' ' . __( '— then Save & add colour / use the B2B cart when you’re ready.', 'mont-ai-assistant' );
-			$card = ( new Catalog_Search() )->search( 'product ' . $picked_id, $history, 1, 'b2b' );
+			$card = ( new Catalog_Search() )->card( $picked_id, 'b2b' );
 			return $this->response(
 				$msg,
-				isset( $card['cards'] ) ? $card['cards'] : array(),
+				$card ? array( $card ) : array(),
 				null,
 				false,
 				'b2b_local',
 				false,
-				$language
+				$language,
+				$picked_id
 			);
 		}
 
-		// Skip option/cart builder for shipping/size advice — answer naturally via AI.
-		if ( ! $is_advice ) {
+		// Option taps / “I want product #123” — local builder (B2C).
+		if ( $picked_id || $this->is_followup_option_answer( $message, $history ) ) {
 			$builder = new Order_Builder();
 			$local   = $builder->maybe_handle( $message, $history, $language );
 			if ( is_array( $local ) ) {
@@ -146,12 +109,13 @@ class Chat_Service {
 					! empty( $local['cart_updated'] ),
 					isset( $local['provider'] ) ? $local['provider'] : 'local',
 					false,
-					$language
+					$language,
+					$picked_id
 				);
 			}
 		}
 
-		// 4) Free-form questions → natural AI answers grounded in store/product facts.
+		// 3) Everything else → natural AI with live catalog tools.
 		return $this->handle_with_ai( $message, $history, $language, $context );
 	}
 
@@ -186,6 +150,23 @@ class Chat_Service {
 	}
 
 	/**
+	 * Whether a reply should include live shop cards even if tools were skipped.
+	 *
+	 * @param string $message Message.
+	 * @param string $content Assistant text.
+	 * @param array  $history History.
+	 * @return bool
+	 */
+	private function should_attach_shop_cards( $message, $content, array $history ) {
+		$blob = strtolower( trim( $message . ' ' . $content . ' ' . $this->history_text( $history ) ) );
+		if ( preg_match( '/\b(ship|shipping|deliver|delivery|return|refund|frakt|levering|policy only)\b/i', $message )
+			&& ! preg_match( '/\b(shirt|skjorte|camicia|product|colour|color|fit)\b/i', $message ) ) {
+			return false;
+		}
+		return (bool) preg_match( '/\b(shirt|shirts|skjorte|camicia|fabric|oxford|linen|flannel|slim|casual|colour|color|blue|white|red|recommend|suggest|show|browse|pick|option|looking|need|want|gift|suit|prefer|don\'?t like)\b/i', $blob );
+	}
+
+	/**
 	 * True when the user is naming a payment method (never collect secrets).
 	 *
 	 * @param string $message Message.
@@ -197,6 +178,72 @@ class Chat_Service {
 			return false;
 		}
 		return (bool) preg_match( '/\b(visa|mastercard|paypal|vipps|credit\s*card|debit\s*card|pay\s*with|payment\s*method)\b/i', $text );
+	}
+
+	/**
+	 * “Why is this good / why did you pick it?”
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	private function is_why_good_question( $message ) {
+		$text = strtolower( trim( (string) $message ) );
+		return (bool) preg_match( '/\b(why (is|its|it\'?s|this|that)|why (did|do) you|what.?s good|why good|hvorfor|perch[eé]|tại sao|tai sao)\b/i', $text );
+	}
+
+	/**
+	 * Explain the current recommendation from live product data.
+	 *
+	 * @param array          $history  History.
+	 * @param string         $language Language.
+	 * @param string         $channel  Channel.
+	 * @param Catalog_Search $catalog  Catalog.
+	 * @return array
+	 */
+	private function explain_recommendation( array $history, $language, $channel, Catalog_Search $catalog ) {
+		$id = $catalog->remembered_recommended_id( $history );
+		if ( ! $id ) {
+			$ids = $catalog->remembered_product_ids( $history );
+			$id  = $ids ? (int) end( $ids ) : 0;
+		}
+		$card = $id ? $catalog->card( $id, $channel ) : null;
+		if ( ! $card ) {
+			$found = $catalog->recommend( 'slim fit shirt', $history, 3, $channel );
+			return $this->response(
+				$this->recommend_copy( $language, $found['cards'] ?? array(), $found['prefs'] ?? array(), true ),
+				$found['cards'] ?? array(),
+				null,
+				false,
+				'catalog',
+				false,
+				$language,
+				isset( $found['recommended_id'] ) ? (int) $found['recommended_id'] : 0
+			);
+		}
+
+		$facts = $this->product_facts_block( $id, $channel );
+		$name  = $card['name'];
+		$bits  = array();
+		if ( preg_match( '/Price:\s*(.+)/i', $facts, $m ) ) {
+			$bits[] = trim( $m[1] );
+		}
+		if ( preg_match( '/Categories:\s*(.+)/i', $facts, $m ) ) {
+			$bits[] = trim( $m[1] );
+		}
+		if ( preg_match( '/Short description:\s*(.+)/i', $facts, $m ) ) {
+			$bits[] = trim( $m[1] );
+		}
+		$detail = $bits ? implode( '. ', array_slice( $bits, 0, 2 ) ) : $card['price'];
+
+		$copy = $this->copy_lang(
+			$language,
+			'I picked “' . $name . '” because it’s a real option from our shop' . ( $detail ? ' — ' . $detail : '' ) . '. Slim fit works well for a cleaner look. If the colour isn’t you, say what you prefer (blue, white, no check) and I’ll switch.',
+			'Jeg valgte «' . $name . '» fordi det er en ekte skjorte fra butikken' . ( $detail ? ' — ' . $detail : '' ) . '. Slim fit gir et renere snitt. Liker du ikke fargen, si hva du vil ha (blå, hvit, uten ruter) så bytter jeg.',
+			'Ho scelto «' . $name . '» perché è una camicia vera del negozio' . ( $detail ? ' — ' . $detail : '' ) . '. Lo slim fit dà una linea più pulita. Se il colore non ti convince, dimmi cosa preferisci e cambio.',
+			'Mình chọn “' . $name . '” vì đây là áo thật trong shop' . ( $detail ? ' — ' . $detail : '' ) . '. Form slim thường gọn hơn. Nếu không thích màu, nói màu bạn muốn (xanh, trắng, không kẻ) mình đổi.'
+		);
+
+		return $this->response( $copy, array( $card ), null, false, 'catalog', false, $language, $id );
 	}
 
 	/**
@@ -273,11 +320,31 @@ class Chat_Service {
 
 		$messages   = array();
 		$sys        = $this->system_prompt( $language, $context );
-		$sys       .= "\n\n" . $catalog->catalog_snapshot( $message, $history, $channel, 8 );
+		$sys       .= "\n\n" . $catalog->catalog_snapshot( $message, $history, $channel, 12 );
 		$memory_ids = $catalog->remembered_product_ids( $history );
 		if ( $memory_ids ) {
-			$sys .= "\n\nAlready shown in this chat (if they ask for “the one you suggested”, call get_product on this id): product #" . implode( ', product #', $memory_ids );
+			$sys .= "\n\nAlready shown in this chat (reuse these ids with get_product when they refer to a previous pick): product #" . implode( ', product #', $memory_ids );
 		}
+		$rec = $catalog->remembered_recommended_id( $history );
+		if ( $rec ) {
+			$sys .= "\nLast top pick id: product #" . $rec;
+		}
+		$prefs = $catalog->extract_prefs( $message, $history );
+		if ( ! empty( array_filter( $prefs ) ) ) {
+			$sys .= "\nCustomer prefs inferred from THEIR messages only: " . wp_json_encode(
+				array_filter(
+					array(
+						'color'          => $prefs['color'] ?? '',
+						'exclude_colors' => $prefs['exclude_colors'] ?? array(),
+						'fit'            => $prefs['fit'] ?? '',
+						'fabric'         => $prefs['fabric'] ?? '',
+						'occasion'       => $prefs['occasion'] ?? '',
+						'size'           => $prefs['size'] ?? '',
+					)
+				)
+			);
+		}
+		$sys .= "\n\nIf the customer is shopping in any wording, call search_products (or get_product) before your final answer so cards appear.";
 		$messages[] = array(
 			'role'    => 'system',
 			'content' => $sys,
@@ -330,6 +397,15 @@ class Chat_Service {
 				$provider_used = $result['provider'];
 				$used_fallback = ! empty( $result['used_fallback'] );
 				$tool_calls    = ! empty( $result['tool_calls'] ) && is_array( $result['tool_calls'] ) ? $result['tool_calls'] : array();
+
+				// Some models paste tools as text: <function=get_product>{...}</function>
+				if ( ! $tool_calls ) {
+					$parsed = $this->parse_inline_tool_calls( (string) ( $result['content'] ?? '' ) );
+					if ( $parsed['calls'] ) {
+						$tool_calls        = $parsed['calls'];
+						$result['content'] = $parsed['text'];
+					}
+				}
 
 				if ( ! $tool_calls ) {
 					$content = trim( (string) $result['content'] );
@@ -384,63 +460,63 @@ class Chat_Service {
 
 			$content = $this->scrub_assistant_text( $content, $language );
 
-			// If they asked to see a shirt and tools returned nothing, attach the focused product.
-			if ( ! $cards && ( $catalog->wants_specific_show( $message ) || $catalog->should_browse( $message, $history ) || $catalog->wants_recommendation( $message ) ) ) {
-				$found = $catalog->wants_specific_show( $message )
-					? null
-					: $catalog->recommend( $message, $history, 3, $channel );
-				if ( $found && ! empty( $found['cards'] ) ) {
-					$cards  = $found['cards'];
-					$rec_id = (int) ( $found['recommended_id'] ?? 0 );
-				}
-			}
-
-			// Named shirt in the reply → attach that live card.
+			// If the model talked products but forgot tools, pull live cards from the shop.
 			if ( ! $cards ) {
 				$cards = $this->cards_mentioned_in_text( $content, $catalog, $channel );
-				if ( $cards && ! $rec_id ) {
-					$rec_id = (int) $cards[0]['id'];
+			}
+			if ( ! $cards && $this->should_attach_shop_cards( $message, $content, $history ) ) {
+				$found = $catalog->recommend( $message, $history, 3, $channel );
+				if ( ! empty( $found['cards'] ) ) {
+					$cards  = $found['cards'];
+					$rec_id = (int) ( $found['recommended_id'] ?? 0 );
+					if ( '' === trim( (string) $content ) ) {
+						$content = $this->recommend_copy( $language, $cards, $found['prefs'] ?? array(), true );
+					}
 				}
 			}
+			if ( $cards && ! $rec_id ) {
+				$rec_id = (int) $cards[0]['id'];
+			}
 
-			$cards = array_slice( $this->unique_cards( $cards ), 0, 4 );
+			$cards = array_slice( $this->unique_cards( $cards ), 0, 3 );
+			if ( '' === trim( (string) $content ) && $cards ) {
+				$content = $this->recommend_copy( $language, $cards, array(), false );
+			}
 
 			return $this->response( $content, $cards, $choices, $cart_updated, $provider_used, $used_fallback, $language, $rec_id );
 		} catch ( \Throwable $e ) {
 			Plugin::log( 'Chat AI failed', array( 'error' => $e->getMessage() ) );
 
-			// Only fall back to a product list when they were browsing.
-			if ( $catalog->should_browse( $message, $history ) || $catalog->wants_recommendation( $message ) || $catalog->wants_specific_show( $message ) ) {
-				try {
-					$found = $catalog->recommend( $message, $history, 3, $channel );
-					if ( ! empty( $found['count'] ) ) {
-						return $this->response(
-							$catalog->browse_message( $language, (int) $found['count'], $message, $channel ),
-							$found['cards'],
-							null,
-							false,
-							'catalog',
-							true,
-							$language,
-							isset( $found['recommended_id'] ) ? (int) $found['recommended_id'] : 0
-						);
-					}
-				} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+			// Always try a live catalog answer first — never strand the shopper.
+			try {
+				$found = $catalog->recommend( $message, $history, 3, $channel );
+				if ( ! empty( $found['count'] ) ) {
+					return $this->response(
+						$this->recommend_copy( $language, $found['cards'], $found['prefs'] ?? array(), true ),
+						$found['cards'],
+						null,
+						false,
+						'catalog',
+						true,
+						$language,
+						isset( $found['recommended_id'] ) ? (int) $found['recommended_id'] : 0
+					);
 				}
+			} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
 			}
 
 			$error_code = 'provider_error';
-			$friendly   = __( 'Sorry — I could not reach the assistant just now. Try again in a moment, or ask me to “show shirts” if you want to browse.', 'mont-ai-assistant' );
+			$friendly   = __( 'Sorry — something glitched on my side. Tell me a colour or style and I’ll pull shirts from the shop.', 'mont-ai-assistant' );
 
 			if ( preg_match( '/HTTP 429/', $e->getMessage() ) ) {
 				$error_code = 'rate_limit';
-				$friendly   = __( 'I’m a bit busy on the AI side right now. Product search still works — try “show me shirts”.', 'mont-ai-assistant' );
+				$friendly   = __( 'I’m briefly overloaded. Say a colour or “show shirts” and I’ll still search the shop for you.', 'mont-ai-assistant' );
 			} elseif ( false !== stripos( $e->getMessage(), 'not configured' ) ) {
 				$error_code = 'not_configured';
-				$friendly   = __( 'AI keys are not configured yet. You can still browse products — try “show me shirts”.', 'mont-ai-assistant' );
+				$friendly   = __( 'AI keys are not configured yet. You can still browse — try asking for a colour or “show shirts”.', 'mont-ai-assistant' );
 			} elseif ( false !== stripos( $e->getMessage(), 'Failed to call a function' ) || false !== stripos( $e->getMessage(), 'tool call validation' ) ) {
 				$error_code = 'tool_error';
-				$friendly   = __( 'I had a small glitch with that request. Try asking to show products, or pick a shirt from a list.', 'mont-ai-assistant' );
+				$friendly   = __( 'Small glitch — try again, or tell me a colour/fabric and I’ll show real shirts.', 'mont-ai-assistant' );
 			}
 
 			$out = array(
@@ -514,33 +590,32 @@ class Chat_Service {
 		$channel  = ( isset( $context['channel'] ) && 'b2b' === $context['channel'] ) ? 'b2b' : 'b2c';
 
 		$base = <<<'PROMPT'
-You are Mont — a real salesperson in the Montenapoleone shirt shop. Text like a helpful human, never like a call-centre bot.
+You are Mont — a real human salesperson at Montenapoleone (premium shirts). Customers ask in endless different ways; understand intent, don’t wait for magic phrases.
 
 VOICE
-- Warm, brief, confident. 1–3 short sentences. Match their language and energy.
-- Never say you are an AI, never mention Groq/Gemini/tools/prompts.
-- You CAN show product photos in this chat via product cards. Never say you are “text-only” or cannot display images.
+- Sound like a helpful shop person texting: warm, short, natural. 1–3 sentences.
+- Match their language (EN / NB / IT / VI) and tone.
+- Never say you are an AI. Never mention tools, APIs, Groq, Gemini, or prompts.
+- You CAN show photos in chat (product cards). Never claim you cannot show images.
 
-HOW TO SELL (CRITICAL)
-- Prefer SHOWING real shirts over interviewing. After one preference (fit, colour, or occasion), search and show 1–3 cards.
-- When they say “show it / the one you suggested / show me first” you MUST call get_product (or search_products with that exact name) so a card with photo appears. Do not describe instead of showing.
-- Show ONE shirt when they asked for one. Show at most 3 when browsing. Never dump a long list.
-- Remember what you already recommended. If they ask for “that one”, show that same product id — not a new random list.
+DATABASE / TOOLS (you have full shop access)
+- Always use tools for anything about products: search_products, get_product, get_variations, get_custom_options, get_cart, add_to_cart.
+- paraphrase does not matter — “need a shirt”, “something nice”, “what suits me”, “not red”, “that one again”, “why that?” are all valid intents. Call tools.
+- search_products query = natural keywords from what they want (colour, fabric, slim, casual, no red, etc.). Limit 1–3.
+- When they want ONE specific shirt you already mentioned, call get_product with that product id.
+- When they reject a colour/style, search again with exclusions (e.g. query “blue white oxford -red”).
+- For sizes/options after they pick a shirt, use get_custom_options then present_choices one step at a time.
+- Never invent product names, prices, stock, or sizes. Only tool / LIVE CATALOG facts.
 
-TRUTH
-- Use ONLY LIVE CATALOG names, tool results, STORE FACTS, and PRODUCT FACTS. Never invent names like “Camicia Azzurra” or “Camicia Bianca” unless that exact title is in the catalog.
-- If a nickname is not in the shop, say so in one line and show the closest real shirts (with cards).
-- Never invent sizes, stock, prices, or delivery dates.
+SELLING STYLE
+- Prefer showing 1–3 real shirts over long interviews.
+- One clarifying question is ok; five in a row is not.
+- Remember earlier picks from chat. Don’t restart from zero.
+- If unsure, search the catalog and show options — don’t stall.
 
-PAYMENTS (NEVER BREAK THIS)
-- Never ask for card numbers, expiry, CVC, Vipps PIN, or any payment secret.
-- Never pretend to “start payment” in chat.
-- Checkout is on the website. Accepted methods include Visa/Mastercard, PayPal, and Vipps (Norway). Tell them to tap Select so it goes in the cart, then pay at checkout.
-
-NATURAL FLOW
-1. Answer what they actually asked.
-2. If they want a shirt, show it (cards) — don’t ask five more questions.
-3. Size/fit can wait until they tap Select.
+PAYMENTS
+- Never ask for card numbers, expiry, CVC, Vipps PIN, or any secret.
+- Payment happens on website checkout (Visa / Mastercard / PayPal / Vipps). Guide them to Select → cart → checkout.
 PROMPT;
 
 		$parts   = array( $base );
@@ -912,6 +987,9 @@ PROMPT;
 		if ( ! empty( $prefs['color'] ) ) {
 			$bits[] = $prefs['color'];
 		}
+		if ( ! empty( $prefs['exclude_colors'] ) ) {
+			$bits[] = 'no ' . implode( '/', (array) $prefs['exclude_colors'] );
+		}
 		if ( ! empty( $prefs['occasion'] ) ) {
 			$bits[] = $prefs['occasion'];
 		}
@@ -1018,6 +1096,14 @@ PROMPT;
 	 */
 	private function scrub_assistant_text( $content, $language ) {
 		$text = (string) $content;
+
+		// Strip leaked tool-call markup the model sometimes prints.
+		$text = preg_replace( '/<\/?function[^>]*>/i', '', $text );
+		$text = preg_replace( '/<function\s*=\s*[^>]+>.*?<\/function>/is', '', $text );
+		$text = preg_replace( '/call\s+[a-z_]+\s*with\s*\{.*?\}/is', '', $text );
+		$text = preg_replace( '/\{"product_id"\s*:\s*"?\d+"?\}/i', '', $text );
+		$text = trim( preg_replace( '/\s{2,}/', ' ', (string) $text ) );
+
 		if ( preg_match( '/(card number|cvv|cvc|security code|expiration date|expiry|vipps pin|bankid)/i', $text ) ) {
 			return $this->copy_lang(
 				$language,
@@ -1037,6 +1123,35 @@ PROMPT;
 			);
 		}
 		return $text;
+	}
+
+	/**
+	 * Convert leaked XML-ish tool text into proper tool_calls.
+	 *
+	 * @param string $content Content.
+	 * @return array{text:string,calls:array}
+	 */
+	private function parse_inline_tool_calls( $content ) {
+		$calls = array();
+		$text  = (string) $content;
+		if ( preg_match_all( '/<function\s*=\s*([a-z0-9_]+)>\s*(\{.*?\})\s*<\/function>/is', $text, $m, PREG_SET_ORDER ) ) {
+			foreach ( $m as $i => $match ) {
+				$args = json_decode( $match[2], true );
+				$calls[] = array(
+					'id'       => 'inline_' . $i,
+					'type'     => 'function',
+					'function' => array(
+						'name'      => $match[1],
+						'arguments' => wp_json_encode( is_array( $args ) ? $args : array() ),
+					),
+				);
+			}
+			$text = trim( preg_replace( '/<function\s*=\s*[a-z0-9_]+>\s*\{.*?\}\s*<\/function>/is', '', $text ) );
+		}
+		return array(
+			'text'  => $text,
+			'calls' => $calls,
+		);
 	}
 
 	/**

@@ -42,10 +42,10 @@ class Tool_Executor {
 		return array(
 			$this->fn(
 				'search_products',
-				'Search the LIVE shop catalog. Call this before naming any shirt. Use limit "1" or "3". Never invent names.',
+				'Search the LIVE WooCommerce catalog for any shopping intent (need shirt, slim fit, not red, gift, casual, etc.). Always call this before naming shirts. Use natural query text.',
 				array(
-					'query' => array( 'type' => 'string', 'description' => 'Real keywords: colour, fabric, SKU, or exact product title' ),
-					'limit' => array( 'type' => 'string', 'description' => 'Max results 1-4 as string. Use 1 when they asked to see one shirt.' ),
+					'query' => array( 'type' => 'string', 'description' => 'Natural search: colour, fabric, fit, exclusions like “no red”, SKU, or style' ),
+					'limit' => array( 'type' => 'string', 'description' => 'Max results 1-3 as string. Prefer 3 for browsing, 1 for a single pick.' ),
 				),
 				array( 'query' )
 			),
@@ -266,54 +266,61 @@ class Tool_Executor {
 	 * @return array
 	 */
 	private function search_products( array $args ) {
-		$query = isset( $args['query'] ) ? sanitize_text_field( $args['query'] ) : '';
-		$limit = isset( $args['limit'] ) ? (int) $args['limit'] : 6;
-		$limit = max( 1, min( 8, $limit ) );
-		$index = new Product_Index();
-		$hits  = $index->search( $query, $limit );
-		$knowledge = new Product_Knowledge();
-		$cards = array();
-		$choice_items = array();
-		foreach ( $hits as $hit ) {
-			$card = $knowledge->card( $hit['id'] );
-			if ( $card ) {
-				$cards[] = $card;
-				$choice_items[] = array(
-					'label' => $card['name'],
-					'value' => 'I want product #' . $card['id'] . ': ' . $card['name'],
-					'image' => $card['image'],
-					'sub'   => $card['price'],
-					'product_id' => $card['id'],
-				);
+		$query   = isset( $args['query'] ) ? sanitize_text_field( $args['query'] ) : '';
+		$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 3;
+		$limit   = max( 1, min( 6, $limit ) );
+		$channel = isset( $args['channel'] ) && 'b2b' === $args['channel'] ? 'b2b' : 'b2c';
+
+		$catalog = new Catalog_Search();
+		$found   = $catalog->recommend( $query, array(), $limit, $channel );
+		$cards   = isset( $found['cards'] ) ? $found['cards'] : array();
+
+		// Also try the product index for exact title / SKU hits.
+		if ( count( $cards ) < $limit && $query ) {
+			$index = new Product_Index();
+			$hits  = $index->search( $query, $limit );
+			$knowledge = new Product_Knowledge();
+			foreach ( $hits as $hit ) {
+				if ( empty( $hit['id'] ) ) {
+					continue;
+				}
+				$already = false;
+				foreach ( $cards as $c ) {
+					if ( (int) $c['id'] === (int) $hit['id'] ) {
+						$already = true;
+						break;
+					}
+				}
+				if ( $already ) {
+					continue;
+				}
+				$card = $knowledge->card( (int) $hit['id'] );
+				if ( $card ) {
+					$cards[] = $card;
+				}
+				if ( count( $cards ) >= $limit ) {
+					break;
+				}
 			}
 		}
-		$choices = null;
-		if ( $choice_items && count( $choice_items ) <= 1 ) {
-			$choices = array(
-				'title'   => 'Pick a product',
-				'field'   => 'product_id',
-				'type'    => 'product_cards',
-				'choices' => $choice_items,
+
+		$results = array();
+		foreach ( $cards as $card ) {
+			$results[] = array(
+				'id'        => $card['id'],
+				'name'      => $card['name'],
+				'price'     => $card['price'],
+				'permalink' => $card['permalink'],
+				'in_stock'  => ! empty( $card['in_stock'] ),
 			);
 		}
+
 		return array(
-			'results' => array_map(
-				function ( $h ) {
-					return array(
-						'id'         => $h['id'],
-						'name'       => $h['name'],
-						'price'      => $h['price_html'],
-						'sku'        => $h['sku'],
-						'categories' => $h['categories'],
-						'in_stock'   => $h['in_stock'],
-						'permalink'  => $h['permalink'],
-						'short'      => function_exists( 'mb_substr' ) ? mb_substr( $h['short_description'], 0, 160 ) : substr( $h['short_description'], 0, 160 ),
-					);
-				},
-				$hits
-			),
-			'cards'   => $cards,
-			'choices' => $choices,
+			'results'         => $results,
+			'cards'           => $cards,
+			'choices'         => null,
+			'recommended_id'  => ! empty( $cards[0]['id'] ) ? (int) $cards[0]['id'] : 0,
+			'hint'            => 'Product cards will appear in chat. Talk about these exact names only.',
 		);
 	}
 

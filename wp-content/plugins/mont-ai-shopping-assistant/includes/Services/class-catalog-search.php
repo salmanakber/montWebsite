@@ -114,7 +114,7 @@ class Catalog_Search {
 		if ( '' === $text ) {
 			return false;
 		}
-		if ( preg_match( '/\b(best one|help me find|recommend|which (one|shirt)|pick (one|for me)|similar please|something similar)\b/i', $text ) ) {
+		if ( preg_match( '/\b(best one|top pick|help me find|recommend|suggest|which (one|shirt)|pick (one|for me)|choose (one|for me)|similar please|something similar|suite on me|suit me)\b/i', $text ) ) {
 			return true;
 		}
 		return false;
@@ -182,37 +182,16 @@ class Catalog_Search {
 	}
 
 	/**
-	 * Pull colour / fabric / fit / size / named shirt from the chat.
+	 * Colour dictionary (longest needles first).
 	 *
-	 * @param string $message Message.
-	 * @param array  $history History.
 	 * @return array
 	 */
-	public function extract_prefs( $message, array $history = array() ) {
-		$blob = strtolower( (string) $message );
-		foreach ( $history as $h ) {
-			if ( empty( $h['content'] ) ) {
-				continue;
-			}
-			$blob .= "\n" . strtolower( (string) $h['content'] );
-		}
-
-		$prefs = array(
-			'color'    => '',
-			'fabric'   => '',
-			'fit'      => '',
-			'size'     => '',
-			'occasion' => '',
-			'name'     => '',
-			'sku'      => '',
-		);
-
-		$colors = array(
+	private function color_map() {
+		return array(
 			'light blue' => 'light blue',
-			'azzurra'    => 'light blue',
-			'azzurro'    => 'light blue',
-			'navy'       => 'navy',
 			'dark blue'  => 'dark blue',
+			'navy blue'  => 'navy',
+			'navy'       => 'navy',
 			'blue'       => 'blue',
 			'blå'        => 'blue',
 			'blu'        => 'blue',
@@ -229,15 +208,88 @@ class Catalog_Search {
 			'olive'      => 'olive',
 			'pink'       => 'pink',
 			'beige'      => 'beige',
+			'check'      => 'check',
 		);
+	}
+
+	/**
+	 * User-only chat text (never product titles from assistant cards).
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return string
+	 */
+	private function user_blob( $message, array $history ) {
+		$parts = array();
+		foreach ( $history as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			$role = isset( $h['role'] ) ? $h['role'] : 'user';
+			if ( 'assistant' === $role ) {
+				continue;
+			}
+			$parts[] = strtolower( (string) $h['content'] );
+		}
+		$parts[] = strtolower( (string) $message );
+		return implode( "\n", $parts );
+	}
+
+	/**
+	 * Pull colour / fabric / fit / size / named shirt from the chat.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return array
+	 */
+	public function extract_prefs( $message, array $history = array() ) {
+		// IMPORTANT: only user turns — assistant history contains product names like
+		// “RED, NAVY BLUE…” which previously poisoned colour prefs.
+		$blob = $this->user_blob( $message, $history );
+		$now  = strtolower( trim( (string) $message ) );
+
+		$prefs = array(
+			'color'           => '',
+			'exclude_colors'  => array(),
+			'fabric'          => '',
+			'fit'             => '',
+			'size'            => '',
+			'occasion'        => '',
+			'name'            => '',
+			'sku'             => '',
+			'avoid_shown'     => false,
+		);
+
+		$colors = $this->color_map();
+
+		// “I don’t like red / no red / not red”
 		foreach ( $colors as $needle => $value ) {
-			if ( false !== strpos( $blob, $needle ) ) {
-				$prefs['color'] = $value;
-				break;
+			if ( preg_match( '/\b(don\'?t like|do not like|hate|no|not|without|skip|ikke)\b[^.\n]{0,20}\b' . preg_quote( $needle, '/' ) . '\b/i', $blob )
+				|| preg_match( '/\b' . preg_quote( $needle, '/' ) . '\b[^.\n]{0,12}\b(no|not for me|off)\b/i', $blob ) ) {
+				$prefs['exclude_colors'][] = $value;
+				$prefs['avoid_shown']      = true;
+			}
+		}
+		$prefs['exclude_colors'] = array_values( array_unique( $prefs['exclude_colors'] ) );
+
+		// Preferred colour — latest user message first, then older user turns.
+		foreach ( array( $now, $blob ) as $scope ) {
+			foreach ( $colors as $needle => $value ) {
+				if ( in_array( $value, $prefs['exclude_colors'], true ) ) {
+					continue;
+				}
+				// Skip colour words that only appear inside “don’t like …”
+				if ( preg_match( '/\b(don\'?t like|do not like|hate|no|not|without)\b[^.\n]{0,20}\b' . preg_quote( $needle, '/' ) . '\b/i', $scope ) ) {
+					continue;
+				}
+				if ( preg_match( '/\b' . preg_quote( $needle, '/' ) . '\b/i', $scope ) ) {
+					$prefs['color'] = $value;
+					break 2;
+				}
 			}
 		}
 
-		$fabrics = array( 'linen' => 'linen', 'lin' => 'linen', 'oxford' => 'oxford', 'flannel' => 'flannel', 'twill' => 'twill', 'poplin' => 'poplin', 'cotton' => 'cotton' );
+		$fabrics = array( 'linen' => 'linen', 'oxford' => 'oxford', 'flannel' => 'flannel', 'twill' => 'twill', 'poplin' => 'poplin', 'cotton' => 'cotton' );
 		foreach ( $fabrics as $needle => $value ) {
 			if ( preg_match( '/\b' . preg_quote( $needle, '/' ) . '\b/i', $blob ) ) {
 				$prefs['fabric'] = $value;
@@ -259,18 +311,39 @@ class Catalog_Search {
 			$prefs['occasion'] = in_array( $occ, array( 'everyday', 'daily' ), true ) ? 'casual' : $occ;
 		}
 
-		if ( preg_match( '/#([a-z]{1,4}\d{1,4})/i', $blob, $m ) ) {
+		if ( preg_match( '/#([a-z]{1,4}\d{1,4})/i', $now, $m ) ) {
 			$prefs['sku'] = strtoupper( $m[1] );
 		}
 
-		// Quoted or Title-case product nicknames from this turn / history.
-		if ( preg_match( '/["“]([^"”]{3,60})["”]/u', $message . ' ' . $this->history_blob( $history ), $m ) ) {
+		if ( preg_match( '/["“]([^"”]{3,60})["”]/u', $message, $m ) ) {
 			$prefs['name'] = trim( $m[1] );
 		} elseif ( preg_match( '/\b(camicia\s+[a-zàèéìòù]+)\b/iu', $message, $m ) ) {
 			$prefs['name'] = $m[1];
 		}
 
 		return $prefs;
+	}
+
+	/**
+	 * Customer is rejecting a colour / style — re-pick without AI.
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	public function wants_reselect( $message ) {
+		$text = strtolower( trim( (string) $message ) );
+		if ( '' === $text ) {
+			return false;
+		}
+		if ( preg_match( '/\b(don\'?t like|do not like|hate|not a fan|no red|no blue|something else|another one|different|other options|not that|ikke liker)\b/i', $text ) ) {
+			return true;
+		}
+		foreach ( array_keys( $this->color_map() ) as $needle ) {
+			if ( preg_match( '/\b(no|not|without)\s+' . preg_quote( $needle, '/' ) . '\b/i', $text ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -390,32 +463,151 @@ class Catalog_Search {
 	 */
 	public function recommend( $message, array $history = array(), $limit = 3, $channel = 'b2c' ) {
 		$prefs = $this->extract_prefs( $message, $history );
-		if ( $prefs['name'] ) {
+		$shown = $this->remembered_product_ids( $history );
+
+		if ( $prefs['name'] && empty( $prefs['exclude_colors'] ) ) {
 			$named = $this->find_by_name( $prefs['name'], $channel, $limit );
 			if ( ! empty( $named['count'] ) ) {
-				$named['recommended_id'] = (int) $named['cards'][0]['id'];
-				$named['prefs']          = $prefs;
+				$named['cards'] = $this->rank_cards( $named['cards'], $prefs, $shown, $limit );
+				$named['count'] = count( $named['cards'] );
+				$named['recommended_id'] = ! empty( $named['cards'][0]['id'] ) ? (int) $named['cards'][0]['id'] : 0;
+				$named['prefs'] = $prefs;
 				return $named;
 			}
 		}
 
 		$terms = array();
-		foreach ( array( 'color', 'fabric', 'occasion', 'sku' ) as $key ) {
+		if ( ! empty( $prefs['color'] ) ) {
+			$terms[] = $prefs['color'];
+		}
+		foreach ( array( 'fabric', 'occasion', 'sku', 'fit' ) as $key ) {
 			if ( ! empty( $prefs[ $key ] ) ) {
 				$terms[] = $prefs[ $key ];
 			}
 		}
+		// When excluding a colour, search for alternatives (blue/white/oxford) not the rejected colour.
+		if ( empty( $terms ) && ! empty( $prefs['exclude_colors'] ) ) {
+			$terms = array( 'shirt', 'oxford', 'blue', 'white' );
+		}
 		if ( ! $terms ) {
 			$terms = $this->build_terms( $message, $history );
+			// Drop colour words that are only exclusions / noise from “need shirt”.
+			$terms = array_values(
+				array_filter(
+					$terms,
+					function ( $t ) use ( $prefs ) {
+						$t = strtolower( (string) $t );
+						if ( in_array( $t, array( 'asian', 'looking', 'man', 'suit', 'suite', 'me', 'suggest', 'choose', 'top', 'pick' ), true ) ) {
+							return false;
+						}
+						if ( in_array( $t, $prefs['exclude_colors'], true ) ) {
+							return false;
+						}
+						return true;
+					}
+				)
+			);
+			if ( ! $terms ) {
+				$terms = array( 'shirt' );
+			}
 		}
 
 		$query  = implode( ' ', array_slice( $terms, 0, 5 ) );
-		$result = $this->query_to_result( $query, $terms, $limit, $channel, true );
+		$pool   = max( 8, $limit * 4 );
+		$result = $this->query_to_result( $query, $terms, $pool, $channel, true );
+		$result['cards'] = $this->rank_cards( isset( $result['cards'] ) ? $result['cards'] : array(), $prefs, $shown, $limit );
+		$result['count'] = count( $result['cards'] );
 		$result['prefs'] = $prefs;
-		if ( ! empty( $result['cards'][0]['id'] ) ) {
-			$result['recommended_id'] = (int) $result['cards'][0]['id'];
-		}
+		$result['recommended_id'] = ! empty( $result['cards'][0]['id'] ) ? (int) $result['cards'][0]['id'] : 0;
 		return $result;
+	}
+
+	/**
+	 * Filter + score cards by prefs / exclusions.
+	 *
+	 * @param array $cards Cards.
+	 * @param array $prefs Prefs.
+	 * @param int[] $shown Already shown ids.
+	 * @param int   $limit Limit.
+	 * @return array
+	 */
+	private function rank_cards( array $cards, array $prefs, array $shown, $limit ) {
+		$scored = array();
+		foreach ( $cards as $card ) {
+			$name = strtolower( (string) ( $card['name'] ?? '' ) );
+			$skip = false;
+			foreach ( (array) ( $prefs['exclude_colors'] ?? array() ) as $ex ) {
+				$ex = strtolower( (string) $ex );
+				if ( $ex && false !== strpos( $name, $ex ) ) {
+					$skip = true;
+					break;
+				}
+			}
+			if ( $skip ) {
+				continue;
+			}
+
+			$score = 0;
+			if ( ! empty( $prefs['color'] ) && false !== strpos( $name, strtolower( $prefs['color'] ) ) ) {
+				$score += 50;
+			}
+			if ( ! empty( $prefs['fabric'] ) && false !== strpos( $name, strtolower( $prefs['fabric'] ) ) ) {
+				$score += 20;
+			}
+			// Prefer solid / non-check for a cleaner everyday pick when no colour set.
+			if ( empty( $prefs['color'] ) && ! preg_match( '/check|dog\s*tooth|stripe|pinstripe/i', $name ) ) {
+				$score += 8;
+			}
+			if ( ! empty( $prefs['avoid_shown'] ) && in_array( (int) ( $card['id'] ?? 0 ), $shown, true ) ) {
+				$score -= 40;
+			} elseif ( in_array( (int) ( $card['id'] ?? 0 ), $shown, true ) ) {
+				$score -= 5;
+			}
+			// Soft bias: light/blue/white often flatter slim fit everyday looks.
+			if ( ! empty( $prefs['fit'] ) && 'slim' === $prefs['fit'] && preg_match( '/\b(light blue|white|blue|oxford)\b/i', $name ) ) {
+				$score += 12;
+			}
+
+			$scored[] = array( 'score' => $score, 'card' => $card );
+		}
+
+		usort(
+			$scored,
+			static function ( $a, $b ) {
+				return $b['score'] <=> $a['score'];
+			}
+		);
+
+		$out = array();
+		foreach ( $scored as $row ) {
+			$out[] = $row['card'];
+			if ( count( $out ) >= $limit ) {
+				break;
+			}
+		}
+
+		// If exclusions wiped everything, fall back to unfiltered minus excluded names from a broader pool.
+		if ( ! $out && ! empty( $prefs['exclude_colors'] ) ) {
+			foreach ( $cards as $card ) {
+				$name = strtolower( (string) ( $card['name'] ?? '' ) );
+				$bad  = false;
+				foreach ( $prefs['exclude_colors'] as $ex ) {
+					if ( $ex && false !== strpos( $name, strtolower( (string) $ex ) ) ) {
+						$bad = true;
+						break;
+					}
+				}
+				if ( $bad ) {
+					continue;
+				}
+				$out[] = $card;
+				if ( count( $out ) >= $limit ) {
+					break;
+				}
+			}
+		}
+
+		return $out;
 	}
 
 	/**
