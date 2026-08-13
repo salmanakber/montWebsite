@@ -134,8 +134,290 @@ class Chat_Service {
 			}
 		}
 
-		// 3) Everything else → natural AI with live catalog tools.
+		// 3) Support / complaints / order help — never mix with product browsing.
+		if ( $this->is_support_flow( $message, $history ) ) {
+			return $this->handle_support_flow( $message, $history, $language );
+		}
+
+		// 4) Everything else → natural AI with live catalog tools.
 		return $this->handle_with_ai( $message, $history, $language, $context );
+	}
+
+	/**
+	 * Customer is asking about orders, complaints, or support — not shopping.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return bool
+	 */
+	private function is_support_flow( $message, array $history ) {
+		$blob = strtolower( $this->user_messages_blob( $message, $history ) );
+		if ( preg_match( '/\b(complain|complaint|klage|reklamasjon|support ticket|customer service|speak to someone|talk to (a )?human|wrong item|damaged|defect|broken|missing (item|order)|not received|refund|where is my order|track(ing)? (my )?order|order status|my order|order number|order #|leveringsstatus|sporing)\b/i', $blob ) ) {
+			return true;
+		}
+		// Continue support thread once we started collecting details.
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) || ( isset( $h['role'] ) && 'assistant' === $h['role'] ) ) {
+				continue;
+			}
+			if ( preg_match( '/\b(complain|complaint|support|klage)\b/i', (string) $h['content'] ) ) {
+				return true;
+			}
+		}
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) || ( isset( $h['role'] ) && 'user' === $h['role'] ) ) {
+				continue;
+			}
+			if ( preg_match( '/(what happened|describe the (issue|problem)|email.*order|what email|hvilken e-post|quale email|pass this to (our )?team|support team|shall i send|send it now|skal jeg sende)/i', (string) $h['content'] ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Only text the customer typed (never assistant product lines).
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return string
+	 */
+	private function user_messages_blob( $message, array $history ) {
+		$parts = array( trim( (string) $message ) );
+		foreach ( $history as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			if ( isset( $h['role'] ) && 'assistant' === $h['role'] ) {
+				continue;
+			}
+			$parts[] = trim( (string) $h['content'] );
+		}
+		return implode( "\n", array_filter( $parts ) );
+	}
+
+	/**
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return string
+	 */
+	private function extract_user_email( $message, array $history ) {
+		$blob = $this->user_messages_blob( $message, $history );
+		if ( preg_match( '/[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/i', $blob, $m ) ) {
+			return sanitize_email( $m[0] );
+		}
+		return '';
+	}
+
+	/**
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return string
+	 */
+	private function extract_order_number( $message, array $history ) {
+		$blob = $this->user_messages_blob( $message, $history );
+		if ( preg_match( '/\border\s*#?\s*(\d{4,})\b/i', $blob, $m ) ) {
+			return $m[1];
+		}
+		if ( preg_match( '/\b#(\d{4,})\b/', $blob, $m ) ) {
+			return $m[1];
+		}
+		return '';
+	}
+
+	/**
+	 * Issue description from customer words only.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return string
+	 */
+	private function extract_support_details( $message, array $history ) {
+		$lines = array();
+		foreach ( $history as $h ) {
+			if ( empty( $h['content'] ) || ( isset( $h['role'] ) && 'assistant' === $h['role'] ) ) {
+				continue;
+			}
+			$lines[] = trim( (string) $h['content'] );
+		}
+		$lines[] = trim( (string) $message );
+		$parts   = array();
+		foreach ( $lines as $line ) {
+			$line = preg_replace( '/\b(i need|i want|complain|complaint|support|help|please)\b/i', '', $line );
+			$line = preg_replace( '/[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}/i', '', $line );
+			$line = preg_replace( '/\border\s*#?\s*\d+/i', '', $line );
+			$line = trim( preg_replace( '/\s+/', ' ', (string) $line ) );
+			if ( strlen( $line ) >= 8 ) {
+				$parts[] = $line;
+			}
+		}
+		return trim( implode( '. ', array_unique( $parts ) ) );
+	}
+
+	/**
+	 * Enough customer-provided info to file a real ticket.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return bool
+	 */
+	private function support_can_submit( $message, array $history ) {
+		$email = $this->extract_user_email( $message, $history );
+		$desc  = $this->extract_support_details( $message, $history );
+		return ( $email && is_email( $email ) && strlen( $desc ) >= 15 );
+	}
+
+	/**
+	 * User confirmed sending a support message we summarized.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return bool
+	 */
+	private function support_user_confirmed_send( $message, array $history ) {
+		$text = strtolower( trim( (string) $message ) );
+		if ( ! preg_match( '/\b(yes|yeah|yep|ja|send|go ahead|please send|ok send|do it|confirm|send it)\b/i', $text ) ) {
+			return false;
+		}
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) || ( isset( $h['role'] ) && 'user' === $h['role'] ) ) {
+				continue;
+			}
+			if ( preg_match( '/(shall i send|send it now|skal jeg sende|invio\?|gửi luôn)/i', (string) $h['content'] ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Handle support / complaints / order lookup without product cards.
+	 *
+	 * @param string $message  Message.
+	 * @param array  $history  History.
+	 * @param string $language Language.
+	 * @return array
+	 */
+	private function handle_support_flow( $message, array $history, $language ) {
+		$email  = $this->extract_user_email( $message, $history );
+		$order  = $this->extract_order_number( $message, $history );
+		$desc   = $this->extract_support_details( $message, $history );
+		$wants_complaint = (bool) preg_match( '/\b(complain|complaint|klage|reklamasjon|wrong|damaged|defect|broken|refund|issue|problem)\b/i', $this->user_messages_blob( $message, $history ) );
+
+		// Order status lookup when we have both fields.
+		if ( $order && $email && preg_match( '/\b(order|status|track|where|delivery|shipped|levering|sporing)\b/i', $this->user_messages_blob( $message, $history ) ) ) {
+			$data = ( new Order_Service() )->lookup( $order, $email );
+			if ( ! empty( $data['found'] ) ) {
+				$items = array();
+				foreach ( (array) ( $data['items'] ?? array() ) as $it ) {
+					$items[] = ( $it['qty'] ?? 1 ) . '× ' . ( $it['name'] ?? '' );
+				}
+				$copy = $this->copy_lang(
+					$language,
+					'Order #' . $data['order_number'] . ' — status: **' . $data['status'] . '** (placed ' . $data['date'] . ', total ' . $data['total'] . '). Items: ' . implode( '; ', $items ) . '.',
+					'Ordre #' . $data['order_number'] . ' — status: **' . $data['status'] . '** (bestilt ' . $data['date'] . ', total ' . $data['total'] . '). Varer: ' . implode( '; ', $items ) . '.',
+					'Ordine #' . $data['order_number'] . ' — stato: **' . $data['status'] . '** (' . $data['date'] . ', totale ' . $data['total'] . '). Articoli: ' . implode( '; ', $items ) . '.',
+					'Đơn #' . $data['order_number'] . ' — trạng thái: **' . $data['status'] . '** (' . $data['date'] . ', tổng ' . $data['total'] . '). Sản phẩm: ' . implode( '; ', $items ) . '.'
+				);
+				if ( ! empty( $data['tracking'] ) ) {
+					$copy .= ' ' . $data['tracking'];
+				}
+				return $this->response( $copy, array(), null, false, 'support', false, $language, 0 );
+			}
+			return $this->response(
+				isset( $data['message'] ) ? $data['message'] : $this->copy_lang( $language, 'Could not find that order.', 'Fant ikke ordren.', 'Ordine non trovato.', 'Không tìm thấy đơn.' ),
+				array(),
+				null,
+				false,
+				'support',
+				false,
+				$language,
+				0
+			);
+		}
+
+		// File complaint when customer gave email + description (explicit or confirmed).
+		$ready_to_file = $this->support_can_submit( $message, $history )
+			&& ( $wants_complaint || $this->support_user_confirmed_send( $message, $history ) );
+		if ( $ready_to_file ) {
+			$result = ( new Order_Service() )->submit_complaint( $email, $desc, '', $order );
+			if ( ! empty( $result['success'] ) ) {
+				$copy = $this->copy_lang(
+					$language,
+					'Done — I’ve sent this to our support team at Montenapoleone. They’ll reply to **' . $email . '** within 1–2 business days. Here’s what we logged: “' . $desc . '”' . ( $order ? ' (order #' . $order . ')' : '' ) . '.',
+					'Sendt til support-teamet vårt. De svarer **' . $email . '** innen 1–2 virkedager. Dette ble logget: «' . $desc . '»' . ( $order ? ' (ordre #' . $order . ')' : '' ) . '.',
+					'Inviato al team supporto. Risponderanno a **' . $email . '** entro 1–2 giorni lavorativi. Registrato: «' . $desc . '»' . ( $order ? ' (ordine #' . $order . ')' : '' ) . '.',
+					'Đã gửi cho bộ phận hỗ trợ. Họ sẽ trả lời **' . $email . '** trong 1–2 ngày làm việc. Nội dung: “' . $desc . '”' . ( $order ? ' (đơn #' . $order . ')' : '' ) . '.'
+				);
+				return $this->response( $copy, array(), null, false, 'support', false, $language, 0 );
+			}
+			return $this->response(
+				isset( $result['error'] ) ? $result['error'] : 'Could not submit.',
+				array(),
+				null,
+				false,
+				'support',
+				false,
+				$language,
+				0
+			);
+		}
+
+		// Still collecting — ask like a human. NEVER submit or show products.
+		if ( ! $desc || strlen( $desc ) < 15 ) {
+			return $this->response(
+				$this->copy_lang(
+					$language,
+					'Sorry you’re having trouble — I’m here to help. What happened exactly? (wrong size, damaged shirt, late delivery, etc.)',
+					'Beklager at noe gikk galt. Hva skjedde? (feil størrelse, skade, sen levering osv.)',
+					'Mi dispiace — cos’è successo? (taglia sbagliata, difetto, ritardo consegna…)',
+					'Rất tiếc — chuyện gì đã xảy ra? (sai size, hỏng, giao trễ…)'
+				),
+				array(),
+				null,
+				false,
+				'support',
+				false,
+				$language,
+				0
+			);
+		}
+		if ( ! $email || ! is_email( $email ) ) {
+			return $this->response(
+				$this->copy_lang(
+					$language,
+					'Got it — thanks for explaining. What email did you use on the order? (So our team can reply to you.)',
+					'Skjønner — takk. Hvilken e-post brukte du ved bestilling? (Så teamet kan svare deg.)',
+					'Capito — grazie. Quale email hai usato per l’ordine?',
+					'Hiểu rồi — email bạn dùng khi đặt hàng là gì?'
+				),
+				array(),
+				null,
+				false,
+				'support',
+				false,
+				$language,
+				0
+			);
+		}
+
+		// Has email + desc but wasn't explicit complaint — confirm before sending.
+		return $this->response(
+			$this->copy_lang(
+				$language,
+				'I can pass this to our support team: “' . $desc . '” — reply to **' . $email . '**. Shall I send it now? (Just say “yes send it”)',
+				'Jeg kan sende dette til support: «' . $desc . '» — svar til **' . $email . '**. Skal jeg sende nå? (Si «ja, send»)',
+				'Posso inoltrare al supporto: «' . $desc . '» — risposta a **' . $email . '**. Invio?',
+				'Mình có thể chuyển cho support: “' . $desc . '” — trả lời **' . $email . '**. Gửi luôn không?'
+			),
+			array(),
+			null,
+			false,
+			'support',
+			false,
+			$language,
+			0
+		);
 	}
 
 	/**
@@ -180,12 +462,12 @@ class Chat_Service {
 		if ( Order_Builder::is_configuring( $message, $history ) ) {
 			return false;
 		}
-		$blob = strtolower( trim( $message . ' ' . $content . ' ' . $this->history_text( $history ) ) );
-		if ( preg_match( '/\b(ship|shipping|deliver|delivery|return|refund|frakt|levering|policy only)\b/i', $message )
-			&& ! preg_match( '/\b(shirt|skjorte|camicia|product|colour|color|fit)\b/i', $message ) ) {
+		if ( $this->is_support_flow( $message, $history ) ) {
 			return false;
 		}
-		return (bool) preg_match( '/\b(shirt|shirts|skjorte|camicia|fabric|oxford|linen|flannel|slim|casual|colour|color|blue|white|red|recommend|suggest|show|browse|pick|option|looking|need|want|gift|suit|prefer|don\'?t like)\b/i', $blob );
+		$blob = strtolower( trim( $message . ' ' . $content ) );
+		// Only attach cards when the customer is clearly shopping — not bare "need/want".
+		return (bool) preg_match( '/\b(shirt|shirts|skjorte|camicia|browse|show me|looking for a|top pick|only one|recommend|similar|colour|color|fabric|oxford|linen|flannel|slim fit|gift)\b/i', $blob );
 	}
 
 	/**
@@ -342,7 +624,9 @@ class Chat_Service {
 
 		$messages   = array();
 		$sys        = $this->system_prompt( $language, $context );
-		$sys       .= "\n\n" . $catalog->catalog_snapshot( $message, $history, $channel, 12 );
+		if ( ! $this->is_support_flow( $message, $history ) ) {
+			$sys .= "\n\n" . $catalog->catalog_snapshot( $message, $history, $channel, 12 );
+		}
 		$memory_ids = $catalog->remembered_product_ids( $history );
 		if ( $memory_ids ) {
 			$sys .= "\n\nAlready shown in this chat (reuse these ids with get_product when they refer to a previous pick): product #" . implode( ', product #', $memory_ids );
@@ -399,7 +683,7 @@ class Chat_Service {
 		$used_fallback = false;
 		$rec_id        = 0;
 		$executor      = new Tool_Executor();
-		$tools         = $executor->definitions();
+		$tools         = $this->is_support_flow( $message, $history ) ? $executor->support_definitions() : $executor->definitions();
 
 		try {
 			$settings = Plugin::settings();
@@ -458,10 +742,29 @@ class Chat_Service {
 						$fargs   = is_array( $decoded ) ? $decoded : array();
 					}
 					$out = $executor->execute( $fname, $fargs );
+					// AI must never submit support tickets — only local validated flow does.
+					if ( 'submit_support_request' === $fname ) {
+						$out = array(
+							'success' => false,
+							'error'   => 'Blocked: ask the customer for their issue description and email in chat first. Support tickets are only created after they provide both.',
+						);
+					}
+					if ( 'search_products' === $fname || 'get_product' === $fname ) {
+						if ( $this->is_support_flow( $message, $history ) ) {
+							$out = array(
+								'error' => 'Support mode — do not show products. Help with their order or complaint only.',
+								'cards' => array(),
+							);
+						}
+					}
 					if ( ! empty( $out['cards'] ) && is_array( $out['cards'] ) ) {
-						$cards = array_merge( $cards, $out['cards'] );
-						if ( ! $rec_id && ! empty( $out['cards'][0]['id'] ) ) {
-							$rec_id = (int) $out['cards'][0]['id'];
+						if ( $this->is_support_flow( $message, $history ) ) {
+							$out['cards'] = array();
+						} else {
+							$cards = array_merge( $cards, $out['cards'] );
+							if ( ! $rec_id && ! empty( $out['cards'][0]['id'] ) ) {
+								$rec_id = (int) $out['cards'][0]['id'];
+							}
 						}
 					}
 					if ( ! empty( $out['choices'] ) && is_array( $out['choices'] ) && ( empty( $out['choices']['type'] ) || 'product_cards' !== $out['choices']['type'] ) ) {
@@ -487,26 +790,29 @@ class Chat_Service {
 			$content = $this->scrub_assistant_text( $content, $language );
 
 			// If the model talked products but forgot tools, pull live cards from the shop.
-			if ( ! $cards ) {
-				$cards = $this->cards_mentioned_in_text( $content, $catalog, $channel );
-			}
-			if ( ! $cards && $this->should_attach_shop_cards( $message, $content, $history ) ) {
-				$limit = $catalog->card_limit( $message, $history );
-				$found = $catalog->recommend( $message, $history, $limit, $channel );
-				if ( ! empty( $found['cards'] ) ) {
-					$cards  = $found['cards'];
-					$rec_id = (int) ( $found['recommended_id'] ?? 0 );
-					if ( '' === trim( (string) $content ) ) {
-						$content = $this->recommend_copy( $language, $cards, $found['prefs'] ?? array(), 1 === $limit );
+			if ( ! $this->is_support_flow( $message, $history ) ) {
+				if ( ! $cards ) {
+					$cards = $this->cards_mentioned_in_text( $content, $catalog, $channel );
+				}
+				if ( ! $cards && $this->should_attach_shop_cards( $message, $content, $history ) ) {
+					$limit = $catalog->card_limit( $message, $history );
+					$found = $catalog->recommend( $message, $history, $limit, $channel );
+					if ( ! empty( $found['cards'] ) ) {
+						$cards  = $found['cards'];
+						$rec_id = (int) ( $found['recommended_id'] ?? 0 );
+						if ( '' === trim( (string) $content ) ) {
+							$content = $this->recommend_copy( $language, $cards, $found['prefs'] ?? array(), 1 === $limit );
+						}
 					}
 				}
+				$max_cards = $catalog->card_limit( $message, $history );
+				$cards     = array_slice( $this->unique_cards( $cards ), 0, $max_cards );
+			} else {
+				$cards = array();
 			}
 			if ( $cards && ! $rec_id ) {
 				$rec_id = (int) $cards[0]['id'];
 			}
-
-			$max_cards = $catalog->card_limit( $message, $history );
-			$cards     = array_slice( $this->unique_cards( $cards ), 0, $max_cards );
 			if ( '' === trim( (string) $content ) && $cards ) {
 				$content = $this->recommend_copy( $language, $cards, array(), false );
 			}
@@ -516,26 +822,36 @@ class Chat_Service {
 			Plugin::log( 'Chat AI failed', array( 'error' => $e->getMessage() ) );
 
 			// Always try a live catalog answer first — never strand the shopper.
-			try {
-				$limit = $catalog->card_limit( $message, $history );
-				$found = $catalog->recommend( $message, $history, $limit, $channel );
-				if ( ! empty( $found['count'] ) ) {
-					return $this->response(
-						$this->recommend_copy( $language, $found['cards'], $found['prefs'] ?? array(), true ),
-						$found['cards'],
-						null,
-						false,
-						'catalog',
-						true,
-						$language,
-						isset( $found['recommended_id'] ) ? (int) $found['recommended_id'] : 0
-					);
+			if ( ! $this->is_support_flow( $message, $history ) ) {
+				try {
+					$limit = $catalog->card_limit( $message, $history );
+					$found = $catalog->recommend( $message, $history, $limit, $channel );
+					if ( ! empty( $found['count'] ) ) {
+						return $this->response(
+							$this->recommend_copy( $language, $found['cards'], $found['prefs'] ?? array(), true ),
+							$found['cards'],
+							null,
+							false,
+							'catalog',
+							true,
+							$language,
+							isset( $found['recommended_id'] ) ? (int) $found['recommended_id'] : 0
+						);
+					}
+				} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
 				}
-			} catch ( \Throwable $ignored ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
 			}
 
 			$error_code = 'provider_error';
-			$friendly   = __( 'Sorry — something glitched on my side. Tell me a colour or style and I’ll pull shirts from the shop.', 'mont-ai-assistant' );
+			$friendly   = $this->is_support_flow( $message, $history )
+				? $this->copy_lang(
+					$language,
+					'Sorry — something glitched. Tell me your order # and email, or describe the issue and I’ll help.',
+					'Beklager — noe gikk galt. Si ordrenummer og e-post, eller beskriv problemet.',
+					'Scusa — errore. Dimmi numero ordine ed email, o descrivi il problema.',
+					'Xin lỗi — lỗi kỹ thuật. Cho mình mã đơn + email hoặc mô tả vấn đề.'
+				)
+				: __( 'Sorry — something glitched on my side. Tell me a colour or style and I’ll pull shirts from the shop.', 'mont-ai-assistant' );
 
 			if ( preg_match( '/HTTP 429/', $e->getMessage() ) ) {
 				$error_code = 'rate_limit';
@@ -637,7 +953,7 @@ DATABASE / TOOLS (you have full shop access)
 
 ORDERS & COMPLAINTS
 - If they ask about an order: ask for order number + email if missing, then lookup_order and explain status/items clearly like a human.
-- If they complain or need help: empathize briefly, gather email + what happened + order # if relevant, then submit_support_request.
+- If they complain or need help: empathize briefly and ask what happened + their email + order # if relevant. NEVER say you submitted a ticket unless the system confirms it. NEVER invent email addresses or issue descriptions. Do NOT show product cards during support.
 - Never invent order status — only tool results.
 
 SELLING STYLE

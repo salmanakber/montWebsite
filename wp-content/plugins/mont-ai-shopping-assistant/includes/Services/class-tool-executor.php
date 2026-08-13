@@ -141,6 +141,25 @@ class Tool_Executor {
 	}
 
 	/**
+	 * Support-only tools — no product search, no ticket submit (local PHP handles submit).
+	 *
+	 * @return array
+	 */
+	public function support_definitions() {
+		return array(
+			$this->fn(
+				'lookup_order',
+				'Look up a customer order by order number + billing email. Use when they ask about order status, delivery, what they ordered, tracking.',
+				array(
+					'order_number' => array( 'type' => 'string', 'description' => 'Order number from confirmation email' ),
+					'email'        => array( 'type' => 'string', 'description' => 'Billing email used at checkout' ),
+				),
+				array( 'order_number', 'email' )
+			),
+		);
+	}
+
+	/**
 	 * Execute a tool by name.
 	 *
 	 * @param string $name Name.
