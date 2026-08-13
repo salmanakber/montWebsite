@@ -156,11 +156,17 @@ class Order_Builder {
 		if ( preg_match( '/product\s*#?\s*(\d+)/i', $message, $m ) ) {
 			return (int) $m[1];
 		}
+		// Only continue the option stepper when this looks like a tap (short choice).
+		$trim = trim( (string) $message );
+		if ( ! preg_match( '/^(slim|regular|classic|extra\s*slim|body\s*fit|\d{2}|xxs|xs|s|m|l|xl|xxl|1|2|3|5)$/i', $trim )
+			&& strlen( $trim ) > 24 ) {
+			return 0;
+		}
 		foreach ( array_reverse( $history ) as $h ) {
-			if ( empty( $h['content'] ) ) {
+			if ( empty( $h['content'] ) || ( isset( $h['role'] ) && 'assistant' === $h['role'] ) ) {
 				continue;
 			}
-			if ( preg_match( '/product\s*#?\s*(\d+)/i', (string) $h['content'], $m ) ) {
+			if ( preg_match( '/I want product\s*#?\s*(\d+)/i', (string) $h['content'], $m ) ) {
 				return (int) $m[1];
 			}
 		}

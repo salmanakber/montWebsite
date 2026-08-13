@@ -42,16 +42,24 @@ class Tool_Executor {
 		return array(
 			$this->fn(
 				'search_products',
-				'Search catalog when the customer describes what they want. Do NOT call for greetings like hi/hello.',
+				'Search the LIVE shop catalog. Call this before naming any shirt. Use limit "1" or "3". Never invent names.',
 				array(
-					'query' => array( 'type' => 'string', 'description' => 'Search keywords from the customer need' ),
-					'limit' => array( 'type' => 'string', 'description' => 'Max results 1-8 as string' ),
+					'query' => array( 'type' => 'string', 'description' => 'Real keywords: colour, fabric, SKU, or exact product title' ),
+					'limit' => array( 'type' => 'string', 'description' => 'Max results 1-4 as string. Use 1 when they asked to see one shirt.' ),
 				),
 				array( 'query' )
 			),
 			$this->fn(
 				'get_product',
-				'Get product details by ID after a product is chosen.',
+				'Load one product by ID and attach its photo card. Use this when they ask to see the shirt you recommended.',
+				array(
+					'product_id' => $id,
+				),
+				array( 'product_id' )
+			),
+			$this->fn(
+				'get_variations',
+				'List size/fit variations and stock for a product ID.',
 				array(
 					'product_id' => $id,
 				),
@@ -280,7 +288,7 @@ class Tool_Executor {
 			}
 		}
 		$choices = null;
-		if ( $choice_items ) {
+		if ( $choice_items && count( $choice_items ) <= 1 ) {
 			$choices = array(
 				'title'   => 'Pick a product',
 				'field'   => 'product_id',

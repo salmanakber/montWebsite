@@ -81,6 +81,46 @@ class Catalog_Search {
 	}
 
 	/**
+	 * Customer wants to see one specific shirt already in play — not a catalog dump.
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	public function wants_specific_show( $message ) {
+		$text = strtolower( trim( (string) $message ) );
+		if ( '' === $text ) {
+			return false;
+		}
+		if ( preg_match( '/\b(the one you|you (suggested|chose|choosen|chosen|picked|recommended)|that shirt|this shirt|show it|show me (it|that|this|the)|show (me )?first|vis (meg )?den|mostrami (quella|questa)|cho xem (nó|ao|áo))\b/i', $text ) ) {
+			return true;
+		}
+		if ( preg_match( '/\bshow me (the )?shirt\b/i', $text ) && ! preg_match( '/show me shirts/i', $text ) ) {
+			return true;
+		}
+		if ( preg_match( '/\b(show|see|vis)\b.+\b(the one|that one|this one|it to me|so i can see)\b/i', $text ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Customer wants a pick / “best one”, not a 20-question interview.
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	public function wants_recommendation( $message ) {
+		$text = strtolower( trim( (string) $message ) );
+		if ( '' === $text ) {
+			return false;
+		}
+		if ( preg_match( '/\b(best one|help me find|recommend|which (one|shirt)|pick (one|for me)|similar please|something similar)\b/i', $text ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Whether to run catalog browse.
 	 * Only when the customer clearly wants to see products — not for chat Q&A.
 	 *
@@ -94,17 +134,23 @@ class Catalog_Search {
 			return false;
 		}
 
-		// Explicit "show me products" intent.
+		// “Show it / the one you suggested” is a focused show, not a catalog dump.
+		if ( $this->wants_specific_show( $text ) ) {
+			return false;
+		}
+
+		// Explicit catalog browse — avoid bare “show me” (matches “show me the shirt”).
 		$explicit = array(
-			'show me', 'show shirts', 'show shirt', 'show fabrics', 'show products',
+			'show shirts', 'show shirt', 'show fabrics', 'show products',
 			'list shirts', 'list products', 'list fabrics',
 			'browse', 'see shirts', 'see products', 'see fabrics',
 			'what shirts do you have', 'which shirts do you have',
-			'show me some', 'any shirts', 'recommend shirts', 'recommend a shirt',
-			'vis skjorter', 'vis meg', 'se skjorter', 'finn skjorter',
-			'mostra camicie', 'mostrami', 'vediamo camicie',
-			'xem áo', 'cho xem', 'liệt kê', 'liet ke',
-			'show fabrics', 'show wholesale', 'b2b fabrics',
+			'show me some', 'show me shirts', 'any shirts',
+			'recommend shirts', 'recommend a shirt',
+			'vis skjorter', 'se skjorter', 'finn skjorter',
+			'mostra camicie', 'vediamo camicie',
+			'xem áo', 'liệt kê', 'liet ke',
+			'show wholesale', 'b2b fabrics',
 		);
 		foreach ( $explicit as $phrase ) {
 			if ( false !== strpos( $text, $phrase ) ) {
@@ -113,13 +159,12 @@ class Catalog_Search {
 		}
 
 		// Short browse commands.
-		if ( preg_match( '/^(show|list|browse|see)\b.{0,40}$/i', $text ) ) {
+		if ( preg_match( '/^(show|list|browse|see)\s+(shirts?|products?|fabrics?)?$/i', $text ) ) {
 			return true;
 		}
 
-		// "looking for / need / want" + product type, but NOT size/shipping/advice questions.
-		$advice = '/(ship|shipping|deliver|arrival|arrive|frakt|levering|return|retur|price|cost|how long|when |size\s*\d|størrelse|taglia|passform|fit|moq|测量|measure)/i';
-		if ( preg_match( $advice, $text ) ) {
+		// “looking for / need / want” + product type, but NOT size/shipping/advice questions.
+		if ( preg_match( '/(ship|shipping|deliver|arrival|arrive|frakt|levering|return|retur|how long|when will|moq)/i', $text ) ) {
 			return false;
 		}
 
@@ -132,9 +177,309 @@ class Catalog_Search {
 			return true;
 		}
 
-		// Do NOT browse just because history mentioned shirts.
 		unset( $history );
 		return false;
+	}
+
+	/**
+	 * Pull colour / fabric / fit / size / named shirt from the chat.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @return array
+	 */
+	public function extract_prefs( $message, array $history = array() ) {
+		$blob = strtolower( (string) $message );
+		foreach ( $history as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			$blob .= "\n" . strtolower( (string) $h['content'] );
+		}
+
+		$prefs = array(
+			'color'    => '',
+			'fabric'   => '',
+			'fit'      => '',
+			'size'     => '',
+			'occasion' => '',
+			'name'     => '',
+			'sku'      => '',
+		);
+
+		$colors = array(
+			'light blue' => 'light blue',
+			'azzurra'    => 'light blue',
+			'azzurro'    => 'light blue',
+			'navy'       => 'navy',
+			'dark blue'  => 'dark blue',
+			'blue'       => 'blue',
+			'blå'        => 'blue',
+			'blu'        => 'blue',
+			'white'      => 'white',
+			'bianca'     => 'white',
+			'bianco'     => 'white',
+			'hvit'       => 'white',
+			'black'      => 'black',
+			'grey'       => 'grey',
+			'gray'       => 'grey',
+			'green'      => 'green',
+			'emerald'    => 'green',
+			'red'        => 'red',
+			'olive'      => 'olive',
+			'pink'       => 'pink',
+			'beige'      => 'beige',
+		);
+		foreach ( $colors as $needle => $value ) {
+			if ( false !== strpos( $blob, $needle ) ) {
+				$prefs['color'] = $value;
+				break;
+			}
+		}
+
+		$fabrics = array( 'linen' => 'linen', 'lin' => 'linen', 'oxford' => 'oxford', 'flannel' => 'flannel', 'twill' => 'twill', 'poplin' => 'poplin', 'cotton' => 'cotton' );
+		foreach ( $fabrics as $needle => $value ) {
+			if ( preg_match( '/\b' . preg_quote( $needle, '/' ) . '\b/i', $blob ) ) {
+				$prefs['fabric'] = $value;
+				break;
+			}
+		}
+
+		if ( preg_match( '/\b(extra\s*slim|slim\s*fit|slim|classic|regular|body\s*fit)\b/i', $blob, $m ) ) {
+			$fit = strtolower( $m[1] );
+			$prefs['fit'] = ( false !== strpos( $fit, 'slim' ) ) ? 'slim' : $fit;
+		}
+
+		if ( preg_match( '/\b(size\s*)?(3[7-9]|4[0-6])\b/', $blob, $m ) ) {
+			$prefs['size'] = $m[2];
+		}
+
+		if ( preg_match( '/\b(casual|everyday|daily|business|office|wedding|formal)\b/i', $blob, $m ) ) {
+			$occ = strtolower( $m[1] );
+			$prefs['occasion'] = in_array( $occ, array( 'everyday', 'daily' ), true ) ? 'casual' : $occ;
+		}
+
+		if ( preg_match( '/#([a-z]{1,4}\d{1,4})/i', $blob, $m ) ) {
+			$prefs['sku'] = strtoupper( $m[1] );
+		}
+
+		// Quoted or Title-case product nicknames from this turn / history.
+		if ( preg_match( '/["“]([^"”]{3,60})["”]/u', $message . ' ' . $this->history_blob( $history ), $m ) ) {
+			$prefs['name'] = trim( $m[1] );
+		} elseif ( preg_match( '/\b(camicia\s+[a-zàèéìòù]+)\b/iu', $message, $m ) ) {
+			$prefs['name'] = $m[1];
+		}
+
+		return $prefs;
+	}
+
+	/**
+	 * Product IDs the assistant already showed (from history memory line).
+	 *
+	 * @param array $history History.
+	 * @return int[]
+	 */
+	public function remembered_product_ids( array $history ) {
+		$ids = array();
+		foreach ( $history as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			if ( preg_match_all( '/product\s*#\s*(\d+)/i', (string) $h['content'], $m ) ) {
+				foreach ( $m[1] as $id ) {
+					$ids[] = (int) $id;
+				}
+			}
+		}
+		return array_values( array_unique( array_filter( $ids ) ) );
+	}
+
+	/**
+	 * Last recommended product id from history.
+	 *
+	 * @param array $history History.
+	 * @return int
+	 */
+	public function remembered_recommended_id( array $history ) {
+		foreach ( array_reverse( $history ) as $h ) {
+			if ( empty( $h['content'] ) ) {
+				continue;
+			}
+			if ( preg_match( '/recommended product\s*#\s*(\d+)/i', (string) $h['content'], $m ) ) {
+				return (int) $m[1];
+			}
+		}
+		$ids = $this->remembered_product_ids( $history );
+		return $ids ? (int) end( $ids ) : 0;
+	}
+
+	/**
+	 * Find live products by name / SKU.
+	 *
+	 * @param string $name    Name.
+	 * @param string $channel Channel.
+	 * @param int    $limit   Limit.
+	 * @return array
+	 */
+	public function find_by_name( $name, $channel = 'b2c', $limit = 3 ) {
+		$name = trim( (string) $name );
+		if ( strlen( $name ) < 2 ) {
+			return $this->empty_result();
+		}
+		return $this->query_to_result( $name, array( $name ), $limit, $channel, false );
+	}
+
+	/**
+	 * Card for one product id.
+	 *
+	 * @param int    $product_id Product ID.
+	 * @param string $channel    Channel.
+	 * @return array|null
+	 */
+	public function card( $product_id, $channel = 'b2c' ) {
+		return $this->safe_card( (int) $product_id, $channel );
+	}
+
+	/**
+	 * Cards for ids.
+	 *
+	 * @param int[]  $ids     IDs.
+	 * @param string $channel Channel.
+	 * @return array
+	 */
+	public function cards_for_ids( array $ids, $channel = 'b2c' ) {
+		$cards = array();
+		foreach ( $ids as $id ) {
+			$card = $this->safe_card( (int) $id, $channel );
+			if ( $card ) {
+				$cards[] = $card;
+			}
+		}
+		return $cards;
+	}
+
+	/**
+	 * Compact catalog lines for the model (real names only).
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @param string $channel Channel.
+	 * @param int    $limit   Limit.
+	 * @return string
+	 */
+	public function catalog_snapshot( $message, array $history, $channel = 'b2c', $limit = 8 ) {
+		$found = $this->recommend( $message, $history, $limit, $channel );
+		if ( empty( $found['cards'] ) ) {
+			return 'CATALOG: no matching shirts for the current filters. Call search_products with broader keywords.';
+		}
+		$lines = array();
+		foreach ( $found['cards'] as $card ) {
+			$lines[] = '#' . $card['id'] . ' ' . $card['name'] . ' (' . $card['price'] . ')';
+		}
+		return "LIVE CATALOG (only these names exist — never invent others):\n- " . implode( "\n- ", $lines );
+	}
+
+	/**
+	 * Smart recommend using conversation prefs.
+	 *
+	 * @param string $message Message.
+	 * @param array  $history History.
+	 * @param int    $limit   Limit.
+	 * @param string $channel Channel.
+	 * @return array
+	 */
+	public function recommend( $message, array $history = array(), $limit = 3, $channel = 'b2c' ) {
+		$prefs = $this->extract_prefs( $message, $history );
+		if ( $prefs['name'] ) {
+			$named = $this->find_by_name( $prefs['name'], $channel, $limit );
+			if ( ! empty( $named['count'] ) ) {
+				$named['recommended_id'] = (int) $named['cards'][0]['id'];
+				$named['prefs']          = $prefs;
+				return $named;
+			}
+		}
+
+		$terms = array();
+		foreach ( array( 'color', 'fabric', 'occasion', 'sku' ) as $key ) {
+			if ( ! empty( $prefs[ $key ] ) ) {
+				$terms[] = $prefs[ $key ];
+			}
+		}
+		if ( ! $terms ) {
+			$terms = $this->build_terms( $message, $history );
+		}
+
+		$query  = implode( ' ', array_slice( $terms, 0, 5 ) );
+		$result = $this->query_to_result( $query, $terms, $limit, $channel, true );
+		$result['prefs'] = $prefs;
+		if ( ! empty( $result['cards'][0]['id'] ) ) {
+			$result['recommended_id'] = (int) $result['cards'][0]['id'];
+		}
+		return $result;
+	}
+
+	/**
+	 * Join history text.
+	 *
+	 * @param array $history History.
+	 * @return string
+	 */
+	private function history_blob( array $history ) {
+		$parts = array();
+		foreach ( $history as $h ) {
+			if ( ! empty( $h['content'] ) ) {
+				$parts[] = (string) $h['content'];
+			}
+		}
+		return implode( "\n", $parts );
+	}
+
+	/**
+	 * Empty search payload.
+	 *
+	 * @return array
+	 */
+	private function empty_result() {
+		return array(
+			'cards'           => array(),
+			'choices'         => null,
+			'count'           => 0,
+			'query'           => '',
+			'terms'           => array(),
+			'recommended_id'  => 0,
+		);
+	}
+
+	/**
+	 * Run WP search → cards (no duplicate choice grid).
+	 *
+	 * @param string $query          Query.
+	 * @param array  $terms          Terms.
+	 * @param int    $limit          Limit.
+	 * @param string $channel        Channel.
+	 * @param bool   $allow_fallback Latest products if nothing matches.
+	 * @return array
+	 */
+	private function query_to_result( $query, array $terms, $limit, $channel, $allow_fallback ) {
+		$limit   = max( 1, min( 8, (int) $limit ) );
+		$channel = ( 'b2b' === $channel ) ? 'b2b' : 'b2c';
+		$ids     = $this->query_product_ids( $query, $terms, $limit, $channel, $allow_fallback );
+		$cards   = array();
+		foreach ( $ids as $id ) {
+			$card = $this->safe_card( (int) $id, $channel );
+			if ( $card ) {
+				$cards[] = $card;
+			}
+		}
+		return array(
+			'cards'          => $cards,
+			'choices'        => null,
+			'count'          => count( $cards ),
+			'query'          => $query,
+			'terms'          => $terms,
+			'channel'        => $channel,
+			'recommended_id' => ! empty( $cards[0]['id'] ) ? (int) $cards[0]['id'] : 0,
+		);
 	}
 
 	/**
@@ -146,61 +491,12 @@ class Catalog_Search {
 	 * @param string $channel Channel b2c|b2b.
 	 * @return array
 	 */
-	public function search( $message, array $history = array(), $limit = 6, $channel = 'b2c' ) {
-		$empty = array(
-			'cards'   => array(),
-			'choices' => null,
-			'count'   => 0,
-			'query'   => '',
-			'terms'   => array(),
-		);
-
+	public function search( $message, array $history = array(), $limit = 3, $channel = 'b2c' ) {
 		try {
-			$limit   = max( 1, min( 12, (int) $limit ) );
-			$channel = ( 'b2b' === $channel ) ? 'b2b' : 'b2c';
-			$terms   = $this->build_terms( $message, $history );
-			$query   = implode( ' ', array_slice( $terms, 0, 5 ) );
-
-			$ids          = $this->query_product_ids( $query, $terms, $limit, $channel );
-			$cards        = array();
-			$choice_items = array();
-
-			foreach ( $ids as $id ) {
-				$card = $this->safe_card( (int) $id, $channel );
-				if ( ! $card ) {
-					continue;
-				}
-				$cards[]        = $card;
-				$choice_items[] = array(
-					'label'      => $card['name'],
-					'value'      => 'I want product #' . $card['id'] . ': ' . $card['name'],
-					'image'      => $card['image'],
-					'sub'        => $card['price'],
-					'product_id' => $card['id'],
-				);
-			}
-
-			$choices = null;
-			if ( $choice_items ) {
-				$choices = array(
-					'title'   => ( 'b2b' === $channel ) ? 'Tap a B2B fabric' : 'Tap a shirt to select it',
-					'field'   => 'product_id',
-					'type'    => 'product_cards',
-					'choices' => $choice_items,
-				);
-			}
-
-			return array(
-				'cards'   => $cards,
-				'choices' => $choices,
-				'count'   => count( $cards ),
-				'query'   => $query,
-				'terms'   => $terms,
-				'channel' => $channel,
-			);
+			return $this->recommend( $message, $history, $limit, $channel );
 		} catch ( \Throwable $e ) {
 			Plugin::log( 'Catalog_Search::search error', array( 'error' => $e->getMessage() ) );
-			return $empty;
+			return $this->empty_result();
 		}
 	}
 
@@ -238,7 +534,7 @@ class Catalog_Search {
 	 * @param string $channel Channel.
 	 * @return int[]
 	 */
-	private function query_product_ids( $query, array $terms, $limit, $channel = 'b2c' ) {
+	private function query_product_ids( $query, array $terms, $limit, $channel = 'b2c', $allow_fallback = true ) {
 		$ids        = array();
 		$meta_query = $this->channel_meta_query( $channel );
 
@@ -255,16 +551,35 @@ class Catalog_Search {
 			$base['meta_query'] = $meta_query;
 		}
 
-		$q = new \WP_Query(
-			array_merge(
-				$base,
-				array(
-					's' => $query ? $query : ( 'b2b' === $channel ? '' : 'shirt' ),
+		try {
+			$index = new \Mont_AI_Assistant\Product\Product_Index();
+			$hits  = $index->search( $query ? $query : implode( ' ', array_slice( $terms, 0, 3 ) ), $limit );
+			foreach ( $hits as $hit ) {
+				if ( ! empty( $hit['id'] ) ) {
+					$ids[] = (int) $hit['id'];
+				}
+			}
+		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+		}
+
+		if ( count( $ids ) < $limit ) {
+			$q = new \WP_Query(
+				array_merge(
+					$base,
+					array(
+						's' => $query ? $query : ( 'b2b' === $channel ? '' : implode( ' ', array_slice( $terms, 0, 3 ) ) ),
+					)
 				)
-			)
-		);
-		if ( ! empty( $q->posts ) ) {
-			$ids = array_map( 'intval', $q->posts );
+			);
+			foreach ( (array) $q->posts as $pid ) {
+				$pid = (int) $pid;
+				if ( ! in_array( $pid, $ids, true ) ) {
+					$ids[] = $pid;
+				}
+				if ( count( $ids ) >= $limit ) {
+					break;
+				}
+			}
 		}
 
 		if ( count( $ids ) < 2 ) {
@@ -289,7 +604,7 @@ class Catalog_Search {
 			}
 		}
 
-		if ( count( $ids ) < 1 ) {
+		if ( $allow_fallback && count( $ids ) < 1 ) {
 			$q3_args = array_merge(
 				$base,
 				array(

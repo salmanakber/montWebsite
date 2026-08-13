@@ -391,7 +391,16 @@
 						choices: data.choices || null,
 						cartUpdated: !!data.cart_updated
 					});
-					history.push({ role: 'assistant', content: msg });
+					var histContent = msg;
+					if (data.cards && data.cards.length) {
+						histContent += '\nShown products: ' + data.cards.map(function (c) {
+							return 'product #' + c.id + ' ' + (c.name || '');
+						}).join('; ');
+					}
+					if (data.recommended_id) {
+						histContent += '\nRecommended product #' + data.recommended_id;
+					}
+					history.push({ role: 'assistant', content: histContent });
 					saveHistory();
 				})
 				.catch(function (err) {
