@@ -182,7 +182,7 @@ class ajaxHooks
 
     wp_enqueue_style('googleFonts', 'https://fonts.googleapis.com');
     wp_enqueue_style('googleFontspre', 'https://fonts.gstatic.com');
-    wp_enqueue_style('googleFonts-fonts', 'https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+    wp_enqueue_style('googleFonts-fonts', 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
  	
 
     wp_enqueue_script('mont-gallery-js', $theme_uri . '/assets/productGallery.js', array('jquery'), filemtime($theme_dir . '/assets/productGallery.js'), true);

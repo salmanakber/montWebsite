@@ -380,42 +380,41 @@ button.button {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 11px;
     text-decoration: none;
     line-height: 1;
+    --mont-logo-gray: #a5a5a5;
+    --mont-logo-height: 30px;
 }
 
 .mont_header_logo img,
 .mont_header_brand img {
-    max-height: 30px;
+    max-height: var(--mont-logo-height);
     width: auto;
     display: block;
     flex-shrink: 0;
 }
 
-/* Desktop: 1974 inline beside logo, same serif lockup style */
+/* Desktop: 1974 beside logo — Cinzel matches the MONTENAPOLEONE wordmark */
 .mont_header_brand__year {
     position: static;
-    font-family: "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
-    font-size: 18px;
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", Georgia, serif;
+    font-size: calc(var(--mont-logo-height) * 0.9);
     font-weight: 400;
-    letter-spacing: 0.12em;
-    color: #949598;
+    letter-spacing: 0.04em;
+    color: var(--mont-logo-gray);
     line-height: 1;
     white-space: nowrap;
     pointer-events: none;
     flex-shrink: 0;
-    transform: translateY(1px);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 @media (min-width: 1025px) {
     .mont_header_brand {
-        gap: 12px;
-    }
-
-    .mont_header_brand__year {
-        font-size: 20px;
-        letter-spacing: 0.14em;
+        gap: 13px;
+        --mont-logo-height: 30px;
     }
 }
 
@@ -799,13 +798,12 @@ justify-content: space-between;
 
 .mont_header_mobile_brand__year {
     display: block;
-    font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-    font-size: 13px;
+    font-family: "Cinzel", "Trajan Pro", "Times New Roman", Georgia, serif;
+    font-size: 15px;
     font-weight: 400;
-    letter-spacing: 0.42em;
-    color: #9a9a9a;
+    letter-spacing: 0.04em;
+    color: #a5a5a5;
     line-height: 1;
-    margin-left: 0.42em; /* optically center tracked type */
 }
 
 .mont_header_mobile_lang {
