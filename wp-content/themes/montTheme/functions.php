@@ -7,6 +7,7 @@ require_once get_template_directory(). '/codeFunction/add-to-cart.php';
 require_once get_template_directory(). '/codeFunction/product-helper.php';
 require_once get_template_directory(). '/codeFunction/load-more-scroll-class.php';
 require_once get_template_directory(). '/codeFunction/discount.php';
+require_once get_template_directory(). '/codeFunction/return-form.php';
 
 add_action( 'after_setup_theme', function () {
 	// Soft-proportional ~120px wide thumbs for custom-size measurement tiles.

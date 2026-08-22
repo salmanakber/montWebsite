@@ -125,6 +125,7 @@ class DC_Language_Urls {
 		if ( ! preg_match( $re, $rel, $m ) ) {
 			self::$had_prefix   = false;
 			self::$request_lang = null;
+			self::maybe_redirect_bare_request( $uri, $path, $query );
 			return;
 		}
 
@@ -164,8 +165,49 @@ class DC_Language_Urls {
 	}
 
 	/**
-	 * Optional: send bare front URLs to /{lang}/… once.
-	 * Runs late and only when we did NOT already strip a prefix.
+	 * Redirect bare / URLs to /{lang}/ before WordPress routing (first visit).
+	 *
+	 * @param string      $uri   Original request URI.
+	 * @param string      $path  Path component.
+	 * @param string|null $query Query string.
+	 */
+	private static function maybe_redirect_bare_request( $uri, $path, $query ) {
+		if ( headers_sent() ) {
+			return;
+		}
+
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) : 'GET';
+		if ( $method !== 'GET' && $method !== 'HEAD' ) {
+			return;
+		}
+
+		if ( self::should_skip_path( $path ) ) {
+			return;
+		}
+
+		if ( isset( $_GET['lang'] ) ) {
+			return;
+		}
+
+		$lang = self::get_request_lang();
+		if ( ! $lang || ! in_array( $lang, self::get_lang_codes(), true ) ) {
+			$lang = 'en';
+		}
+
+		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+		$target  = self::add_lang_prefix( $current, $lang );
+
+		if ( ! self::urls_differ( $current, $target ) ) {
+			return;
+		}
+
+		wp_safe_redirect( $target, 302 );
+		exit;
+	}
+
+	/**
+	 * Fallback redirect on template_redirect if early redirect did not run.
 	 */
 	public static function maybe_redirect_unprefixed() {
 		if ( ! self::enabled() || is_admin() || wp_doing_ajax() || wp_doing_cron() || headers_sent() ) {
@@ -208,7 +250,7 @@ class DC_Language_Urls {
 
 		$lang = self::get_request_lang();
 		if ( ! $lang || ! in_array( $lang, self::get_lang_codes(), true ) ) {
-			return;
+			$lang = 'en';
 		}
 
 		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';

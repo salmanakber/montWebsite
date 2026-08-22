@@ -140,6 +140,92 @@ span.dpName {
     color: #555;
 }
 
+.mont_pdp-doc-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.mont_return-form-btn {
+    text-decoration: none;
+}
+
+/* Return form popup after region change */
+.mont-return-form-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.mont-return-form-popup[hidden] {
+    display: none !important;
+}
+
+.mont-return-form-popup__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.mont-return-form-popup__panel {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 100%);
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 22px 22px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+}
+
+.mont-return-form-popup__panel h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #111;
+}
+
+.mont-return-form-popup__text {
+    margin: 0 0 8px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mont-return-form-popup__region {
+    margin: 0 0 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+.mont-return-form-popup__download {
+    display: inline-flex;
+    text-decoration: none;
+}
+
+.mont-return-form-popup__close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: 0;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+}
+
+body.mont-return-form-open {
+    overflow: hidden;
+}
+
 /* B2C size guide drawer */
 body.monte-size-drawer-open {
     overflow: hidden !important;

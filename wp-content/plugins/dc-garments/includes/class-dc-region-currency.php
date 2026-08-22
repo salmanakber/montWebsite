@@ -104,6 +104,15 @@ class DC_Region_Currency {
             if (self::is_valid_region($from_cookie)) {
                 $slug = $from_cookie;
             }
+        } else {
+            // 3) First visit: geolocate from IP / CDN header, default intl (English).
+            $slug = self::detect_region_from_ip();
+            if (!self::is_valid_region($slug)) {
+                $slug = 'intl';
+            }
+            if (!headers_sent()) {
+                self::set_region_cookie($slug);
+            }
         }
 
         self::$cached_slug = $slug;
@@ -164,6 +173,17 @@ class DC_Region_Currency {
      * Lightweight IP detect — never blocks request hard; defaults to intl.
      */
     public static function detect_region_from_ip() {
+        // Cloudflare country header (fast, no external API).
+        if (!empty($_SERVER['HTTP_CF_IPCOUNTRY'])) {
+            $cc = strtoupper(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_IPCOUNTRY'])));
+            if ($cc && $cc !== 'XX' && $cc !== 'T1') {
+                $mapped = self::country_to_region($cc);
+                if (self::is_valid_region($mapped)) {
+                    return $mapped;
+                }
+            }
+        }
+
         $ip = self::get_client_ip();
         if (
             !$ip
@@ -188,9 +208,9 @@ class DC_Region_Currency {
             $response = wp_remote_get(
                 'https://ip-api.com/json/' . rawurlencode($ip) . '?fields=status,countryCode',
                 array(
-                    'timeout'     => 1,
+                    'timeout'     => 2,
                     'redirection' => 0,
-                    'sslverify'   => false,
+                    'sslverify'   => true,
                 )
             );
 
@@ -449,6 +469,7 @@ class DC_Region_Currency {
             'langCodes'     => class_exists(__NAMESPACE__ . '\\DC_Language_Urls')
                 ? DC_Language_Urls::get_lang_codes()
                 : array('en', 'it', 'nb', 'vi'),
+            'returnForm'    => function_exists('mont_return_form_js_config') ? mont_return_form_js_config() : null,
         ));
     }
 
