@@ -139,6 +139,42 @@ class DC_Region_Currency {
         return !empty($region['lang']) ? $region['lang'] : 'en';
     }
 
+    /**
+     * Language prefix for bare-URL redirect: cookie → geo IP → en (intl).
+     * Sets region cookie on first visit when geo-detecting.
+     *
+     * @return string Language code (en, it, nb, vi).
+     */
+    public static function resolve_redirect_lang() {
+        $slug = 'intl';
+
+        if (isset($_COOKIE[self::COOKIE_NAME])) {
+            $from_cookie = sanitize_key(wp_unslash($_COOKIE[self::COOKIE_NAME]));
+            if (self::is_valid_region($from_cookie)) {
+                $slug = $from_cookie;
+            }
+        } else {
+            $slug = self::detect_region_from_ip();
+            if (!self::is_valid_region($slug)) {
+                $slug = 'intl';
+            }
+            if (!headers_sent()) {
+                self::set_region_cookie($slug);
+            }
+            self::$cached_slug = $slug;
+        }
+
+        $region = self::get_region($slug);
+        $lang   = ($region && !empty($region['lang'])) ? $region['lang'] : 'en';
+
+        $valid_langs = array('en', 'it', 'nb', 'vi');
+        if (!in_array($lang, $valid_langs, true)) {
+            $lang = 'en';
+        }
+
+        return $lang;
+    }
+
     public static function country_to_region($country_code) {
         $country_code = strtoupper(sanitize_text_field($country_code));
         foreach (self::get_regions() as $slug => $region) {
@@ -218,6 +254,25 @@ class DC_Region_Currency {
                 $body = json_decode(wp_remote_retrieve_body($response), true);
                 if (!empty($body['status']) && $body['status'] === 'success' && !empty($body['countryCode'])) {
                     $region = self::country_to_region($body['countryCode']);
+                }
+            }
+
+            // Fallback geo provider if primary fails.
+            if ($region === 'intl') {
+                $fallback = wp_remote_get(
+                    'https://ipapi.co/' . rawurlencode($ip) . '/country_code/',
+                    array(
+                        'timeout'     => 2,
+                        'redirection' => 0,
+                        'sslverify'   => true,
+                        'headers'     => array('User-Agent' => 'Montenapoleone/1.0'),
+                    )
+                );
+                if (!is_wp_error($fallback) && (int) wp_remote_retrieve_response_code($fallback) === 200) {
+                    $cc = strtoupper(trim((string) wp_remote_retrieve_body($fallback)));
+                    if ($cc && strlen($cc) === 2) {
+                        $region = self::country_to_region($cc);
+                    }
                 }
             }
         }

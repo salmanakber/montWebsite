@@ -32,7 +32,7 @@ class DC_Language_Urls {
 	private static $filtering = false;
 
 	public static function init() {
-		add_action( 'plugins_loaded', array( __CLASS__, 'bootstrap_request' ), 1 );
+		add_action( 'plugins_loaded', array( __CLASS__, 'bootstrap_request' ), 5 );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect_unprefixed' ), 0 );
 
 		// Do NOT filter home_url — that causes redirect loops with canonical.
@@ -164,6 +164,43 @@ class DC_Language_Urls {
 		$_SERVER['REQUEST_URI'] = $new_uri;
 	}
 
+	private static function redirect_lang_for_bare_url() {
+		$lang = 'en';
+		if ( class_exists( __NAMESPACE__ . '\\DC_Region_Currency' ) ) {
+			$lang = DC_Region_Currency::resolve_redirect_lang();
+		}
+		if ( ! in_array( $lang, self::get_lang_codes(), true ) ) {
+			$lang = 'en';
+		}
+		return $lang;
+	}
+
+	private static function perform_bare_url_redirect( $uri ) {
+		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
+		if ( self::should_skip_path( $path ) ) {
+			return;
+		}
+		if ( isset( $_GET['lang'] ) ) {
+			return;
+		}
+
+		$lang    = self::redirect_lang_for_bare_url();
+		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+		$target  = self::add_lang_prefix( $current, $lang );
+
+		if ( ! self::urls_differ( $current, $target ) ) {
+			return;
+		}
+
+		if ( function_exists( 'wp_safe_redirect' ) ) {
+			wp_safe_redirect( $target, 302 );
+		} else {
+			header( 'Location: ' . $target, true, 302 );
+		}
+		exit;
+	}
+
 	/**
 	 * Redirect bare / URLs to /{lang}/ before WordPress routing (first visit).
 	 *
@@ -181,29 +218,7 @@ class DC_Language_Urls {
 			return;
 		}
 
-		if ( self::should_skip_path( $path ) ) {
-			return;
-		}
-
-		if ( isset( $_GET['lang'] ) ) {
-			return;
-		}
-
-		$lang = self::get_request_lang();
-		if ( ! $lang || ! in_array( $lang, self::get_lang_codes(), true ) ) {
-			$lang = 'en';
-		}
-
-		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
-		$target  = self::add_lang_prefix( $current, $lang );
-
-		if ( ! self::urls_differ( $current, $target ) ) {
-			return;
-		}
-
-		wp_safe_redirect( $target, 302 );
-		exit;
+		self::perform_bare_url_redirect( $uri );
 	}
 
 	/**
@@ -248,21 +263,7 @@ class DC_Language_Urls {
 			return;
 		}
 
-		$lang = self::get_request_lang();
-		if ( ! $lang || ! in_array( $lang, self::get_lang_codes(), true ) ) {
-			$lang = 'en';
-		}
-
-		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
-		$target  = self::add_lang_prefix( $current, $lang );
-
-		if ( ! self::urls_differ( $current, $target ) ) {
-			return;
-		}
-
-		wp_safe_redirect( $target, 302 );
-		exit;
+		self::perform_bare_url_redirect( $uri );
 	}
 
 	private static function urls_differ( $a, $b ) {

@@ -153,8 +153,9 @@ jQuery(document).ready(function($) {
         $('body').removeClass('monte-size-drawer-open');
     }
 
-    $(document).on('click', '[data-monte-size-guide], .mont_size-guide-btn', function(e) {
+    $(document).on('click', '[data-monte-size-guide]', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         openMonteSizeGuide();
     });
 
@@ -171,6 +172,9 @@ jQuery(document).ready(function($) {
 
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape') {
+            if ($('body').hasClass('mont-return-form-open')) {
+                return;
+            }
             closeMonteSizeGuide();
         }
     });

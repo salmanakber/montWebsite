@@ -111,7 +111,8 @@ span.dpName {
     color: #585656;
 }
 
-.mont_size-guide-btn {
+.mont_size-guide-btn,
+.mont_doc-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -131,7 +132,8 @@ span.dpName {
     transition: background 0.15s ease;
 }
 
-.mont_size-guide-btn:hover {
+.mont_size-guide-btn:hover,
+.mont_doc-btn:hover {
     background: #e4e4e4;
 }
 

@@ -191,7 +191,7 @@ function mont_return_form_button( array $args = array() ) {
 	$args = wp_parse_args(
 		$args,
 		array(
-			'class'     => 'mont_return-form-btn mont_size-guide-btn',
+			'class'     => 'mont_return-form-btn mont_doc-btn',
 			'show_icon' => true,
 		)
 	);

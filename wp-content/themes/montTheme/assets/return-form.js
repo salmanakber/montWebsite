@@ -118,6 +118,7 @@
 
     $(document).on('click', '[data-mont-return-open]', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         var region = $(this).attr('data-mont-return-form') || (cfg ? cfg.current : '');
         showPopup(region);
     });
