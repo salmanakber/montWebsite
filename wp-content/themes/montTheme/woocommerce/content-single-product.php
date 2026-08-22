@@ -581,7 +581,12 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 			<div class="mont_straight_line">
 				<span class="mont_straight_line__label">Vennligst fyll ut</span>
 				<div class="mont_pdp-doc-buttons">
-					<?php echo mont_return_form_button(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php
+					$return_btn = mont_return_form_button();
+					if ( $return_btn ) :
+						echo '<span class="mont_return-form-block">' . $return_btn . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					endif;
+					?>
 					<button type="button" class="mont_size-guide-btn" data-monte-size-guide aria-haspopup="dialog">
 					<svg class="mont_size-guide-btn__icon" viewBox="0 0 18 18" width="14" height="14" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<rect x="1.5" y="1.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>

@@ -2,76 +2,116 @@
 /**
  * Region-specific return / refund PDF forms.
  *
+ * Only regions listed in the catalog have a form (intl, vn).
+ *
  * @package montTheme
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Return form definitions keyed by region slug.
+ * Regions that have a return PDF.
  *
- * @return array<string, array{file:string,label:string}>
+ * @return array<string, array{file:string}>
  */
 function mont_return_form_catalog() {
 	return array(
 		'intl' => array(
-			'file'  => 'Return English.pdf',
-			'label' => 'Return form (English)',
-		),
-		'it'   => array(
-			'file'  => 'Return English.pdf',
-			'label' => 'Return form (English)',
-		),
-		'no'   => array(
-			'file'  => 'Return English.pdf',
-			'label' => 'Return form (English)',
+			'file' => 'Return English.pdf',
 		),
 		'vn'   => array(
-			'file'  => 'Return Tieng Viet.pdf',
-			'label' => 'Return form (Tiếng Việt)',
+			'file' => 'Return Tieng Viet.pdf',
 		),
 	);
 }
 
 /**
- * Resolve region slug for return form lookup.
+ * UI copy in the active site language.
  *
- * @param string|null $region_slug Optional region slug.
+ * @param string|null $lang Language code (en, nb, it, vi).
+ * @return array<string, string>
+ */
+function mont_return_form_labels( $lang = null ) {
+	if ( null === $lang && class_exists( 'DC_Product_Manager\\DC_Region_Currency' ) ) {
+		$lang = \DC_Product_Manager\DC_Region_Currency::get_current_lang();
+	}
+	$lang = strtolower( sanitize_key( (string) $lang ) );
+
+	$strings = array(
+		'en' => array(
+			'button'     => 'Return form',
+			'popupTitle' => 'Return & exchange form',
+			'popupText'  => 'Please review the form below. You can download it for your records.',
+			'download'   => 'Download PDF',
+			'close'      => 'Close',
+			'viewerTitle'=> 'Return form preview',
+		),
+		'nb' => array(
+			'button'     => 'Returskjema',
+			'popupTitle' => 'Retur- og bytteskjema',
+			'popupText'  => 'Se skjemaet nedenfor. Du kan laste det ned til dine arkiver.',
+			'download'   => 'Last ned PDF',
+			'close'      => 'Lukk',
+			'viewerTitle'=> 'Forhåndsvisning av returskjema',
+		),
+		'it' => array(
+			'button'     => 'Modulo reso',
+			'popupTitle' => 'Modulo reso e cambio',
+			'popupText'  => 'Consulta il modulo qui sotto. Puoi scaricarlo per i tuoi archivi.',
+			'download'   => 'Scarica PDF',
+			'close'      => 'Chiudi',
+			'viewerTitle'=> 'Anteprima modulo reso',
+		),
+		'vi' => array(
+			'button'     => 'Mẫu trả hàng',
+			'popupTitle' => 'Mẫu trả hàng & đổi hàng',
+			'popupText'  => 'Xem mẫu bên dưới. Bạn có thể tải xuống để lưu.',
+			'download'   => 'Tải PDF',
+			'close'      => 'Đóng',
+			'viewerTitle'=> 'Xem trước mẫu trả hàng',
+		),
+	);
+
+	return isset( $strings[ $lang ] ) ? $strings[ $lang ] : $strings['en'];
+}
+
+/**
+ * @param string|null $region_slug Region slug.
  * @return string
  */
-function mont_return_form_region_slug( $region_slug = null ) {
+function mont_return_form_current_region( $region_slug = null ) {
 	if ( null === $region_slug && class_exists( 'DC_Product_Manager\\DC_Region_Currency' ) ) {
 		$region_slug = \DC_Product_Manager\DC_Region_Currency::get_current_region_slug();
 	}
-	$region_slug = sanitize_key( (string) $region_slug );
-	$catalog     = mont_return_form_catalog();
-	return isset( $catalog[ $region_slug ] ) ? $region_slug : 'intl';
+	return sanitize_key( (string) $region_slug );
 }
 
 /**
- * Public URL for the return PDF for a region.
+ * Whether this region has a return PDF.
  *
- * @param string|null $region_slug Optional region slug.
+ * @param string|null $region_slug Region slug.
+ * @return bool
+ */
+function mont_return_form_has_form( $region_slug = null ) {
+	$slug    = mont_return_form_current_region( $region_slug );
+	$catalog = mont_return_form_catalog();
+	return isset( $catalog[ $slug ] );
+}
+
+/**
+ * Public URL for the return PDF.
+ *
+ * @param string|null $region_slug Region slug.
  * @return string
  */
 function mont_return_form_url( $region_slug = null ) {
-	$slug    = mont_return_form_region_slug( $region_slug );
-	$catalog = mont_return_form_catalog();
-	$file    = $catalog[ $slug ]['file'];
-	$base    = trailingslashit( get_template_directory_uri() ) . 'assets/returnForm/';
+	$slug = mont_return_form_current_region( $region_slug );
+	if ( ! mont_return_form_has_form( $slug ) ) {
+		return '';
+	}
+	$file = mont_return_form_catalog()[ $slug ]['file'];
+	$base = trailingslashit( get_template_directory_uri() ) . 'assets/returnForm/';
 	return $base . rawurlencode( $file );
-}
-
-/**
- * Human label for the active return form.
- *
- * @param string|null $region_slug Optional region slug.
- * @return string
- */
-function mont_return_form_label( $region_slug = null ) {
-	$slug    = mont_return_form_region_slug( $region_slug );
-	$catalog = mont_return_form_catalog();
-	return $catalog[ $slug ]['label'];
 }
 
 /**
@@ -80,28 +120,31 @@ function mont_return_form_label( $region_slug = null ) {
  * @return array
  */
 function mont_return_form_js_config() {
+	$lang    = class_exists( 'DC_Product_Manager\\DC_Region_Currency' )
+		? \DC_Product_Manager\DC_Region_Currency::get_current_lang()
+		: 'en';
+	$current = mont_return_form_current_region();
+	$labels  = mont_return_form_labels( $lang );
+
 	$out = array(
 		'forms'   => array(),
-		'current' => mont_return_form_region_slug(),
-		'labels'  => array(
-			'button'  => __( 'Return form', 'montenapoleone' ),
-			'popupTitle' => __( 'Return form for your region', 'montenapoleone' ),
-			'popupText'  => __( 'Download the return form for your selected region:', 'montenapoleone' ),
-			'download'   => __( 'Download PDF', 'montenapoleone' ),
-			'close'      => __( 'Close', 'montenapoleone' ),
-		),
+		'current' => $current,
+		'hasForm' => mont_return_form_has_form( $current ),
+		'lang'    => $lang,
+		'labels'  => $labels,
+		'url'     => '',
+		'label'   => '',
 	);
 
 	foreach ( mont_return_form_catalog() as $slug => $item ) {
 		$out['forms'][ $slug ] = array(
-			'url'   => mont_return_form_url( $slug ),
-			'label' => $item['label'],
+			'url' => mont_return_form_url( $slug ),
 		);
 	}
 
-	$current = $out['current'];
-	$out['url']   = $out['forms'][ $current ]['url'];
-	$out['label'] = $out['forms'][ $current ]['label'];
+	if ( $out['hasForm'] ) {
+		$out['url'] = mont_return_form_url( $current );
+	}
 
 	return $out;
 }
@@ -135,12 +178,16 @@ function mont_return_form_enqueue() {
 add_action( 'wp_enqueue_scripts', 'mont_return_form_enqueue', 25 );
 
 /**
- * Render return-form button (B2C / B2B product pages).
+ * Render return-form button (B2C / B2B product pages). Empty when region has no form.
  *
- * @param array $args Optional args: class, show_icon.
+ * @param array $args Optional args.
  * @return string
  */
 function mont_return_form_button( array $args = array() ) {
+	if ( ! mont_return_form_has_form() ) {
+		return '';
+	}
+
 	$args = wp_parse_args(
 		$args,
 		array(
@@ -149,8 +196,9 @@ function mont_return_form_button( array $args = array() ) {
 		)
 	);
 
-	$url   = mont_return_form_url();
-	$label = mont_return_form_label();
+	$labels = mont_return_form_labels();
+	$region = mont_return_form_current_region();
+	$url    = mont_return_form_url( $region );
 
 	$icon = '';
 	if ( $args['show_icon'] ) {
@@ -161,11 +209,11 @@ function mont_return_form_button( array $args = array() ) {
 	}
 
 	return sprintf(
-		'<a href="%1$s" class="%2$s" target="_blank" rel="noopener noreferrer" data-mont-return-form-link data-mont-return-form="%3$s">%4$s<span>%5$s</span></a>',
-		esc_url( $url ),
+		'<button type="button" class="%1$s" data-mont-return-open data-mont-return-form="%2$s" data-mont-return-url="%3$s">%4$s<span>%5$s</span></button>',
 		esc_attr( $args['class'] ),
-		esc_attr( mont_return_form_region_slug() ),
+		esc_attr( $region ),
+		esc_url( $url ),
 		$icon,
-		esc_html( __( 'Return form', 'montenapoleone' ) )
+		esc_html( $labels['button'] )
 	);
 }

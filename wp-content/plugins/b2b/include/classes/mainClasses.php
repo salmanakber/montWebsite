@@ -731,6 +731,15 @@ if(isset($_GET['productb2b']) AND !empty($_GET['productb2b'])){
      // $fabricDetail = '<input type="hidden" name="fabricColor" value="'.$product_details['data']['color'].'"> '
     // echo '<br><br><br><br>';
     // print_r($product_details['data']);
+    $return_form_block = '';
+    if ( function_exists( 'mont_return_form_has_form' ) && mont_return_form_has_form() && function_exists( 'mont_return_form_button' ) ) {
+        $labels = function_exists( 'mont_return_form_labels' ) ? mont_return_form_labels() : array( 'button' => 'Return form' );
+        $return_form_block = '<div class="mont_straight_line mont_straight_line--b2b mont_return-form-block">'
+            . '<span class="mont_straight_line__label">' . esc_html( $labels['button'] ) . '</span>'
+            . '<div class="mont_pdp-doc-buttons">' . mont_return_form_button() . '</div>'
+            . '</div>';
+    }
+
     $template_content_b2b_details = $this->replace_variables_in_html_file
     (
         $this->path . 'include/templates/details.php' ,
@@ -740,7 +749,8 @@ if(isset($_GET['productb2b']) AND !empty($_GET['productb2b'])){
             'moq' => 'This color requires a minimum order of '.$product_details['moq'].' shirts total',
             'done' => (isset($_SESSION['products']) ? 'add-to-cart-button-bubble' : 'e'),
             'collar' => $collar_type,
-            'cuff' =>  $cuff_type 
+            'cuff' =>  $cuff_type,
+            'return_form_block' => $return_form_block,
         ));
     $output .= $template_content_b2b_details;
 }

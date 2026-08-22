@@ -26,18 +26,7 @@
 				{{details}}
 			</div>
 
-			<div class="mont_straight_line mont_straight_line--b2b">
-				<span class="mont_straight_line__label">Documents</span>
-				<div class="mont_pdp-doc-buttons">
-					<a href="#" class="mont_return-form-btn mont_size-guide-btn" data-mont-return-form-link target="_blank" rel="noopener noreferrer">
-						<svg class="mont_size-guide-btn__icon" viewBox="0 0 18 18" width="14" height="14" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<path d="M4 2.5h10a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.2"/>
-							<path d="M6 6.5h6M6 9h6M6 11.5h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-						</svg>
-						<span>Return form</span>
-					</a>
-				</div>
-			</div>
+			{{return_form_block}}
 
 			<div class="b2b-pdp__grid row">
 				<div class="col-md-6 column-top column-left-top">

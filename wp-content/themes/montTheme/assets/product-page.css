@@ -150,6 +150,8 @@ span.dpName {
 
 .mont_return-form-btn {
     text-decoration: none;
+    border: 0;
+    appearance: none;
 }
 
 /* Return form popup after region change */
@@ -173,14 +175,49 @@ span.dpName {
     background: rgba(0, 0, 0, 0.45);
 }
 
+.mont_return-form-block--hidden,
+.mont_return-form-block[hidden],
+.mont_straight_line--b2b[hidden] {
+    display: none !important;
+}
+
 .mont-return-form-popup__panel {
     position: relative;
     z-index: 1;
-    width: min(420px, 100%);
+    width: min(720px, 100%);
+    max-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
     background: #fff;
     border-radius: 12px;
-    padding: 24px 22px 22px;
+    padding: 24px 22px 20px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+}
+
+.mont-return-form-popup__viewer-wrap {
+    flex: 1 1 auto;
+    min-height: 420px;
+    max-height: min(62vh, 640px);
+    margin: 0 0 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f7f7f7;
+}
+
+.mont-return-form-popup__viewer {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
+    border: 0;
+    background: #fff;
+}
+
+.mont-return-form-popup__actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 4px;
 }
 
 .mont-return-form-popup__panel h3 {
@@ -198,10 +235,7 @@ span.dpName {
 }
 
 .mont-return-form-popup__region {
-    margin: 0 0 16px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #333;
+    display: none;
 }
 
 .mont-return-form-popup__download {
