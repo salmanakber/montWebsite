@@ -1,0 +1,318 @@
+/* About Us page — scoped under .mont-about */
+.mont-about {
+  --ink: #333;
+  --bg: #fff;
+  --muted: #8C8C8C;
+  --accent: #666;
+  --line: rgba(0, 0, 0, 0.1);
+  --img: #E5E5E5;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Figtree", sans-serif;
+  font-weight: 300;
+  line-height: 1.75;
+  font-size: 17px;
+}
+
+.mont-about *,
+.mont-about *::before,
+.mont-about *::after {
+  box-sizing: border-box;
+}
+
+.mont-about .mont-about__wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* Full-bleed media / gray placeholder */
+.mont-about .mont-about__media {
+  width: 100%;
+  margin: 0;
+  background: var(--img);
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.mont-about .mont-about__media::before {
+  content: "Replace image";
+  font-family: "Figtree", sans-serif;
+  font-weight: 300;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.35);
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mont-about .mont-about__media[data-empty="1"]::before {
+  display: flex;
+}
+
+.mont-about .mont-about__media[data-empty="1"] img {
+  opacity: 0;
+  height: 280px;
+  object-fit: cover;
+}
+
+.mont-about .mont-about__media img {
+  width: 100%;
+  height: auto;
+  display: block;
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+}
+
+.mont-about .mont-about__section {
+  padding: 64px 0;
+  border-top: 1px solid var(--line);
+}
+
+.mont-about .mont-about__section:first-child {
+  border-top: none;
+}
+
+.mont-about .mont-about__eyebrow {
+  font-size: 12.5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+  font-weight: 400;
+}
+
+.mont-about h1,
+.mont-about h2 {
+  font-family: "Figtree", sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+  margin-bottom: 24px;
+  color: var(--ink);
+}
+
+.mont-about h1 {
+  font-size: 34px;
+}
+
+.mont-about h2 {
+  font-size: 26px;
+  line-height: 1.35;
+  max-width: 600px;
+  font-weight: 400;
+}
+
+.mont-about p {
+  margin-bottom: 18px;
+  color: #555555;
+  max-width: 640px;
+  font-weight: 300;
+}
+
+.mont-about p:last-child {
+  margin-bottom: 0;
+}
+
+.mont-about .mont-about__facts {
+  display: flex;
+  gap: 40px;
+  padding: 32px 0 0;
+  flex-wrap: wrap;
+}
+
+.mont-about .mont-about__fact dt {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.mont-about .mont-about__fact dd {
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.mont-about .mont-about__trad-row {
+  display: flex;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.mont-about .mont-about__trad-row:last-child {
+  border-bottom: none;
+}
+
+.mont-about .mont-about__trad-name {
+  font-family: "Figtree", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  min-width: 190px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.mont-about .mont-about__trad-desc {
+  color: #555555;
+  font-size: 15.5px;
+  font-weight: 300;
+}
+
+.mont-about blockquote {
+  font-family: "Figtree", sans-serif;
+  font-weight: 300;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.55;
+  color: var(--ink);
+  padding-left: 22px;
+  border-left: 1px solid var(--muted);
+  max-width: 560px;
+  margin-top: 24px;
+}
+
+.mont-about .mont-about__footer {
+  padding: 48px 0 64px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  letter-spacing: 0.5px;
+}
+
+/* Horizontal scroll carousel */
+.mont-about .mont-about__scroll-section {
+  padding: 64px 0 56px;
+  border-top: 1px solid var(--line);
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+.mont-about .mont-about__scroll-heading {
+  margin: 0 auto 32px;
+  padding: 0 6vw;
+  max-width: none;
+}
+
+.mont-about .mont-about__scroll-heading h2 {
+  margin-bottom: 0;
+}
+
+.mont-about .mont-about__scroll-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 4px 6vw 20px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+
+.mont-about .mont-about__scroll-track::-webkit-scrollbar {
+  height: 5px;
+}
+
+.mont-about .mont-about__scroll-track::-webkit-scrollbar-thumb {
+  background: #D8D8D8;
+  border-radius: 4px;
+}
+
+.mont-about .mont-about__scroll-track::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mont-about .mont-about__scroll-card {
+  flex: 0 0 calc(25% - 15px);
+  min-width: 250px;
+  scroll-snap-align: start;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 28px 24px;
+  background: #FCFCFC;
+}
+
+.mont-about .mont-about__scroll-card h3 {
+  font-family: "Figtree", sans-serif;
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: -0.2px;
+  margin-bottom: 14px;
+  color: var(--ink);
+}
+
+.mont-about .mont-about__scroll-card p {
+  font-size: 15px;
+  max-width: none;
+  margin-bottom: 14px;
+}
+
+.mont-about .mont-about__scroll-card blockquote {
+  font-size: 16px;
+  margin-top: 14px;
+  padding-left: 14px;
+  max-width: none;
+}
+
+@media (max-width: 1100px) {
+  .mont-about .mont-about__scroll-card {
+    flex: 0 0 calc(33.333% - 14px);
+  }
+}
+
+@media (max-width: 760px) {
+  .mont-about .mont-about__scroll-card {
+    flex: 0 0 78%;
+  }
+}
+
+@media (max-width: 640px) {
+  .mont-about h1 {
+    font-size: 27px;
+  }
+
+  .mont-about h2 {
+    font-size: 21px;
+  }
+
+  .mont-about .mont-about__trad-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mont-about .mont-about__media {
+    min-height: 180px;
+  }
+}
+
+@media print {
+  .mont-about .mont-about__scroll-track {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding: 4px 6vw 20px;
+  }
+
+  .mont-about .mont-about__scroll-card {
+    flex: 0 0 calc(33.333% - 14px);
+  }
+
+  .mont-about .mont-about__scroll-section {
+    page-break-inside: avoid;
+  }
+}

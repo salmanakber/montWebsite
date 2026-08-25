@@ -1,0 +1,742 @@
+{
+  "en": {
+    "source_file": "Ve_Chung_Toi_EN.html",
+    "image_count": 3,
+    "images": [
+      {
+        "index": 1,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_before_sections"
+      },
+      {
+        "index": 2,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_1"
+      },
+      {
+        "index": 3,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_4"
+      }
+    ],
+    "section_count": 5,
+    "sections": [
+      {
+        "index": 1,
+        "eyebrow": null,
+        "section_titles": [
+          "About Us"
+        ],
+        "paragraphs": [
+          "Monte Napoleone was founded in Treviso, Italy in 1974. Since then, we've been creating premium shirts marked by timeless elegance and uncompromising quality. For us, every product isn't just about outward beauty - it's about dedication. Our craftsmen use only the finest materials, carefully selected to ensure both perfection and durability.",
+          "Monte Napoleone isn't just a brand. It's a promise - of elegance, integrity, and a future where quality and responsibility go hand in hand. When you choose us, you're not just choosing a product - you're choosing a legacy."
+        ],
+        "facts": [
+          {
+            "label": "Founded",
+            "value": "1974, Treviso, Italy"
+          },
+          {
+            "label": "Specialty",
+            "value": "Shirts, polos, T-shirts"
+          },
+          {
+            "label": "Method",
+            "value": "Made to order"
+          }
+        ],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 2,
+        "eyebrow": "Brand Story",
+        "section_titles": [
+          "The Story of Monte Napoleone: From Italian Hills to Scandinavian Streets"
+        ],
+        "paragraphs": [
+          "Monte Napoleone was founded in 1974 by Vincenzo Lapi, a visionary from Treviso, Italy. In the small town of Treviso in northern Italy, Vincenzo started a shirt workshop with a simple ambition: to combine Italian craftsmanship with timeless elegance. The name Monte Napoleone is a symbol of that dream - “Monte” (mountain) reflects the challenges and peaks that must be overcome to achieve success, while “Napoleone” honors Vincenzo's roots in Naples, the city where his journey began.",
+          "Over the decades, Vincenzo built a brand known for quality and meticulous care. In 2017, the story took a new turn when Monte Napoleone partnered with DC Garment, a reputable shirt workshop in Vietnam. This partnership combined traditional craftsmanship with modern management, and under Vincenzo's leadership, Monte Napoleone entered a new wave of growth and refinement.",
+          "But like many businesses, 2020 became a turning point. The pandemic hit hard, and Monte Napoleone stood on the brink of bankruptcy. That's when Tri Minh Dang, co-founder and CEO of DC Garment, made a bold decision: he took over the Monte Napoleone brand license, determined to rebuild it from the ground up. His vision was clear - bring made-to-order clothing to everyone, entirely online. He launched an online store where customers could customize shirts to their own measurements, completely free. This breakthrough concept brought personalized fit and luxury closer to everyone, straight from the factory.",
+          "In 2021, Monte Napoleone entered the Scandinavian market, headquartered in Oslo. Here, Italian-style design was adapted to fit Scandinavian values: simplicity, quality, and a spirit of innovation. Monte Napoleone's philosophy is simple but powerful: everyone deserves perfectly fitting clothes, regardless of shape or size, with no hidden costs.",
+          "Today, Monte Napoleone is more than a brand - it's a story of courage, craftsmanship, and innovation. Rooted in Italian tradition with an eye toward the future, Monte Napoleone continues to grow to deliver the best shopping experience for its customers."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 3,
+        "eyebrow": "Our Foundation",
+        "section_titles": [
+          "Three traditions, woven into a single seam"
+        ],
+        "paragraphs": [
+          "Today, the founder's spirit lives on in three traditions that shape everything we do."
+        ],
+        "facts": [],
+        "traditions": [
+          {
+            "name": "Italian Heritage",
+            "desc": "An appreciation for refined, timeless design - rooted in Treviso and Naples."
+          },
+          {
+            "name": "Scandinavian Thinking",
+            "desc": "Inspiration for simplicity, functionality, and honesty - from the Oslo market, where the brand expanded in 2021."
+          },
+          {
+            "name": "Vietnamese Craftsmanship",
+            "desc": "DC Garment's manufacturing capability has turned ideas into precise, consistent products since 2017."
+          }
+        ],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 4,
+        "eyebrow": "Specialty",
+        "section_titles": [
+          "Why we specialize"
+        ],
+        "paragraphs": [
+          "Instead of producing everything, we focus on doing one thing exceptionally well - shirts, polos, T-shirts. Over the decades, our team has refined every stage of shirtmaking, meeting the quality standards of the world's most demanding retail partners. Experience isn't measured by how many products are made, but by the knowledge, precision, and pride of the people who make them."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 5,
+        "eyebrow": "Commitment",
+        "section_titles": [
+          "Commitment",
+          "Designed around you",
+          "Craftsmanship, kept in check",
+          "The price you see is the price you pay",
+          "We'll never stop improving",
+          "Monte Napoleone 1974"
+        ],
+        "paragraphs": [
+          "Every shirt ordered through our online store is made specifically for you - not pulled from stock. We believe the shirt should adapt to the customer, with free adjustments to body and sleeve length.",
+          "Working closely with our own factory lets us oversee every stage - from fabric selection to final packaging. Before it carries the Monte Napoleone name, every shirt has been inspected and approved.",
+          "Shopping shouldn't leave you uncertain. We've built the entire buying experience to remove uncertainty - no hidden fees, no surprises.",
+          "We will always keep searching for better materials, a better fit, better craftsmanship - not because we think we're perfect, but because we believe our customers deserve our best.",
+          "Our Heritage Collection - the image of fifty years of that belief, today. Carefully selected natural fabrics, personalized embroidered initials, mother-of-pearl buttons."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      }
+    ],
+    "ctas": [],
+    "all_headings": [
+      {
+        "level": "h1",
+        "text": "About Us"
+      },
+      {
+        "level": "h2",
+        "text": "The Story of Monte Napoleone: From Italian Hills to Scandinavian Streets"
+      },
+      {
+        "level": "h2",
+        "text": "Three traditions, woven into a single seam"
+      },
+      {
+        "level": "h2",
+        "text": "Why we specialize"
+      },
+      {
+        "level": "h2",
+        "text": "Commitment"
+      },
+      {
+        "level": "h3",
+        "text": "Designed around you"
+      },
+      {
+        "level": "h3",
+        "text": "Craftsmanship, kept in check"
+      },
+      {
+        "level": "h3",
+        "text": "The price you see is the price you pay"
+      },
+      {
+        "level": "h3",
+        "text": "We'll never stop improving"
+      },
+      {
+        "level": "h3",
+        "text": "Monte Napoleone 1974"
+      }
+    ]
+  },
+  "it": {
+    "source_file": "Ve_Chung_Toi_IT.html",
+    "image_count": 3,
+    "images": [
+      {
+        "index": 1,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_before_sections"
+      },
+      {
+        "index": 2,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_1"
+      },
+      {
+        "index": 3,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_4"
+      }
+    ],
+    "section_count": 5,
+    "sections": [
+      {
+        "index": 1,
+        "eyebrow": null,
+        "section_titles": [
+          "Chi Siamo"
+        ],
+        "paragraphs": [
+          "Monte Napoleone è stata fondata a Treviso, in Italia, nel 1974. Da allora, creiamo camicie di alta qualità, contrassegnate da un'eleganza senza tempo e una qualità senza compromessi. Per noi, ogni prodotto non è solo bellezza esteriore - è dedizione. I nostri artigiani utilizzano solo i migliori materiali, accuratamente selezionati per garantire sia perfezione che durata.",
+          "Monte Napoleone non è solo un marchio. È una promessa - di eleganza, integrità, e un futuro in cui qualità e responsabilità vanno di pari passo. Quando scegli noi, non scegli solo un prodotto - scegli un'eredità."
+        ],
+        "facts": [
+          {
+            "label": "Fondazione",
+            "value": "1974, Treviso, Italia"
+          },
+          {
+            "label": "Specializzazione",
+            "value": "Camicie, polo, T-shirt"
+          },
+          {
+            "label": "Metodo",
+            "value": "Su misura, su ordinazione"
+          }
+        ],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 2,
+        "eyebrow": "La Nostra Storia",
+        "section_titles": [
+          "La Storia di Monte Napoleone: Dalle Colline Italiane alle Strade Scandinave"
+        ],
+        "paragraphs": [
+          "Monte Napoleone è stata fondata nel 1974 da Vincenzo Lapi, un visionario di Treviso, in Italia. Nella piccola città di Treviso, nel nord Italia, Vincenzo avviò un laboratorio di camicie con un'ambizione semplice: unire l'artigianato italiano a un'eleganza senza tempo. Il nome Monte Napoleone è il simbolo di quel sogno - “Monte” riflette le sfide e le vette da superare per raggiungere il successo, mentre “Napoleone” onora le origini di Vincenzo a Napoli, la città dove iniziò il suo cammino.",
+          "Nel corso dei decenni, Vincenzo costruì un marchio noto per qualità e cura meticolosa. Nel 2017, la storia prese una nuova direzione quando Monte Napoleone si associò a DC Garment, un rinomato laboratorio di camicie in Vietnam. Questa collaborazione unì l'artigianato tradizionale a una gestione moderna, e sotto la guida di Vincenzo, Monte Napoleone entrò in una nuova fase di crescita e perfezionamento.",
+          "Ma come per molte aziende, il 2020 segnò una svolta. La pandemia colpì duramente, e Monte Napoleone si trovò sull'orlo del fallimento. Fu allora che Tri Minh Dang, co-fondatore e CEO di DC Garment, prese una decisione audace: rilevò la licenza del marchio Monte Napoleone, determinato a ricostruirlo da zero. La sua visione era chiara - portare l'abbigliamento su misura a tutti, interamente in digitale. Lanciò un negozio online dove i clienti potevano personalizzare le camicie secondo le proprie misure, completamente gratis. Questo concetto rivoluzionario avvicinò il lusso e la vestibilità personalizzata a tutti, direttamente dalla fabbrica.",
+          "Nel 2021, Monte Napoleone entrò nel mercato scandinavo, con sede a Oslo. Qui, il design in stile italiano fu adattato ai valori scandinavi: semplicità, qualità e spirito innovativo. La filosofia di Monte Napoleone è semplice ma potente: tutti meritano abiti perfettamente calzanti, indipendentemente da forma o taglia, senza costi nascosti.",
+          "Oggi, Monte Napoleone non è solo un marchio - è una storia di coraggio, artigianato e innovazione. Con radici nella tradizione italiana e uno sguardo rivolto al futuro, Monte Napoleone continua a crescere per offrire ai clienti la migliore esperienza di shopping."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 3,
+        "eyebrow": "Le Nostre Fondamenta",
+        "section_titles": [
+          "Tre tradizioni, unite in un'unica cucitura"
+        ],
+        "paragraphs": [
+          "Oggi, lo spirito del fondatore vive in tre tradizioni che modellano tutto ciò che facciamo."
+        ],
+        "facts": [],
+        "traditions": [
+          {
+            "name": "Eredità Italiana",
+            "desc": "Un apprezzamento per un design raffinato e senza tempo - le radici a Treviso e Napoli."
+          },
+          {
+            "name": "Mentalità Scandinava",
+            "desc": "Ispirazione per semplicità, funzionalità e onestà - dal mercato di Oslo, dove il marchio si è espanso nel 2021."
+          },
+          {
+            "name": "Artigianato Vietnamita",
+            "desc": "La capacità produttiva di DC Garment trasforma le idee in prodotti precisi e coerenti dal 2017."
+          }
+        ],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 4,
+        "eyebrow": "Specializzazione",
+        "section_titles": [
+          "Perché ci specializziamo"
+        ],
+        "paragraphs": [
+          "Invece di produrre di tutto, ci concentriamo nel fare bene una sola cosa - camicie, polo, T-shirt. Nel corso dei decenni, il nostro team ha perfezionato ogni fase della realizzazione delle camicie, rispettando gli standard qualitativi dei partner retail più esigenti al mondo. L'esperienza non si misura dal numero di prodotti realizzati, ma dalla conoscenza, precisione e orgoglio di chi li crea."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 5,
+        "eyebrow": "Impegno",
+        "section_titles": [
+          "Impegno",
+          "Pensato su misura per te",
+          "Artigianato sotto controllo",
+          "Il prezzo che vedi è il prezzo che paghi",
+          "Non smetteremo mai di migliorare",
+          "Monte Napoleone 1974"
+        ],
+        "paragraphs": [
+          "Ogni camicia ordinata tramite il nostro negozio online è cucita appositamente per te - non prelevata da uno stock. Crediamo che la camicia debba adattarsi al cliente, con aggiustamenti gratuiti alla lunghezza del corpo e delle maniche.",
+          "La stretta collaborazione con la nostra stessa fabbrica ci permette di supervisionare ogni fase - dalla selezione dei tessuti al confezionamento finale. Prima di portare il nome Monte Napoleone, ogni camicia è stata ispezionata e approvata.",
+          "Fare acquisti non dovrebbe generare incertezza. Costruiamo l'intera esperienza di acquisto per eliminare l'incertezza - senza costi nascosti, senza sorprese.",
+          "Continueremo sempre a cercare materiali migliori, vestibilità migliore, artigianato migliore - non perché pensiamo di essere perfetti, ma perché crediamo che i clienti meritino il meglio da noi.",
+          "La nostra Collezione Heritage - l'immagine di cinquant'anni di questa fiducia, oggi. Tessuti naturali selezionati, iniziali ricamate personalizzate, bottoni in madreperla."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      }
+    ],
+    "ctas": [],
+    "all_headings": [
+      {
+        "level": "h1",
+        "text": "Chi Siamo"
+      },
+      {
+        "level": "h2",
+        "text": "La Storia di Monte Napoleone: Dalle Colline Italiane alle Strade Scandinave"
+      },
+      {
+        "level": "h2",
+        "text": "Tre tradizioni, unite in un'unica cucitura"
+      },
+      {
+        "level": "h2",
+        "text": "Perché ci specializziamo"
+      },
+      {
+        "level": "h2",
+        "text": "Impegno"
+      },
+      {
+        "level": "h3",
+        "text": "Pensato su misura per te"
+      },
+      {
+        "level": "h3",
+        "text": "Artigianato sotto controllo"
+      },
+      {
+        "level": "h3",
+        "text": "Il prezzo che vedi è il prezzo che paghi"
+      },
+      {
+        "level": "h3",
+        "text": "Non smetteremo mai di migliorare"
+      },
+      {
+        "level": "h3",
+        "text": "Monte Napoleone 1974"
+      }
+    ]
+  },
+  "nb": {
+    "source_file": "Ve_Chung_Toi_NO.html",
+    "image_count": 3,
+    "images": [
+      {
+        "index": 1,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_before_sections"
+      },
+      {
+        "index": 2,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_1"
+      },
+      {
+        "index": 3,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_4"
+      }
+    ],
+    "section_count": 5,
+    "sections": [
+      {
+        "index": 1,
+        "eyebrow": null,
+        "section_titles": [
+          "Om Oss"
+        ],
+        "paragraphs": [
+          "Monte Napoleone ble grunnlagt i Treviso, Italia i 1974. Siden den gang har vi skapt skjorter i høy kvalitet, preget av tidløs eleganse og kompromissløs kvalitet. For oss handler hvert produkt ikke bare om ytre skjønnhet - det handler om dedikasjon. Våre håndverkere bruker kun de beste materialene, nøye utvalgt for å sikre både perfeksjon og holdbarhet.",
+          "Monte Napoleone er ikke bare et merke. Det er et løfte - om eleganse, integritet, og en fremtid der kvalitet og ansvar går hånd i hånd. Når du velger oss, velger du ikke bare et produkt - du velger en arv."
+        ],
+        "facts": [
+          {
+            "label": "Grunnlagt",
+            "value": "1974, Treviso, Italia"
+          },
+          {
+            "label": "Spesialitet",
+            "value": "Skjorter, poloer, T-skjorter"
+          },
+          {
+            "label": "Metode",
+            "value": "Skreddersydd på bestilling"
+          }
+        ],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 2,
+        "eyebrow": "Merkehistorie",
+        "section_titles": [
+          "Historien Om Monte Napoleone: Fra Italienske Fjell Til Skandinaviske Gater"
+        ],
+        "paragraphs": [
+          "Monte Napoleone ble grunnlagt i 1974 av Vincenzo Lapi, en visjonær fra Treviso, Italia. I den lille byen Treviso i Nord-Italia startet Vincenzo et skjorteverksted med en enkel ambisjon: å kombinere italiensk håndverk med tidløs eleganse. Navnet Monte Napoleone er selve symbolet på den drømmen - “Monte” (fjell) reflekterer utfordringene og toppene som må overvinnes for å oppnå suksess, mens “Napoleone” hedrer Vincenzos røtter i Napoli, byen der reisen hans begynte.",
+          "Gjennom flere tiår bygde Vincenzo et merke kjent for kvalitet og grundig omhu. I 2017 tok historien en ny vending da Monte Napoleone inngikk samarbeid med DC Garment, et anerkjent skjorteverksted i Vietnam. Dette samarbeidet kombinerte tradisjonelt håndverk med moderne ledelse, og under Vincenzos ledelse gikk Monte Napoleone inn i en ny bølge av vekst og forbedring.",
+          "Men som for mange virksomheter ble 2020 et vendepunkt. Pandemien traff hardt, og Monte Napoleone sto på randen av konkurs. Det var da Tri Minh Dang, medgründer og administrerende direktør i DC Garment, tok en dristig beslutning: han overtok lisensen til Monte Napoleone-merket, fast bestemt på å bygge det opp igjen fra bunnen. Visjonen hans var klar - å gjøre skreddersøm tilgjengelig for alle, helt digitalt. Han lanserte en nettbutikk der kundene kunne tilpasse skjorter etter egne mål, helt gratis. Dette banebrytende konseptet brakte personlig tilpasning og luksus nærmere alle, rett fra fabrikken.",
+          "I 2021 gikk Monte Napoleone inn i det skandinaviske markedet, med hovedkontor i Oslo. Her ble italiensk-stil design tilpasset skandinaviske verdier: enkelhet, kvalitet og nyskapende ånd. Monte Napoleones filosofi er enkel, men kraftfull: alle fortjener klær som passer perfekt, uansett form eller størrelse, uten skjulte kostnader.",
+          "I dag er Monte Napoleone mer enn et merke - det er en historie om mot, håndverk og nyskapning. Med røtter i italiensk tradisjon og blikket rettet mot fremtiden, fortsetter Monte Napoleone å vokse for å gi kundene den beste handleopplevelsen."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 3,
+        "eyebrow": "Vårt Fundament",
+        "section_titles": [
+          "Tre tradisjoner, vevet inn i én søm"
+        ],
+        "paragraphs": [
+          "I dag lever grunnleggerens ånd videre i tre tradisjoner som former alt vi gjør."
+        ],
+        "facts": [],
+        "traditions": [
+          {
+            "name": "Italiensk Arv",
+            "desc": "En forkjærlighet for raffinert, tidløst design - med røtter i Treviso og Napoli."
+          },
+          {
+            "name": "Skandinavisk Tankegang",
+            "desc": "Inspirasjon til enkelhet, funksjonalitet og ærlighet - fra Oslo-markedet, der merket ekspanderte i 2021."
+          },
+          {
+            "name": "Vietnamesisk Håndverk",
+            "desc": "DC Garments produksjonskapasitet har forvandlet ideer til presise, konsistente produkter siden 2017."
+          }
+        ],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 4,
+        "eyebrow": "Spesialisering",
+        "section_titles": [
+          "Hvorfor vi spesialiserer oss"
+        ],
+        "paragraphs": [
+          "I stedet for å produsere alt, fokuserer vi på å gjøre én ting eksepsjonelt godt - skjorter, poloer, T-skjorter. Gjennom flere tiår har teamet vårt perfeksjonert hvert trinn i skjortesøm, og møtt kvalitetsstandardene til verdens mest krevende forhandlerpartnere. Erfaring måles ikke i hvor mange produkter som lages, men i kunnskapen, presisjonen og stoltheten til dem som lager dem."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 5,
+        "eyebrow": "Forpliktelse",
+        "section_titles": [
+          "Forpliktelse",
+          "Laget rundt deg",
+          "Håndverk under kontroll",
+          "Prisen du ser er prisen du betaler",
+          "Vi slutter aldri å forbedre oss",
+          "Monte Napoleone 1974"
+        ],
+        "paragraphs": [
+          "Hver skjorte bestilt gjennom nettbutikken vår er sydd spesielt til deg - ikke hentet fra lager. Vi tror skjorten skal tilpasse seg kunden, med gratis justering av kroppslengde og ermelengde.",
+          "Tett samarbeid med vår egen fabrikk lar oss overvåke hvert trinn - fra valg av stoff til endelig emballasje. Før den bærer navnet Monte Napoleone, er hver skjorte inspisert og godkjent.",
+          "Å handle skal ikke skape usikkerhet. Vi har bygget hele handleopplevelsen for å fjerne usikkerhet - ingen skjulte gebyrer, ingen overraskelser.",
+          "Vi vil alltid fortsette å lete etter bedre materialer, bedre passform, bedre håndverk - ikke fordi vi tror vi er perfekte, men fordi vi tror kundene våre fortjener det beste fra oss.",
+          "Vår Heritage-kolleksjon - bildet av femti år med denne troen, i dag. Nøye utvalgte naturlige stoffer, personlig broderte initialer, perlemorknapper."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      }
+    ],
+    "ctas": [],
+    "all_headings": [
+      {
+        "level": "h1",
+        "text": "Om Oss"
+      },
+      {
+        "level": "h2",
+        "text": "Historien Om Monte Napoleone: Fra Italienske Fjell Til Skandinaviske Gater"
+      },
+      {
+        "level": "h2",
+        "text": "Tre tradisjoner, vevet inn i én søm"
+      },
+      {
+        "level": "h2",
+        "text": "Hvorfor vi spesialiserer oss"
+      },
+      {
+        "level": "h2",
+        "text": "Forpliktelse"
+      },
+      {
+        "level": "h3",
+        "text": "Laget rundt deg"
+      },
+      {
+        "level": "h3",
+        "text": "Håndverk under kontroll"
+      },
+      {
+        "level": "h3",
+        "text": "Prisen du ser er prisen du betaler"
+      },
+      {
+        "level": "h3",
+        "text": "Vi slutter aldri å forbedre oss"
+      },
+      {
+        "level": "h3",
+        "text": "Monte Napoleone 1974"
+      }
+    ]
+  },
+  "vi": {
+    "source_file": "Ve_Chung_Toi_VI__1_.html",
+    "image_count": 3,
+    "images": [
+      {
+        "index": 1,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_before_sections"
+      },
+      {
+        "index": 2,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_1"
+      },
+      {
+        "index": 3,
+        "src": "PLACEHOLDER",
+        "alt": "Monte Napoleone",
+        "position": "hero_after_section_4"
+      }
+    ],
+    "section_count": 5,
+    "sections": [
+      {
+        "index": 1,
+        "eyebrow": null,
+        "section_titles": [
+          "Về Chúng Tôi"
+        ],
+        "paragraphs": [
+          "Monte Napoleone được thành lập tại Treviso, Ý vào năm 1974. Từ đó đến nay, chúng tôi tạo nên những sản phẩm áo sơ mi cao cấp, mang dấu ấn của sự thanh lịch vượt thời gian và chất lượng không khoan nhượng. Với chúng tôi, mỗi sản phẩm không chỉ là vẻ đẹp bên ngoài - đó là sự tận tâm. Những người thợ của chúng tôi chỉ sử dụng những chất liệu tốt nhất, được tuyển chọn kỹ lưỡng để đảm bảo cả sự hoàn hảo lẫn độ bền.",
+          "Monte Napoleone không chỉ là một thương hiệu. Đó là một lời hứa - về sự thanh lịch, sự chính trực, và một tương lai nơi chất lượng và trách nhiệm song hành. Khi bạn chọn chúng tôi, bạn không chỉ chọn một sản phẩm - bạn chọn một di sản."
+        ],
+        "facts": [
+          {
+            "label": "Thành lập",
+            "value": "1974, Treviso, Ý"
+          },
+          {
+            "label": "Chuyên môn",
+            "value": "Áo sơ mi, polo, thun"
+          },
+          {
+            "label": "Phương thức",
+            "value": "May đo theo yêu cầu"
+          }
+        ],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 2,
+        "eyebrow": "Câu Chuyện Thương Hiệu",
+        "section_titles": [
+          "Câu Chuyện Về Monte Napoleone: Từ Núi Đồi Ý Đến Những Con Phố Scandinavia"
+        ],
+        "paragraphs": [
+          "Monte Napoleone được thành lập năm 1974 bởi Vincenzo Lapi, một người có tầm nhìn đến từ Treviso, Ý. Tại thị trấn nhỏ Treviso, miền bắc nước Ý, Vincenzo bắt đầu một xưởng may áo sơ mi với một tham vọng đơn giản: kết hợp tay nghề thủ công Ý với sự thanh lịch vượt thời gian. Cái tên Monte Napoleone chính là biểu tượng cho giấc mơ đó - \"Monte\" (ngọn núi) phản ánh những thử thách và đỉnh cao cần vượt qua để đạt được thành công, còn \"Napoleone\" tôn vinh cội nguồn của Vincenzo tại Napoli, thành phố nơi hành trình của ông bắt đầu.",
+          "Qua nhiều thập kỷ, Vincenzo đã xây dựng nên một thương hiệu được biết đến với chất lượng và sự tỉ mỉ. Năm 2017, câu chuyện rẽ sang một hướng mới khi Monte Napoleone hợp tác với DC Garment, một xưởng may áo sơ mi uy tín tại Việt Nam. Sự hợp tác này kết hợp tay nghề thủ công truyền thống với năng lực quản lý hiện đại, và dưới sự dẫn dắt của Vincenzo, Monte Napoleone bước vào một làn sóng tăng trưởng và hoàn thiện mới.",
+          "Nhưng cũng như nhiều doanh nghiệp khác, năm 2020 trở thành một bước ngoặt. Đại dịch giáng một đòn nặng nề, và Monte Napoleone đứng trước bờ vực phá sản. Đó là lúc Tri Minh Dang, đồng sáng lập kiêm Giám đốc điều hành của DC Garment, đưa ra một quyết định táo bạo: ông tiếp quản giấy phép thương hiệu Monte Napoleone và quyết tâm xây dựng lại từ đầu. Tầm nhìn của ông rất rõ ràng - đưa may đo đến với tất cả mọi người, hoàn toàn trên nền tảng số. Ông ra mắt một cửa hàng trực tuyến nơi khách hàng có thể tùy chỉnh áo sơ mi theo số đo riêng, hoàn toàn miễn phí. Khái niệm đột phá này đưa sự sang trọng và vừa vặn cá nhân đến gần hơn với tất cả mọi người, trực tiếp từ xưởng sản xuất.",
+          "Năm 2021, Monte Napoleone bước chân vào thị trường Scandinavia, với trụ sở đặt tại Oslo. Tại đây, thiết kế mang phong cách Ý được điều chỉnh để phù hợp với các giá trị Scandinavia: sự đơn giản, chất lượng và tinh thần đổi mới. Triết lý của Monte Napoleone rất đơn giản nhưng mạnh mẽ: tất cả mọi người đều xứng đáng có những bộ trang phục vừa vặn hoàn hảo, bất kể vóc dáng hay kích cỡ, và không có chi phí ẩn.",
+          "Ngày nay, Monte Napoleone không chỉ là một thương hiệu - đó là câu chuyện về lòng can đảm, tay nghề thủ công và sự đổi mới. Với cội nguồn từ truyền thống Ý và tầm nhìn hướng đến tương lai, Monte Napoleone tiếp tục phát triển để mang đến trải nghiệm mua sắm tốt nhất cho khách hàng."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 3,
+        "eyebrow": "Nền Tảng Của Chúng Tôi",
+        "section_titles": [
+          "Ba truyền thống, hội tụ trong một đường may"
+        ],
+        "paragraphs": [
+          "Ngày nay, tinh thần của người sáng lập vẫn sống trong ba truyền thống định hình mọi việc chúng tôi làm."
+        ],
+        "facts": [],
+        "traditions": [
+          {
+            "name": "Di sản Ý",
+            "desc": "Sự trân trọng đối với thiết kế tinh tế và vượt thời gian - cội nguồn từ Treviso và Napoli."
+          },
+          {
+            "name": "Tư duy Scandinavia",
+            "desc": "Cảm hứng cho sự đơn giản, thực dụng và trung thực - từ thị trường Oslo, nơi thương hiệu mở rộng năm 2021."
+          },
+          {
+            "name": "Tay nghề Việt Nam",
+            "desc": "Năng lực sản xuất của DC Garment giúp biến ý tưởng thành sản phẩm chính xác, nhất quán từ năm 2017."
+          }
+        ],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 4,
+        "eyebrow": "Chuyên Môn",
+        "section_titles": [
+          "Vì sao chúng tôi chuyên sâu"
+        ],
+        "paragraphs": [
+          "Thay vì sản xuất mọi thứ, chúng tôi tập trung làm thật tốt một điều - áo sơ mi, áo polo, áo thun. Qua nhiều thập kỷ, đội ngũ của chúng tôi đã hoàn thiện từng công đoạn làm áo, đáp ứng tiêu chuẩn chất lượng của các đối tác bán lẻ khắt khe trên toàn thế giới. Kinh nghiệm không được đo bằng số lượng sản phẩm làm ra, mà bằng kiến thức, sự tỉ mỉ và niềm tự hào của những người tạo ra chúng."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      },
+      {
+        "index": 5,
+        "eyebrow": "Cam Kết",
+        "section_titles": [
+          "Cam Kết",
+          "Được thiết kế riêng cho bạn",
+          "Tay nghề trong tầm kiểm soát",
+          "Giá bạn thấy là giá bạn trả",
+          "Chúng tôi sẽ không ngừng hoàn thiện",
+          "Monte Napoleone 1974"
+        ],
+        "paragraphs": [
+          "Mỗi chiếc áo đặt qua cửa hàng trực tuyến của chúng tôi đều được may riêng cho bạn - không lấy từ kho có sẵn. Chúng tôi tin chiếc áo nên thích nghi với khách hàng, với điều chỉnh miễn phí về chiều dài thân và tay áo.",
+          "Việc hợp tác chặt chẽ với chính xưởng sản xuất cho phép chúng tôi giám sát mọi công đoạn - từ chọn vải đến đóng gói cuối cùng. Trước khi mang tên Monte Napoleone, mỗi chiếc áo đã được kiểm tra và phê duyệt.",
+          "Mua sắm không nên khiến bạn bất an. Chúng tôi xây dựng toàn bộ trải nghiệm mua sắm xoay quanh việc loại bỏ sự bất an - không phí ẩn, không bất ngờ.",
+          "Chúng tôi sẽ không ngừng tìm kiếm chất liệu tốt hơn, form dáng tốt hơn, tay nghề tốt hơn - vì tin rằng khách hàng xứng đáng nhận điều tốt nhất từ chúng tôi.",
+          "Bộ sưu tập Di sản của chúng tôi - hình ảnh của năm mươi năm niềm tin ấy trong hiện tại. Chất liệu tự nhiên tuyển chọn, thêu tên viết tắt cá nhân hóa, cúc áo xà cừ."
+        ],
+        "facts": [],
+        "traditions": [],
+        "images": [],
+        "ctas": [],
+        "other": null
+      }
+    ],
+    "ctas": [],
+    "all_headings": [
+      {
+        "level": "h1",
+        "text": "Về Chúng Tôi"
+      },
+      {
+        "level": "h2",
+        "text": "Câu Chuyện Về Monte Napoleone: Từ Núi Đồi Ý Đến Những Con Phố Scandinavia"
+      },
+      {
+        "level": "h2",
+        "text": "Ba truyền thống, hội tụ trong một đường may"
+      },
+      {
+        "level": "h2",
+        "text": "Vì sao chúng tôi chuyên sâu"
+      },
+      {
+        "level": "h2",
+        "text": "Cam Kết"
+      },
+      {
+        "level": "h3",
+        "text": "Được thiết kế riêng cho bạn"
+      },
+      {
+        "level": "h3",
+        "text": "Tay nghề trong tầm kiểm soát"
+      },
+      {
+        "level": "h3",
+        "text": "Giá bạn thấy là giá bạn trả"
+      },
+      {
+        "level": "h3",
+        "text": "Chúng tôi sẽ không ngừng hoàn thiện"
+      },
+      {
+        "level": "h3",
+        "text": "Monte Napoleone 1974"
+      }
+    ]
+  }
+}
