@@ -32,6 +32,7 @@ class DC_Language_Urls {
 	private static $filtering = false;
 
 	public static function init() {
+		// Only strip /{lang}/ early. Never redirect here — that caused / ↔ /en/ loops.
 		add_action( 'plugins_loaded', array( __CLASS__, 'bootstrap_request' ), 5 );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_redirect_unprefixed' ), 0 );
 
@@ -125,7 +126,7 @@ class DC_Language_Urls {
 		if ( ! preg_match( $re, $rel, $m ) ) {
 			self::$had_prefix   = false;
 			self::$request_lang = null;
-			self::maybe_redirect_bare_request( $uri, $path, $query );
+			// Do NOT redirect at plugins_loaded — only strip here.
 			return;
 		}
 
@@ -175,68 +176,31 @@ class DC_Language_Urls {
 		return $lang;
 	}
 
-	private static function perform_bare_url_redirect( $uri ) {
-		$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
-		if ( self::should_skip_path( $path ) ) {
-			return;
-		}
-		if ( isset( $_GET['lang'] ) ) {
-			return;
-		}
-
-		$lang    = self::redirect_lang_for_bare_url();
-		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
-		$target  = self::add_lang_prefix( $current, $lang );
-
-		if ( ! self::urls_differ( $current, $target ) ) {
-			return;
-		}
-
-		if ( function_exists( 'wp_safe_redirect' ) ) {
-			wp_safe_redirect( $target, 302 );
-		} else {
-			header( 'Location: ' . $target, true, 302 );
-		}
-		exit;
-	}
-
 	/**
-	 * Redirect bare / URLs to /{lang}/ before WordPress routing (first visit).
-	 *
-	 * @param string      $uri   Original request URI.
-	 * @param string      $path  Path component.
-	 * @param string|null $query Query string.
-	 */
-	private static function maybe_redirect_bare_request( $uri, $path, $query ) {
-		if ( headers_sent() ) {
-			return;
-		}
-
-		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) : 'GET';
-		if ( $method !== 'GET' && $method !== 'HEAD' ) {
-			return;
-		}
-
-		self::perform_bare_url_redirect( $uri );
-	}
-
-	/**
-	 * Fallback redirect on template_redirect if early redirect did not run.
+	 * One-shot redirect of unprefixed front-end URLs to /{lang}/…
+	 * Runs only on template_redirect (never at plugins_loaded).
 	 */
 	public static function maybe_redirect_unprefixed() {
 		if ( ! self::enabled() || is_admin() || wp_doing_ajax() || wp_doing_cron() || headers_sent() ) {
 			return;
 		}
+
+		// Already came in as /en/… (we stripped it) — never redirect again.
 		if ( self::$had_prefix ) {
 			return;
 		}
-		if ( is_feed() || is_robots() || is_trackback() ) {
+
+		if ( is_feed() || is_robots() || is_trackback() || is_404() ) {
 			return;
 		}
 
 		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) : 'GET';
 		if ( $method !== 'GET' && $method !== 'HEAD' ) {
+			return;
+		}
+
+		// Loop guard: if we just redirected, serve the page.
+		if ( ! empty( $_COOKIE['dc_lang_fix'] ) ) {
 			return;
 		}
 
@@ -256,14 +220,49 @@ class DC_Language_Urls {
 				$clean   = remove_query_arg( 'lang', $current );
 				$target  = self::add_lang_prefix( $clean, $lang );
 				if ( self::urls_differ( $current, $target ) ) {
-					wp_safe_redirect( $target, 302 );
-					exit;
+					self::safe_lang_redirect( $target );
 				}
 			}
 			return;
 		}
 
-		self::perform_bare_url_redirect( $uri );
+		// Already has a language prefix in the browser URL — nothing to do.
+		$codes = self::get_lang_codes();
+		$re    = '#^/(' . implode( '|', array_map( 'preg_quote', $codes ) ) . ')(/|$)#i';
+		$rel   = '/' . ltrim( (string) $path, '/' );
+		$home  = self::site_home_path();
+		if ( $home && $home !== '/' && strpos( $rel, $home ) === 0 ) {
+			$rel = '/' . ltrim( substr( $rel, strlen( $home ) ), '/' );
+		}
+		if ( preg_match( $re, $rel ) ) {
+			return;
+		}
+
+		$lang    = self::redirect_lang_for_bare_url();
+		$host    = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+		$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
+		$target  = self::add_lang_prefix( $current, $lang );
+
+		if ( ! self::urls_differ( $current, $target ) ) {
+			return;
+		}
+
+		self::safe_lang_redirect( $target );
+	}
+
+	/**
+	 * Redirect once and set a short cookie so we cannot loop.
+	 *
+	 * @param string $target Absolute URL.
+	 */
+	private static function safe_lang_redirect( $target ) {
+		$path   = defined( 'COOKIEPATH' ) && COOKIEPATH ? COOKIEPATH : '/';
+		$domain = defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '';
+		if ( ! headers_sent() ) {
+			setcookie( 'dc_lang_fix', '1', time() + 20, $path, $domain, is_ssl(), true );
+		}
+		wp_safe_redirect( $target, 302 );
+		exit;
 	}
 
 	private static function urls_differ( $a, $b ) {
@@ -528,16 +527,14 @@ class DC_Language_Urls {
 	}
 
 	/**
-	 * Critical loop breaker: after stripping /en/, WP sees "/" and tries to
-	 * canonical-redirect to home_url('/en/') → infinite redirects.
+	 * Kill WordPress canonical redirects in language-prefix mode.
+	 * After we strip /en/ → /, WP otherwise redirects back to /en/ forever.
 	 */
 	public static function filter_redirect_canonical( $redirect_url, $requested_url ) {
 		if ( ! self::enabled() ) {
 			return $redirect_url;
 		}
-		if ( self::$had_prefix ) {
-			return false;
-		}
-		return $redirect_url;
+		// Always disable when Polylang-style URLs are on — we own language prefixes.
+		return false;
 	}
 }
