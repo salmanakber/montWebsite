@@ -345,6 +345,10 @@ class DC_Region_Currency {
      * Reads the option directly so it works before the DeepL plugin class is loaded.
      */
     public static function polylang_style_enabled() {
+        // Never run our fake /en/ URL layer alongside real Polylang.
+        if (class_exists(__NAMESPACE__ . '\\DC_Language_Urls') && DC_Language_Urls::polylang_plugin_active()) {
+            return false;
+        }
         if (class_exists('\\Mont_DeepL_Plugin')) {
             $settings = \Mont_DeepL_Plugin::settings();
             return !empty($settings['polylang_style']);
@@ -378,12 +382,47 @@ class DC_Region_Currency {
     public function init() {
         add_action('init', array($this, 'maybe_handle_region_query'), 5);
         add_action('init', array($this, 'maybe_handle_lang_query'), 6);
+        add_action('init', array($this, 'maybe_sync_region_from_polylang'), 8);
         add_action('init', array($this, 'maybe_auto_set_region'), 20);
         add_action('init', array($this, 'register_shortcode'), 20);
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('wp_ajax_dc_switch_region', array($this, 'ajax_switch_region'));
         add_action('wp_ajax_nopriv_dc_switch_region', array($this, 'ajax_switch_region'));
         add_filter('woocommerce_currency', array($this, 'filter_woocommerce_currency'), 5);
+    }
+
+    /**
+     * When real Polylang is active, mirror its language into dc_region cookie.
+     */
+    public function maybe_sync_region_from_polylang() {
+        if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+            return;
+        }
+        if (!class_exists(__NAMESPACE__ . '\\DC_Language_Urls') || !DC_Language_Urls::polylang_plugin_active()) {
+            return;
+        }
+
+        $lang = '';
+        if (function_exists('pll_current_language')) {
+            $lang = (string) pll_current_language('slug');
+        }
+        if (!$lang && !empty($_COOKIE['pll_language'])) {
+            $lang = sanitize_key(wp_unslash($_COOKIE['pll_language']));
+        }
+        // Map Polylang "no" → our "nb".
+        if ($lang === 'no') {
+            $lang = 'nb';
+        }
+
+        $slug = self::lang_to_region($lang);
+        if (!$slug) {
+            return;
+        }
+
+        $current = isset($_COOKIE[self::COOKIE_NAME]) ? sanitize_key($_COOKIE[self::COOKIE_NAME]) : '';
+        if ($current !== $slug) {
+            self::set_region_cookie($slug);
+        }
     }
 
     /**
