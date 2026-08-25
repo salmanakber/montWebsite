@@ -126,22 +126,51 @@
 
 .mont-about .mont-about__facts {
   display: flex;
-  gap: 40px;
-  padding: 32px 0 0;
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px 48px;
+  margin: 28px 0 0;
+  padding: 28px 0 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.mont-about .mont-about__fact {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.mont-about .mont-about__fact dt,
+.mont-about .mont-about__fact dd {
+  display: block;
+  float: none;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .mont-about .mont-about__fact dt {
+  margin: 0 0 6px;
+  font-family: "Figtree", sans-serif;
   font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin-bottom: 4px;
-  letter-spacing: 0.5px;
+  line-height: 1.35;
 }
 
 .mont-about .mont-about__fact dd {
+  font-family: "Figtree", sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: var(--ink);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
 }
 
 .mont-about .mont-about__trad-row {
@@ -283,6 +312,13 @@
 }
 
 @media (max-width: 640px) {
+  .mont-about .mont-about__facts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding-top: 22px;
+  }
+
   .mont-about h1 {
     font-size: 27px;
   }

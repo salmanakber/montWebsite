@@ -308,8 +308,9 @@ class DC_Region_Currency {
 
     /**
      * Build a safe redirect URL after region change.
-     * - With WPML: language-aware permalink
-     * - Polylang-style DeepL mode: keep ?lang=en|it|nb|vi visible
+     * - Real Polylang: translated page / language home
+     * - WPML: language-aware permalink
+     * - DeepL polylang-style mode: /{lang}/… path prefixes
      * - Default: same page (cookie carries the region)
      */
     public static function get_url_for_region($region_slug, $url = null) {
@@ -317,9 +318,17 @@ class DC_Region_Currency {
             return $url ? $url : home_url('/');
         }
 
-        $url = $url ? $url : self::get_current_page_url();
+        $url    = $url ? $url : self::get_current_page_url();
         $region = self::get_region($region_slug);
-        $lang = $region['lang'];
+        $lang   = !empty($region['lang']) ? $region['lang'] : 'en';
+
+        // Real Polylang: jump to the translated page (or that language's home).
+        if (class_exists(__NAMESPACE__ . '\\DC_Language_Urls') && DC_Language_Urls::polylang_plugin_active()) {
+            $pll_url = self::get_polylang_url_for_lang($lang, $url);
+            if ($pll_url) {
+                return remove_query_arg(array(self::QUERY_VAR, 'lang'), $pll_url);
+            }
+        }
 
         // WPML active: use its permalink API only.
         if (defined('ICL_SITEPRESS_VERSION') && has_filter('wpml_permalink')) {
@@ -338,6 +347,100 @@ class DC_Region_Currency {
         }
 
         return remove_query_arg('lang', $url);
+    }
+
+    /**
+     * Resolve a Polylang URL for a region language (en|it|nb|vi).
+     *
+     * @param string $lang Our language code.
+     * @param string $url  Current page URL.
+     * @return string Empty if unavailable.
+     */
+    public static function get_polylang_url_for_lang($lang, $url = '') {
+        $candidates = self::polylang_lang_candidates($lang);
+        if (!$candidates) {
+            return '';
+        }
+
+        $path = (string) wp_parse_url($url, PHP_URL_PATH);
+        // Front page / ugly /en/66-2/ → always use language home.
+        $is_homeish = (function_exists('is_front_page') && is_front_page())
+            || (function_exists('is_home') && is_home())
+            || (bool) preg_match('#/(en|it|nb|no|vi)/(66-2|home)/?$#i', $path)
+            || (bool) preg_match('#/(en|it|nb|no|vi)/?$#i', $path);
+
+        if ($is_homeish && function_exists('pll_home_url')) {
+            foreach ($candidates as $try) {
+                $home = pll_home_url($try);
+                if (is_string($home) && $home !== '') {
+                    return $home;
+                }
+            }
+        }
+
+        // Prefer Polylang's own "this page in language X" URL.
+        if (function_exists('PLL')) {
+            $pll = PLL();
+            if (is_object($pll) && isset($pll->links) && method_exists($pll->links, 'get_translation_url')) {
+                foreach ($candidates as $try) {
+                    $lang_obj = (isset($pll->model) && method_exists($pll->model, 'get_language'))
+                        ? $pll->model->get_language($try)
+                        : null;
+                    if (!$lang_obj) {
+                        continue;
+                    }
+                    $translated = $pll->links->get_translation_url($lang_obj);
+                    if (is_string($translated) && $translated !== '') {
+                        return $translated;
+                    }
+                }
+            }
+        }
+
+        $post_id = 0;
+        if (function_exists('url_to_postid') && $url) {
+            $post_id = (int) url_to_postid($url);
+        }
+        if (!$post_id && function_exists('get_queried_object_id')) {
+            $post_id = (int) get_queried_object_id();
+        }
+
+        if ($post_id && function_exists('pll_get_post')) {
+            foreach ($candidates as $try) {
+                $tr = pll_get_post($post_id, $try);
+                if ($tr) {
+                    $permalink = get_permalink((int) $tr);
+                    if ($permalink) {
+                        return $permalink;
+                    }
+                }
+            }
+        }
+
+        if (function_exists('pll_home_url')) {
+            foreach ($candidates as $try) {
+                $home = pll_home_url($try);
+                if (is_string($home) && $home !== '') {
+                    return $home;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Polylang may register Norwegian as nb or no.
+     *
+     * @param string $lang Our lang code.
+     * @return string[]
+     */
+    private static function polylang_lang_candidates($lang) {
+        $lang = strtolower(sanitize_key($lang));
+        if ($lang === 'nb' || $lang === 'no') {
+            return array('nb', 'no');
+        }
+        return $lang ? array($lang) : array();
     }
 
     /**
@@ -385,10 +488,173 @@ class DC_Region_Currency {
         add_action('init', array($this, 'maybe_sync_region_from_polylang'), 8);
         add_action('init', array($this, 'maybe_auto_set_region'), 20);
         add_action('init', array($this, 'register_shortcode'), 20);
+        // Run on front + admin so deploy fixes /en/66-2/ without waiting for wp-admin.
+        add_action('init', array($this, 'maybe_fix_polylang_home_slugs'), 30);
+        add_action('template_redirect', array($this, 'maybe_redirect_ugly_home_slug'), 1);
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('wp_ajax_dc_switch_region', array($this, 'ajax_switch_region'));
         add_action('wp_ajax_nopriv_dc_switch_region', array($this, 'ajax_switch_region'));
         add_filter('woocommerce_currency', array($this, 'filter_woocommerce_currency'), 5);
+        add_filter('pll_preferred_language', array($this, 'filter_pll_preferred_language'), 5);
+    }
+
+    /**
+     * Prefer our region cookie over Polylang browser auto-detect (avoids /en/66-2/ surprises).
+     *
+     * @param string|bool $slug Polylang language slug.
+     * @return string|bool
+     */
+    public function filter_pll_preferred_language($slug) {
+        if (empty($_COOKIE[self::COOKIE_NAME])) {
+            return $slug;
+        }
+        $region_slug = sanitize_key(wp_unslash($_COOKIE[self::COOKIE_NAME]));
+        if (!self::is_valid_region($region_slug)) {
+            return $slug;
+        }
+        $region = self::get_region($region_slug);
+        if (empty($region['lang'])) {
+            return $slug;
+        }
+        $candidates = self::polylang_lang_candidates($region['lang']);
+        foreach ($candidates as $try) {
+            if (function_exists('pll_languages_list')) {
+                $list = pll_languages_list(array('fields' => 'slug'));
+                if (is_array($list) && in_array($try, $list, true)) {
+                    return $try;
+                }
+            } else {
+                return $try;
+            }
+        }
+        return $slug;
+    }
+
+    /**
+     * One-time: rename ugly Polylang home slugs like "66-2" → "home".
+     * Fixes https://montenapoleone1974.com/en/66-2/
+     * (About Us did not cause this — WP/Polylang assigned a conflict slug to the EN home page.)
+     */
+    public function maybe_fix_polylang_home_slugs() {
+        if (get_option('mont_fixed_pll_home_slugs_v1')) {
+            return;
+        }
+        if (!function_exists('pll_get_post_translations') && !function_exists('get_posts')) {
+            return;
+        }
+
+        $fixed = false;
+        $front = (int) get_option('page_on_front');
+
+        if ($front > 0 && function_exists('pll_get_post_translations')) {
+            $translations = pll_get_post_translations($front);
+            if (!is_array($translations) || !$translations) {
+                $translations = array($front);
+            }
+            foreach ($translations as $pid) {
+                if ($this->rename_ugly_page_slug((int) $pid)) {
+                    $fixed = true;
+                }
+            }
+        }
+
+        // Always scrub known bad slug, even if not linked as front page.
+        $pages = get_posts(array(
+            'post_type'              => 'page',
+            'post_status'            => 'any',
+            'name'                   => '66-2',
+            'posts_per_page'         => 10,
+            'fields'                 => 'ids',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+        ));
+        foreach ($pages as $pid) {
+            if ($this->rename_ugly_page_slug((int) $pid)) {
+                $fixed = true;
+            }
+        }
+
+        // Only mark done when we fixed something, or confirmed the bad slug is gone.
+        $still = get_posts(array(
+            'post_type'              => 'page',
+            'post_status'            => 'any',
+            'name'                   => '66-2',
+            'posts_per_page'         => 1,
+            'fields'                 => 'ids',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+        ));
+        if ($fixed || !$still) {
+            update_option('mont_fixed_pll_home_slugs_v1', 1, false);
+            if ($fixed) {
+                flush_rewrite_rules(false);
+            }
+        }
+    }
+
+    /**
+     * @param int $pid Page ID.
+     * @return bool True if renamed.
+     */
+    private function rename_ugly_page_slug($pid) {
+        $pid  = (int) $pid;
+        $post = $pid ? get_post($pid) : null;
+        if (!$post || $post->post_type !== 'page') {
+            return false;
+        }
+        $slug = (string) $post->post_name;
+        if ($slug !== '66-2' && !preg_match('/^\d+-2$/', $slug)) {
+            return false;
+        }
+        $result = wp_update_post(array(
+            'ID'        => $pid,
+            'post_name' => 'home',
+        ), true);
+        return !is_wp_error($result) && $result;
+    }
+
+    /**
+     * Soft-redirect legacy /en/66-2/ to Polylang language home when possible.
+     */
+    public function maybe_redirect_ugly_home_slug() {
+        if (is_admin() || wp_doing_ajax() || wp_doing_cron() || headers_sent()) {
+            return;
+        }
+        if (!function_exists('pll_home_url')) {
+            return;
+        }
+
+        $path = (string) wp_parse_url(self::get_current_page_url(), PHP_URL_PATH);
+        if (!preg_match('#/(en|it|nb|no|vi)/(66-2)/?$#i', $path, $m)) {
+            return;
+        }
+
+        $lang = strtolower($m[1]);
+        if ($lang === 'no') {
+            $lang = 'nb';
+        }
+
+        $target = '';
+        foreach (self::polylang_lang_candidates($lang) as $try) {
+            $home = pll_home_url($try);
+            if (is_string($home) && $home !== '') {
+                $target = $home;
+                break;
+            }
+        }
+        if (!$target) {
+            return;
+        }
+
+        $target_path = (string) wp_parse_url($target, PHP_URL_PATH);
+        if (untrailingslashit($target_path) === untrailingslashit($path)) {
+            return;
+        }
+
+        wp_safe_redirect($target, 301);
+        exit;
     }
 
     /**
@@ -443,12 +709,15 @@ class DC_Region_Currency {
         }
 
         self::set_region_cookie($slug);
+        self::set_polylang_language_cookie($slug);
 
-        // Clean URL: redirect once to same page without the query arg (cookie keeps region).
-        // Skip if WPML will own the language URL. Prefer /{lang}/… when Polylang-style is on.
+        // Clean URL: redirect once without the query arg.
+        // With real Polylang, jump to the translated page for that region.
         if (!defined('ICL_SITEPRESS_VERSION') && !headers_sent()) {
             $clean = remove_query_arg(array(self::QUERY_VAR, 'lang'), self::get_current_page_url());
-            if (self::polylang_style_enabled() && class_exists(__NAMESPACE__ . '\\DC_Language_Urls')) {
+            if (class_exists(__NAMESPACE__ . '\\DC_Language_Urls') && DC_Language_Urls::polylang_plugin_active()) {
+                $clean = self::get_url_for_region($slug, $clean);
+            } elseif (self::polylang_style_enabled() && class_exists(__NAMESPACE__ . '\\DC_Language_Urls')) {
                 $region = self::get_region($slug);
                 $clean  = DC_Language_Urls::convert_url_lang($clean, $region['lang']);
             }
@@ -576,6 +845,7 @@ class DC_Region_Currency {
         }
 
         self::set_region_cookie($region_slug);
+        self::set_polylang_language_cookie($region_slug);
 
         $redirect = isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '';
         if (!$redirect) {
@@ -596,6 +866,44 @@ class DC_Region_Currency {
             'currency' => self::get_region($region_slug)['currency'],
             'redirect' => $redirect,
         ));
+    }
+
+    /**
+     * Keep Polylang's pll_language cookie aligned with our region switcher.
+     *
+     * @param string $region_slug Region slug.
+     */
+    public static function set_polylang_language_cookie($region_slug) {
+        if (!self::is_valid_region($region_slug)) {
+            return;
+        }
+        if (headers_sent()) {
+            return;
+        }
+        $region = self::get_region($region_slug);
+        if (empty($region['lang'])) {
+            return;
+        }
+
+        $pll_slug = $region['lang'];
+        // Prefer Polylang's registered slug (nb vs no).
+        if (function_exists('pll_languages_list')) {
+            $list = pll_languages_list(array('fields' => 'slug'));
+            if (is_array($list)) {
+                foreach (self::polylang_lang_candidates($region['lang']) as $try) {
+                    if (in_array($try, $list, true)) {
+                        $pll_slug = $try;
+                        break;
+                    }
+                }
+            }
+        }
+
+        $expire = time() + YEAR_IN_SECONDS;
+        $secure = is_ssl();
+        // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+        setcookie('pll_language', $pll_slug, $expire, COOKIEPATH ? COOKIEPATH : '/', COOKIE_DOMAIN, $secure, true);
+        $_COOKIE['pll_language'] = $pll_slug;
     }
 
     public function render_switcher($atts = array()) {
