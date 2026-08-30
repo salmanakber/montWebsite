@@ -746,7 +746,7 @@ if(isset($_GET['productb2b']) AND !empty($_GET['productb2b'])){
         array(
             'images' => $product_details['right'],
             'details' => $product_details['left'],
-            'moq' => 'This color requires a minimum order of '.$product_details['moq'].' shirts total',
+            'moq' => (string) $product_details['moq'],
             'done' => (isset($_SESSION['products']) ? 'add-to-cart-button-bubble' : 'e'),
             'collar' => $collar_type,
             'cuff' =>  $cuff_type,
@@ -780,7 +780,7 @@ public function enqueue_scripts_and_styles() {
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');
     wp_enqueue_style('b2b-fontaweseom', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css');
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.7', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.8', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
 
     // Shared category tab design (theme file when available).

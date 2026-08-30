@@ -147,12 +147,15 @@ jQuery(document).ready(function($) {
         $('.b2b-size-input').each(function() {
             sum += parseFloat($(this).val()) || 0;
         });
-        $('.price-b2b').val(sum +' '+ "Shirts" );
-        $('.mont-b2b-sticky-price').text(sum +' '+ "Shirts" );
+        var totalText = sum + ' Shirts';
+        $('.price-b2b').val(totalText);
+        $('.b2b-pdp__total-value, #b2b-total-pieces').text(sum);
+        $('.mont-b2b-sticky-price').text(totalText);
     }
     $('.b2b-size-input').on('input', function() {
         updateSum();
     });
+    updateSum();
 
 
 $(document).on('click', '.send-it-to-cart', function() {
