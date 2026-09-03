@@ -202,6 +202,7 @@ class ajaxHooks
         'fitSizes'  => new stdClass(),
         'charts'    => new stdClass(),
         'diagrams'  => new stdClass(),
+        'i18n'      => function_exists( 'mont_pdp_js_i18n' ) ? mont_pdp_js_i18n() : array(),
     );
     $is_product_page = ! is_admin()
         && (

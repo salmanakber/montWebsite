@@ -11,6 +11,13 @@ jQuery(document).ready(function ($) {
     var montDiagramCache = {};
     var montDiagramWarmStarted = false;
 
+    function montT(key, fallback) {
+        if (typeof ajaxurl !== 'undefined' && ajaxurl && ajaxurl.i18n && ajaxurl.i18n[key]) {
+            return ajaxurl.i18n[key];
+        }
+        return fallback;
+    }
+
     function montImagesUsable(images) {
         if (!images || typeof images !== 'object') return false;
         var keys = ['shirt_length', 'sleeve_length', 'half_chest', 'half_waist', 'half_bottom', 'shoulder'];
@@ -34,6 +41,25 @@ jQuery(document).ready(function ($) {
             if (groups[i].indexOf(f) !== -1) return groups[i];
         }
         return f ? [f] : [];
+    }
+
+    /** Odd collar sizes unavailable for Contemporary fit (left column on size charts). */
+    var CONTEMPORARY_LOCKED_SIZE_NUMS = [37, 39, 41, 43, 45, 47];
+
+    function montExtractSizeNum(slugOrLabel) {
+        var m = String(slugOrLabel || '').match(/(\d{2})/);
+        return m ? parseInt(m[1], 10) : NaN;
+    }
+
+    function montIsContemporaryFitSlug(slug) {
+        var aliases = montFitSlugAliases(slug);
+        return aliases.indexOf('contemporary') !== -1 || aliases.indexOf('contemporary-fit') !== -1;
+    }
+
+    function montIsContemporaryLockedSize(slugOrLabel, fitSlug) {
+        if (!montIsContemporaryFitSlug(fitSlug || drawerPendingFitSlug)) return false;
+        var num = montExtractSizeNum(slugOrLabel);
+        return CONTEMPORARY_LOCKED_SIZE_NUMS.indexOf(num) !== -1;
     }
 
     function montDiagramKeyCandidates(key) {
@@ -254,7 +280,7 @@ jQuery(document).ready(function ($) {
             drawerPendingFitSlug = '';
             drawerPendingSizeSlug = '';
             $('#mont-drawer-sizes').removeClass('is-loading').attr('hidden', true).empty();
-            $('#mont-drawer-size-hint').text('Velg passform først').prop('hidden', false);
+            $('#mont-drawer-size-hint').text(montT('drawerHintFitFirst', 'Velg passform først')).prop('hidden', false);
             $('#mont-fit-size-continue').prop('disabled', true);
         }
         var $checkedSize = $('.pa_size-option').has('input.pa_size-checkbox:checked').first();
@@ -322,20 +348,44 @@ jQuery(document).ready(function ($) {
             return String(a.slug).localeCompare(String(b.slug));
         });
         if (!visible.length) {
-            $hint.text('Ingen størrelser for denne passformen').prop('hidden', false);
+            $hint.text(montT('drawerNoSizes', 'Ingen størrelser for denne passformen')).prop('hidden', false);
             $grid.attr('hidden', true);
             $('#mont-fit-size-continue').prop('disabled', true);
             return;
         }
         $hint.prop('hidden', true);
         $grid.removeAttr('hidden');
+        if (drawerPendingSizeSlug && montIsContemporaryLockedSize(drawerPendingSizeSlug, drawerPendingFitSlug)) {
+            drawerPendingSizeSlug = '';
+        }
         visible.forEach(function (item) {
-            var selected = String(item.slug) === String(drawerPendingSizeSlug);
-            var $btn = $('<button type="button" class="mont-drawer-size-option' + (selected ? ' is-selected' : '') + '"></button>');
+            var locked = montIsContemporaryLockedSize(item.slug, drawerPendingFitSlug)
+                || montIsContemporaryLockedSize(item.label, drawerPendingFitSlug);
+            var selected = !locked && String(item.slug) === String(drawerPendingSizeSlug);
+            var $btn = $('<button type="button" class="mont-drawer-size-option' + (selected ? ' is-selected' : '') + (locked ? ' is-contemporary-locked' : '') + '"></button>');
             $btn.attr('data-slug', item.slug).text(item.label);
+            if (locked) {
+                $btn.prop('disabled', true).attr('aria-disabled', 'true').attr('title', montT('sizeLockedTitle', 'Not available for Contemporary fit'));
+            }
             $grid.append($btn);
         });
-        $('#mont-fit-size-continue').prop('disabled', !drawerPendingSizeSlug || validSizes.indexOf(String(drawerPendingSizeSlug)) === -1);
+        // Also mark source list items for any non-drawer UI.
+        $('.pa_size-option').each(function () {
+            var slug = String($(this).data('slug') || '');
+            var label = $.trim($(this).find('.tobeSelected').text());
+            var locked = montIsContemporaryLockedSize(slug, drawerPendingFitSlug)
+                || montIsContemporaryLockedSize(label, drawerPendingFitSlug);
+            $(this).toggleClass('is-contemporary-locked', locked);
+            if (locked) {
+                $(this).find('.mont_checkbox_select').prop('checked', false).prop('disabled', true);
+            } else {
+                $(this).find('.mont_checkbox_select').prop('disabled', false);
+            }
+        });
+        var canContinue = !!drawerPendingSizeSlug
+            && validSizes.indexOf(String(drawerPendingSizeSlug)) !== -1
+            && !montIsContemporaryLockedSize(drawerPendingSizeSlug, drawerPendingFitSlug);
+        $('#mont-fit-size-continue').prop('disabled', !canContinue);
     }
 
     function sizesFromLocalMap(fitSlug) {
@@ -361,6 +411,15 @@ jQuery(document).ready(function ($) {
             } else {
                 $(this).show();
             }
+            var label = $.trim($(this).find('.tobeSelected').text());
+            var locked = montIsContemporaryLockedSize(listSlug, drawerPendingFitSlug)
+                || montIsContemporaryLockedSize(label, drawerPendingFitSlug);
+            $(this).toggleClass('is-contemporary-locked', locked);
+            if (locked) {
+                $(this).find('.mont_checkbox_select').prop('checked', false).prop('disabled', true);
+            } else {
+                $(this).find('.mont_checkbox_select').prop('disabled', false);
+            }
         });
         var sortedItems = $items.filter(':visible').sort(function (a, b) {
             var aSlug = $(a).data('slug');
@@ -380,7 +439,10 @@ jQuery(document).ready(function ($) {
             $('.pa_size').addClass('mont_open');
         }
         if ($('#mont-fit-size-drawer').hasClass('is-open')) {
-            if (drawerPendingSizeSlug && validSizes.indexOf(String(drawerPendingSizeSlug)) === -1) {
+            if (drawerPendingSizeSlug && (
+                validSizes.indexOf(String(drawerPendingSizeSlug)) === -1
+                || montIsContemporaryLockedSize(drawerPendingSizeSlug, drawerPendingFitSlug)
+            )) {
                 drawerPendingSizeSlug = '';
             }
             montRenderDrawerSizes(validSizes);
@@ -479,7 +541,7 @@ jQuery(document).ready(function ($) {
         if (forDrawer) {
             montShowSizeSkeleton();
         } else {
-            montShowLoader($sizeGroup, 'Oppdaterer størrelser…');
+            montShowLoader($sizeGroup, montT('drawerUpdating', 'Oppdaterer størrelser…'));
         }
 
         montActiveRequest = $.ajax({
@@ -506,7 +568,7 @@ jQuery(document).ready(function ($) {
                     applyValidSizes(validSizes, !forDrawer);
                 } else if (forDrawer) {
                     $('#mont-drawer-sizes').removeClass('is-loading').attr('hidden', true).empty();
-                    $('#mont-drawer-size-hint').text('Kunne ikke laste størrelser').prop('hidden', false);
+                    $('#mont-drawer-size-hint').text(montT('drawerLoadError', 'Kunne ikke laste størrelser')).prop('hidden', false);
                 }
             },
             error: function (xhr, status) {
@@ -514,7 +576,7 @@ jQuery(document).ready(function ($) {
                     montHideLoader($sizeGroup);
                     if (forDrawer) {
                         $('#mont-drawer-sizes').removeClass('is-loading').attr('hidden', true).empty();
-                        $('#mont-drawer-size-hint').text('Kunne ikke laste størrelser').prop('hidden', false);
+                        $('#mont-drawer-size-hint').text(montT('drawerLoadError', 'Kunne ikke laste størrelser')).prop('hidden', false);
                     }
                 }
             },
@@ -569,6 +631,9 @@ jQuery(document).ready(function ($) {
     });
 
     $(document).on('click', '.mont-drawer-size-option', function () {
+        if ($(this).hasClass('is-contemporary-locked') || $(this).prop('disabled')) {
+            return;
+        }
         drawerPendingSizeSlug = String($(this).data('slug') || '');
         $('#mont-drawer-sizes .mont-drawer-size-option').removeClass('is-selected');
         $(this).addClass('is-selected');
@@ -644,6 +709,9 @@ jQuery(document).ready(function ($) {
 
     $(document).on("click", ".pa_size-option", function () {
         var $sizeItem = $(this);
+        if ($sizeItem.hasClass('is-contemporary-locked')) {
+            return false;
+        }
         var sizeSlug = $sizeItem.data("slug");
         var bodyCheck = "";
         var $tailorGroup = $('.skreddersydd .mont_variation-group').first();
@@ -886,7 +954,9 @@ jQuery(document).ready(function ($) {
             var value = num + " cm";
 
             if (key === "sleeve_length") {
-                $item.find(".mont_sizes-measurement-value").text("Left: " + num + " cm, Right: " + num + " cm");
+                $item.find(".mont_sizes-measurement-value").text(
+                    montT('left', 'Left') + ": " + num + " cm, " + montT('right', 'Right') + ": " + num + " cm"
+                );
                 $item.find('.mont_sizes-control-value').text(num + " cm");
                 $('input[name="mont_sizes[sleeve_length_left]"]').val(num).attr("data-value", num).attr("clicked", "false");
                 $('input[name="mont_sizes[sleeve_length_right]"]').val(num).attr("data-value", num).attr("clicked", "false");

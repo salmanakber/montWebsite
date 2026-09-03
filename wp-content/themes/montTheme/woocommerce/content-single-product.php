@@ -8,6 +8,14 @@ if ( post_password_required() ) {
 	return;
 }
 
+$mont_t = function_exists( 'mont_pdp_t' ) ? 'mont_pdp_t' : null;
+$t = function ( $key, $fallback = '' ) use ( $mont_t ) {
+	if ( $mont_t ) {
+		return $mont_t( $key );
+	}
+	return $fallback !== '' ? $fallback : $key;
+};
+
 // ==========================================
 // 1. DATA PREPARATION (Unified Grid)
 // ==========================================
@@ -426,7 +434,7 @@ div#mont_backButton { z-index: 999; }
 
 <div class="mont_single_product_container">
 	<div class="mont_top_area">
-		 <p>Gratis frakt over hele verden</p>
+		 <p><?php echo esc_html( $t( 'free_shipping', 'Free shipping worldwide' ) ); ?></p>
 		<?php $customVariation->display_slider_on_product_page(); ?>
 		<p><?php
 if(get_field("product_type") == "FORHÅNDSORDRE")
@@ -447,11 +455,11 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
         <div class="mont_layout_sixty">
             <div class="mont_back_button" id="mont_backButton">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                <span>Back</span>
+                <span><?php echo esc_html( $t( 'back', 'Back' ) ); ?></span>
                 <div class="mont_popover" id="mont_prevPagePopover">
-					<div class="mont_popover_arrow"></div>
-					<div class="mont_popover_content">
-						<div class="mont_popover_text" id="mont_prevPageTitle">Loading previous page...</div>
+                    <div class="mont_popover_arrow"></div>
+                    <div class="mont_popover_content">
+						<div class="mont_popover_text" id="mont_prevPageTitle"><?php echo esc_html( $t( 'loading_prev', 'Loading previous page...' ) ); ?></div>
 					</div>
 				</div>
             </div>
@@ -516,7 +524,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 
                 <?php if ($total_items > 4) : ?>
                 <div class="mont_see_more_container">
-                    <button id="mont_see_more_btn" class="mont_see_more_btn">See more images</button>
+                    <button id="mont_see_more_btn" class="mont_see_more_btn"><?php echo esc_html( $t( 'see_more_images', 'See more images' ) ); ?></button>
                 </div>
                 <?php endif; ?>
             </div>
@@ -541,7 +549,9 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 				<div class="mont_product-stock">
 						<?php 
 								$stock_qty = $product->get_stock_quantity();
-								echo ($stock_qty && $stock_qty > 0)   ? 'Tilgjengelig ' . $stock_qty    : 'Pre-order';
+								echo esc_html( ( $stock_qty && $stock_qty > 0 )
+									? ( $t( 'available', 'Available' ) . ' ' . $stock_qty )
+									: $t( 'pre_order', 'Pre-order' ) );
 							?>
 				</div>
 			</div>
@@ -575,11 +585,11 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 					<div class="desc_full<?php echo esc_attr( $desc_class ); ?>" style="display: none;">
 						<?php echo wp_kses_post( $desc_rendered ); ?>
 					</div>
-					<span class="mont_show_hide_desc_text">Les mer...</span>
+					<span class="mont_show_hide_desc_text"><?php echo esc_html( $t( 'read_more', 'Read more...' ) ); ?></span>
 				</div>
 			</div>
 			<div class="mont_straight_line">
-				<span class="mont_straight_line__label">Vennligst fyll ut</span>
+				<span class="mont_straight_line__label"><?php echo esc_html( $t( 'please_complete', 'Please complete' ) ); ?></span>
 				<div class="mont_pdp-doc-buttons">
 					<?php
 					$return_btn = mont_return_form_button();
@@ -599,7 +609,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 						<rect x="7" y="12.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
 						<rect x="12.5" y="12.5" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>
 					</svg>
-					<span>Size Guide</span>
+					<span><?php echo esc_html( $t( 'size_guide', 'Size Guide' ) ); ?></span>
 				</button>
 				</div>
 			</div>
@@ -623,7 +633,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 										data-open-fit-size-drawer
 										data-listName="<?php echo esc_attr($names['attribute_name']); ?>"
 										data-attribute-key="<?php echo esc_attr($attr_slug); ?>">
-										<h3><span class="mont_required">*</span> Passform &amp; Størrelse (Obligatorisk)</h3>
+										<h3><span class="mont_required">*</span> <?php echo esc_html( $t( 'fit_size_required', 'Fit & Size (Required)' ) ); ?></h3>
 										<span class="dpName mont-fit-size-summary"></span>
 										<span class="mont_toggle-icon mont-drawer-chevron"><i data-lucide="chevron-right"></i></span>
 									</div>
@@ -632,7 +642,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 										data-listName="<?php echo esc_attr($names['attribute_name']); ?>"
 										data-attribute-key="<?php echo esc_attr($attr_slug); ?>"
 										aria-hidden="true">
-										<h3><span class="mont_required">*</span> Størrelse (Obligatorisk)</h3>
+										<h3><span class="mont_required">*</span> <?php echo esc_html( $t( 'size_required', 'Size (Required)' ) ); ?></h3>
 										<span class="dpName"></span>
 									</div>
 									<?php else : ?>
@@ -673,7 +683,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 							<div class="mont_variation-selector custom-add velg-snipp ">
 								<div class="mont_variation-group">
 									<div class="mont_variation-header" onclick="toggleSection(this)">
-										<h3>Velg Snipp (Valg fritt)</h3>
+										<h3><?php echo esc_html( $t( 'choose_collar', 'Choose collar (optional)' ) ); ?></h3>
 										<span class="dpName skname"><b></b></span>
 										<span class="mont_toggle-icon"><i data-lucide="chevron-down"></i></span>
 									</div>
@@ -699,7 +709,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 							<div class="mont_variation-selector custom-add velg-mansjetter">
 								<div class="mont_variation-group">
 									<div class="mont_variation-header" onclick="toggleSection(this)">
-										<h3> Velg Mansjetter (Valg fritt)</h3>
+										<h3><?php echo esc_html( $t( 'choose_cuff', 'Choose cuff (optional)' ) ); ?></h3>
 										<span class="dpName skname"><b></b></span>
 										<span class="mont_toggle-icon"><i data-lucide="chevron-down"></i></span>
 									</div>
@@ -735,7 +745,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 						<div class="mont_variation-selector skreddersydd">
 							<div class="mont_variation-group">
 								<div class="mont_variation-header" onclick="toggleSection(this)">
-									<h3>Skreddersydd (Valgt Fritt)</h3>
+									<h3><?php echo esc_html( $t( 'tailoring', 'Tailoring (optional)' ) ); ?></h3>
 									<span class="mont_toggle-icon"><i data-lucide="chevron-down"></i></span>
 								</div>
 
@@ -756,7 +766,7 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 					<a href="javascript:void(0)" 
 					class="custom-add-to-cart" 
 					data-product_id="<?php echo get_the_ID(); ?>">
-					LEGG I HANDLE POSEN 
+					<?php echo esc_html( $t( 'add_to_cart', 'Add to bag' ) ); ?>
 				</a>
 			</div>
 				<?php
@@ -764,18 +774,18 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 				?>
 			<div class="mont_alerts">
 				<div class="mont_alert mont_alert--popover" id="mont_alert" hidden role="dialog" aria-labelledby="mont_alert_title_1" aria-modal="false">
-					<button type="button" class="mont_alert_close" onclick="closeAlert()" aria-label="Lukk">
+					<button type="button" class="mont_alert_close" onclick="closeAlert()" aria-label="<?php echo esc_attr( $t( 'close', 'Close' ) ); ?>">
 						<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
 							<path d="M6 6l12 12M18 6L6 18"/>
 						</svg>
 					</button>
-					<h2 class="mont_alert_title" id="mont_alert_title_1">KANSELLERING OG RETUR FOR SKREDDERSYDDE SKJORTER.</h2>
+					<h2 class="mont_alert_title" id="mont_alert_title_1"><?php echo esc_html( $t( 'alert_cancel_title' ) ); ?></h2>
 					<p class="mont_alert_text">
-						Alle skreddersydde skjorter er 100% individuelt tilpasset etter kundens preferanser. Derfor aksepterer vi IKKE returer av noen grunn bortsett fra produksjonsfeil.
+						<?php echo esc_html( $t( 'alert_cancel_text' ) ); ?>
 					</p>
-					<h2 class="mont_alert_title">LEVERINGSTID FOR SKREDDERSYDDE SKJORTER.</h2>
+					<h2 class="mont_alert_title"><?php echo esc_html( $t( 'alert_delivery_title' ) ); ?></h2>
 					<p class="mont_alert_text">
-						Alle skreddersydde skjorter krever mer arbeid og skifter av nye deler, derfor må vi legge til opptil syv (7) dager ekstra i tillegg til normal leveringstid.
+						<?php echo esc_html( $t( 'alert_delivery_text' ) ); ?>
 					</p>
 				</div>
 				<div class="mont_alert_backdrop" id="mont_alert_backdrop" hidden aria-hidden="true"></div>
@@ -789,22 +799,22 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 	<div class="mont-fit-size-drawer__backdrop" data-close-fit-size-drawer tabindex="-1"></div>
 	<aside class="mont-fit-size-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="mont-fit-size-drawer-title">
 		<div class="mont-fit-size-drawer__scroll">
-			<h2 id="mont-fit-size-drawer-title" class="mont-fit-size-drawer__title">Velg passform og størrelse</h2>
+			<h2 id="mont-fit-size-drawer-title" class="mont-fit-size-drawer__title"><?php echo esc_html( $t( 'drawer_title' ) ); ?></h2>
 
 			<section class="mont-fit-size-drawer__section" aria-labelledby="mont-drawer-fit-label">
-				<h3 id="mont-drawer-fit-label" class="mont-fit-size-drawer__label">Passform</h3>
+				<h3 id="mont-drawer-fit-label" class="mont-fit-size-drawer__label"><?php echo esc_html( $t( 'drawer_fit' ) ); ?></h3>
 				<div class="mont-fit-size-drawer__fits" id="mont-drawer-fits"></div>
 			</section>
 
 			<section class="mont-fit-size-drawer__section" aria-labelledby="mont-drawer-size-label">
-				<h3 id="mont-drawer-size-label" class="mont-fit-size-drawer__label">Størrelse</h3>
-				<p class="mont-fit-size-drawer__hint" id="mont-drawer-size-hint">Velg passform først</p>
+				<h3 id="mont-drawer-size-label" class="mont-fit-size-drawer__label"><?php echo esc_html( $t( 'drawer_size' ) ); ?></h3>
+				<p class="mont-fit-size-drawer__hint" id="mont-drawer-size-hint"><?php echo esc_html( $t( 'drawer_hint_fit_first' ) ); ?></p>
 				<div class="mont-fit-size-drawer__sizes" id="mont-drawer-sizes" hidden></div>
 			</section>
 		</div>
 		<footer class="mont-fit-size-drawer__footer">
-			<button type="button" class="mont-fit-size-drawer__continue" id="mont-fit-size-continue" disabled>Fortsett</button>
-			<button type="button" class="mont-fit-size-drawer__close" data-close-fit-size-drawer aria-label="Lukk">
+			<button type="button" class="mont-fit-size-drawer__continue" id="mont-fit-size-continue" disabled><?php echo esc_html( $t( 'drawer_continue' ) ); ?></button>
+			<button type="button" class="mont-fit-size-drawer__close" data-close-fit-size-drawer aria-label="<?php echo esc_attr( $t( 'close' ) ); ?>">
 				<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
 			</button>
 		</footer>
@@ -818,20 +828,22 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
 		<span class="mont-mobile-sticky-cta__stock">
 			<?php
 			$sticky_stock = $product->get_stock_quantity();
-			echo esc_html( ( $sticky_stock && $sticky_stock > 0 ) ? ( 'Tilgjengelig ' . $sticky_stock ) : 'Pre-order' );
+			echo esc_html( ( $sticky_stock && $sticky_stock > 0 )
+				? ( $t( 'available', 'Available' ) . ' ' . $sticky_stock )
+				: $t( 'pre_order', 'Pre-order' ) );
 			?>
 		</span>
 	</div>
 	<a href="javascript:void(0)"
 		class="mont-mobile-sticky-cta__action is-cart custom-add-to-cart"
 		data-product_id="<?php echo (int) get_the_ID(); ?>">
-		LEGG I HANDLEPOSEN
+		<?php echo esc_html( $t( 'add_to_cart', 'Add to bag' ) ); ?>
 	</a>
 </div>
 
 <div class="mont_bottom_layout">
 	<div class="mont_related_products_slider">
-		<h3>Skjorter: Våre anbefalinger</h3>
+		<h3><?php echo esc_html( $t( 'recommendations', 'Shirts: Our recommendations' ) ); ?></h3>
 		<div class="mont_slider_single_product_page">
             <?php echo do_shortcode('[custom_product_grid related="yes" limit="8"]'); ?>
         </div>

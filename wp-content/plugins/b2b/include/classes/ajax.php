@@ -28,9 +28,15 @@ class ajax extends b2b
         exit();
 		}
 		else{
+	$moq_tpl = function_exists( 'mont_pdp_t' )
+		? mont_pdp_t( 'moq_message' )
+		: 'Minimum order is %1$s shirts. You’re only adding %2$s to your cart.';
 	wp_send_json(array(
-
-    'message' => "Minimum order is ".$productData['fabircDetails'][0]['moq']." shirts You're only adding ".$this->getTotalSizeValue($productData)." to your cart.",
+    'message' => sprintf(
+		$moq_tpl,
+		$productData['fabircDetails'][0]['moq'],
+		$this->getTotalSizeValue($productData)
+	),
     'sizeError' => true,
     'server' => ''
         ));

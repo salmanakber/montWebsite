@@ -1714,6 +1714,8 @@ body.mont-fit-size-drawer-open {
     font-weight: 400;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
+    position: relative;
+    overflow: hidden;
 }
 
 .mont-drawer-size-option.is-selected {
@@ -1721,9 +1723,84 @@ body.mont-fit-size-drawer-open {
     color: #fff;
 }
 
-.mont-drawer-size-option:hover {
+.mont-drawer-size-option:hover:not(.is-contemporary-locked):not(:disabled) {
     background: #111;
     color: #fff;
+}
+
+.mont-drawer-size-option.is-contemporary-locked,
+.mont-drawer-size-option:disabled.is-contemporary-locked {
+    opacity: 0.42;
+    border-color: #cfcfcf;
+    background: #f7f7f7 !important;
+    color: #9a9a9a !important;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.mont-drawer-size-option.is-contemporary-locked::before,
+.mont-drawer-size-option.is-contemporary-locked::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.mont-drawer-size-option.is-contemporary-locked::before {
+    background: linear-gradient(
+        to top left,
+        transparent calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.55) calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.55) calc(50% + 0.7px),
+        transparent calc(50% + 0.7px)
+    );
+}
+
+.mont-drawer-size-option.is-contemporary-locked::after {
+    background: linear-gradient(
+        to top right,
+        transparent calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.55) calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.55) calc(50% + 0.7px),
+        transparent calc(50% + 0.7px)
+    );
+}
+
+.pa_size-option.is-contemporary-locked {
+    opacity: 0.42;
+    pointer-events: none;
+    position: relative;
+    background: #f7f7f7;
+}
+
+.pa_size-option.is-contemporary-locked::before,
+.pa_size-option.is-contemporary-locked::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.pa_size-option.is-contemporary-locked::before {
+    background: linear-gradient(
+        to top left,
+        transparent calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.45) calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.45) calc(50% + 0.7px),
+        transparent calc(50% + 0.7px)
+    );
+}
+
+.pa_size-option.is-contemporary-locked::after {
+    background: linear-gradient(
+        to top right,
+        transparent calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.45) calc(50% - 0.7px),
+        rgba(90, 90, 90, 0.45) calc(50% + 0.7px),
+        transparent calc(50% + 0.7px)
+    );
 }
 
 .mont-fit-size-drawer__footer {

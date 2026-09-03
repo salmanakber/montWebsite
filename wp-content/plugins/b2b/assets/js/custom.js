@@ -66,7 +66,8 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // After redirect from "save & add", open cart modal once
+    // After "I'm Done Choosing" only — open delivery/cart modal once.
+    // "Save & Add new colour" must NOT open delivery details.
     try {
         if (sessionStorage.getItem('b2b_open_cart') === '1') {
             sessionStorage.removeItem('b2b_open_cart');
@@ -80,6 +81,39 @@ jQuery(document).ready(function($) {
         }
     } catch (err) {}
 
+    var CONTEMPORARY_LOCKED_SIZES = [37, 39, 41, 43, 45, 47];
+
+    function isContemporaryFitActive() {
+        return $('#b2b-fit-contemporary').is(':checked');
+    }
+
+    function applyContemporarySizeLocks() {
+        var lock = isContemporaryFitActive();
+        $('.b2b-size-cell').each(function () {
+            var $cell = $(this);
+            var num = parseInt($cell.attr('data-size-num') || $cell.find('.b2b-size-input').attr('data-size-num'), 10);
+            var shouldLock = lock && CONTEMPORARY_LOCKED_SIZES.indexOf(num) !== -1;
+            $cell.toggleClass('is-contemporary-locked', shouldLock);
+            var $input = $cell.find('.b2b-size-input');
+            if (shouldLock) {
+                $input.val('').prop('disabled', true).attr('aria-disabled', 'true');
+            } else {
+                $input.prop('disabled', false).removeAttr('aria-disabled');
+            }
+        });
+        updateSum();
+    }
+
+    // Body fit: allow one selection at a time; contemporary locks odd sizes.
+    $(document).on('change', '.b2b-checked-form', function () {
+        var $this = $(this);
+        if ($this.is(':checked')) {
+            $('.b2b-checked-form').not($this).prop('checked', false);
+        }
+        applyContemporarySizeLocks();
+    });
+    applyContemporarySizeLocks();
+
     // Cart FAB — dedicated handlers (avoid click-through closing modal)
     $(document).on('click', '.b2b-cart-fab, [data-monte-b2b-modal-trigger="#monte-b2b-form"]', function(e) {
         e.preventDefault();
@@ -91,12 +125,23 @@ jQuery(document).ready(function($) {
         }, 10);
     });
 
-    $(document).on('click', '.submit-it-directly.add-to-cart-button-bubble', function(e) {
+    $(document).on('click', '.submit-it-directly', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        setTimeout(function () {
-            loadB2bCartAndOpen();
-        }, 10);
+        var $btn = $(this);
+        // If current colour already in cart / FAB ready — open delivery form.
+        if ($btn.hasClass('add-to-cart-button-bubble') || (!$('.b2b-cart-fab').hasClass('d-none') && $('.count-item-b2b').length)) {
+            setTimeout(function () {
+                try { sessionStorage.setItem('b2b_open_cart', '1'); } catch (err) {}
+                loadB2bCartAndOpen();
+            }, 10);
+            return;
+        }
+        $.notify((window.b2bI18n && b2bI18n.notifySaveFirst) ? b2bI18n.notifySaveFirst : "Save a colour first with “Save & Add new colour”, then click I’m Done Choosing.", {
+            type: "danger",
+            align: "left",
+            verticalAlign: "bottom"
+        });
     });
 
     $(document).on('click', '.monte-b2b-close', function(e) {
@@ -145,9 +190,11 @@ jQuery(document).ready(function($) {
         function updateSum() {
         var sum = 0;
         $('.b2b-size-input').each(function() {
+            if ($(this).prop('disabled')) return;
             sum += parseFloat($(this).val()) || 0;
         });
-        var totalText = sum + ' Shirts';
+        var shirtsWord = (window.b2bI18n && b2bI18n.shirts) ? b2bI18n.shirts : 'Shirts';
+        var totalText = sum + ' ' + shirtsWord;
         $('.price-b2b').val(totalText);
         $('.b2b-pdp__total-value, #b2b-total-pieces').text(sum);
         $('.mont-b2b-sticky-price').text(totalText);
@@ -164,6 +211,7 @@ $(document).on('click', '.send-it-to-cart', function() {
     var thisE = $(this);
     // Check if any of the b2b-size-input fields are filled
     $('.b2b-size-input').each(function() {
+        if ($(this).prop('disabled')) return;
         if ($(this).val().trim() !== '') {
             isAnyFieldFilled = true;
             return false; // Exit the loop if a filled input is found
@@ -178,7 +226,7 @@ $(document).on('click', '.send-it-to-cart', function() {
     var cuffTypeValue = $('.cuff-type-b2b input[type=radio]:checked').val();
 
     if (!isAnyFieldFilled) {
-        $.notify("Please fill in any of the size fields.", { type: "danger", align: "left", verticalAlign: "bottom" });
+        $.notify((window.b2bI18n && b2bI18n.notifyFillSizes) ? b2bI18n.notifyFillSizes : "Please fill in any of the size fields.", { type: "danger", align: "left", verticalAlign: "bottom" });
         return; // Stop further processing if no field is filled
     }
 
@@ -197,8 +245,9 @@ $(document).on('click', '.send-it-to-cart', function() {
         'fabircDetails' : []
     };
 
-    // Collect data-value attribute from b2b-size-input fields
+    // Collect size quantities (skip contemporary-locked / disabled)
     $('.b2b-size-input').each(function() {
+        if ($(this).prop('disabled')) return;
         var fieldValue = $(this).val().trim();
         if (fieldValue !== '') {
             var dataValue = $(this).data('value');
@@ -249,12 +298,13 @@ $(document).on('click', '.send-it-to-cart', function() {
             if(response.data && response.data.count > 0)
             {
 				$('.submit-it-directly').addClass('add-to-cart-button-bubble');
-                $.notify("Product added to cart.", { type: "toast", align: "right", verticalAlign: "bottom" });
+                $.notify((window.b2bI18n && b2bI18n.notifyAdded) ? b2bI18n.notifyAdded : "Product added to cart.", { type: "toast", align: "right", verticalAlign: "bottom" });
                 $('.add-to-cart-button-bubble, .b2b-cart-fab').removeClass('d-none');
                 $('.count-item-b2b').text(response.data.count < 10 ? '0' + response.data.count : response.data.count);
                 bounceB2bCartFab();
+                // Return to catalog only — do NOT open delivery/shipping form.
                 try {
-                    sessionStorage.setItem('b2b_open_cart', '1');
+                    sessionStorage.removeItem('b2b_open_cart');
                 } catch (err) {}
 				window.location.href = (typeof b2bShopUrl !== 'undefined' && b2bShopUrl) ? b2bShopUrl : '/monte-connected-b2b/';
             }

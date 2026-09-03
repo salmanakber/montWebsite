@@ -9,6 +9,7 @@ require_once get_template_directory(). '/codeFunction/load-more-scroll-class.php
 require_once get_template_directory(). '/codeFunction/discount.php';
 require_once get_template_directory(). '/codeFunction/return-form.php';
 require_once get_template_directory(). '/codeFunction/about-us.php';
+require_once get_template_directory(). '/codeFunction/mont-pdp-i18n.php';
 
 add_action( 'after_setup_theme', function () {
 	// Soft-proportional ~120px wide thumbs for custom-size measurement tiles.

@@ -702,25 +702,29 @@ public function monte_b2b_shortcode($atts) {
     // Include your template HTML here
    foreach (get_field('choose_collar_update', 'option') as $key => $value){
     $is_sel = ( ( $value['selected'] ?? '' ) === 'Yes' );
+    $sub    = isset( $value['sub_name'] ) ? trim( (string) $value['sub_name'] ) : '';
     $collar_type .= '<label class="b2b-check-to-go-collar b2b-option-tile' . ( $is_sel ? ' is-selected' : '' ) . '">'
       . '<input type="radio" name="collar_type" value="' . esc_attr( ucfirst( $value['name'] ) ) . '" ' . ( $is_sel ? 'checked' : '' ) . '>'
       . '<input type="hidden" name="data_collar_type_transmit_129" value="' . esc_url( $value['image'] ) . '">'
+      . '<span class="blank-check ' . ( $is_sel ? 'checkbtn' : '' ) . '" aria-hidden="true"></span>'
       . '<span class="b2b-option-tile__media"><img src="' . esc_url( $value['image'] ) . '" alt="' . esc_attr( ucfirst( $value['name'] ) ) . '"></span>'
       . '<span class="text-and-check b2b-option-tile__meta">'
-      . '<span class="blank-check ' . ( $is_sel ? 'checkbtn' : '' ) . '"></span>'
       . '<span class="b2b-option-tile__name">' . esc_html( ucfirst( $value['name'] ) ) . '</span>'
+      . ( $sub !== '' ? '<span class="b2b-option-tile__sub">' . esc_html( ucfirst( $sub ) ) . '</span>' : '' )
       . '</span></label>';
 }
 
    foreach (get_field('choose_cuff_update', 'option') as $key => $value){
     $is_sel = ( ( $value['selected'] ?? '' ) === 'Yes' );
+    $sub    = isset( $value['sub_name'] ) ? trim( (string) $value['sub_name'] ) : '';
     $cuff_type .= '<label class="b2b-check-to-go-cuff b2b-option-tile' . ( $is_sel ? ' is-selected' : '' ) . '">'
       . '<input type="radio" name="cuff_type" value="' . esc_attr( ucfirst( $value['name'] ) ) . '" ' . ( $is_sel ? 'checked' : '' ) . '>'
       . '<input type="hidden" name="data_cuff_type_transmit_111" value="' . esc_url( $value['image'] ) . '">'
+      . '<span class="blank-check ' . ( $is_sel ? 'checkbtn' : '' ) . '" aria-hidden="true"></span>'
       . '<span class="b2b-option-tile__media"><img src="' . esc_url( $value['image'] ) . '" alt="' . esc_attr( ucfirst( $value['name'] ) ) . '"></span>'
       . '<span class="text-and-check b2b-option-tile__meta">'
-      . '<span class="blank-check ' . ( $is_sel ? 'checkbtn' : '' ) . '"></span>'
       . '<span class="b2b-option-tile__name">' . esc_html( ucfirst( $value['name'] ) ) . '</span>'
+      . ( $sub !== '' ? '<span class="b2b-option-tile__sub">' . esc_html( ucfirst( $sub ) ) . '</span>' : '' )
       . '</span></label>';
 }
 
@@ -740,6 +744,11 @@ if(isset($_GET['productb2b']) AND !empty($_GET['productb2b'])){
             . '</div>';
     }
 
+    $i18n = function_exists( 'mont_pdp_i18n' ) ? mont_pdp_i18n() : array();
+    $t    = function ( $key, $fallback = '' ) use ( $i18n ) {
+        return isset( $i18n[ $key ] ) ? esc_html( $i18n[ $key ] ) : esc_html( $fallback );
+    };
+
     $template_content_b2b_details = $this->replace_variables_in_html_file
     (
         $this->path . 'include/templates/details.php' ,
@@ -751,6 +760,25 @@ if(isset($_GET['productb2b']) AND !empty($_GET['productb2b'])){
             'collar' => $collar_type,
             'cuff' =>  $cuff_type,
             'return_form_block' => $return_form_block,
+            't_back' => $t( 'back', 'Back' ),
+            't_loading_prev' => $t( 'loading_prev', 'Loading previous page...' ),
+            't_quotation_title' => $t( 'quotation_title', 'Information required for quotation' ),
+            't_quotation_moq' => $t( 'quotation_moq', 'Total MOQ' ),
+            't_quotation_moq_suffix' => $t( 'quotation_moq_suffix', 'pcs/color' ),
+            't_size_breakdown' => $t( 'size_breakdown', 'Size breakdown' ),
+            't_total_pieces' => $t( 'total_pieces', 'Total pieces:' ),
+            't_body_fit' => $t( 'body_fit', 'Body fit' ),
+            't_slim_fit' => $t( 'slim_fit', 'Slim fit' ),
+            't_regular_fit' => $t( 'regular_fit', 'Regular fit' ),
+            't_contemporary_fit' => $t( 'contemporary_fit', 'Contemporary fit' ),
+            't_size_guide' => $t( 'size_guide', 'Size guide' ),
+            't_notes_supplier' => $t( 'notes_supplier', 'Notes for supplier' ),
+            't_collar_type' => $t( 'collar_type', 'Collar type' ),
+            't_cuff_type' => $t( 'cuff_type', 'Cuff type' ),
+            't_save_add_colour' => $t( 'save_add_colour', 'Save & add new colour' ),
+            't_done_choosing' => $t( 'done_choosing', "I'm done choosing" ),
+            't_shirts' => $t( 'shirts', 'Shirts' ),
+            't_min_order_applies' => $t( 'min_order_applies', 'Minimum order applies' ),
         ));
     $output .= $template_content_b2b_details;
 }
@@ -780,7 +808,7 @@ public function enqueue_scripts_and_styles() {
     wp_enqueue_style('b2b-owl-default-css', $this->url . 'assets/css/owl.theme.default.min.css', array(), '1.0');
     wp_enqueue_style('b2b-fontaweseom', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css');
     wp_enqueue_script('b2b-notify-script', $this->url . 'assets/js/b2b-notify.js', array('jquery'), '1.0', true);
-    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '1.8', true);
+    wp_enqueue_script('b2b-custom-script', $this->url . 'assets/js/custom.js', array('jquery'), '2.0', true);
     wp_enqueue_script('b2b-owl-script', $this->url . 'assets/js/owl.carousel.js', array('jquery'), '1.0', true);
 
     // Shared category tab design (theme file when available).
@@ -813,6 +841,8 @@ public function enqueue_scripts_and_styles() {
     wp_localize_script('b2b-custom-script', 'ajaxurl', array(
         'url' => admin_url('admin-ajax.php'),
     ));
+    $b2b_i18n = function_exists( 'mont_pdp_js_i18n' ) ? mont_pdp_js_i18n() : array( 'shirts' => 'Shirts' );
+    wp_localize_script( 'b2b-custom-script', 'b2bI18n', $b2b_i18n );
     wp_add_inline_script(
         'b2b-custom-script',
         'var b2bShopUrl = ' . wp_json_encode( $b2b_url ) . ';',
