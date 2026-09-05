@@ -114,7 +114,7 @@
             </div>
             <style>
                 .current_page_item a {
-                    font-weight: 500 !important;
+                
                     color: black !important;
                 }
             </style>

@@ -22,6 +22,9 @@ function mont_return_form_catalog() {
 		'vn'   => array(
 			'file' => 'Return Tieng Viet.pdf',
 		),
+		'no'   => array(
+			'file' => 'Return Norwegian.pdf', // Return Norwegian.pdf
+		),
 	);
 }
 
