@@ -163,14 +163,6 @@
 
         $switcher.addClass('dc-region-loading');
 
-        try {
-            if (window.montReturnForm && window.montReturnForm.forms && window.montReturnForm.forms[region]) {
-                sessionStorage.setItem('mont_show_return_form', region);
-            }
-        } catch (err) {
-            // ignore
-        }
-
         $.post(dc_region.ajaxUrl, {
             action: 'dc_switch_region',
             nonce: dc_region.nonce,

@@ -136,14 +136,12 @@
 
         toggleProductUi(cfg.current);
 
-        var pending = sessionStorage.getItem('mont_show_return_form');
-        if (pending) {
+        // Clear any leftover auto-open flag from older region-switcher builds.
+        // Popup must only open via the Return form button click.
+        try {
             sessionStorage.removeItem('mont_show_return_form');
-            if (regionHasForm(pending)) {
-                setTimeout(function () {
-                    showPopup(pending);
-                }, 400);
-            }
+        } catch (err) {
+            // ignore
         }
     });
 
