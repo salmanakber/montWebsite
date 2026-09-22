@@ -17,6 +17,11 @@
   font-weight: 300;
   line-height: 1.75;
   font-size: 17px;
+  position: relative;
+  max-width: 100%;
+  overflow-x: hidden; /* prevent 100vw-style breakouts from widening the page */
+  container-type: inline-size;
+  container-name: mont-about;
 }
 
 .mont-about,
@@ -192,14 +197,28 @@
   min-height: 280px;
 }
 
-/* Traditions image (slot 3) — full bleed breakout */
+/* Traditions image (slot 3) — full width of .mont-about, not the viewport */
 .mont-about .mont-about__media--3.traditions-image,
 .mont-about .traditions-image {
-  width: 100vw;
   position: relative;
-  left: 50%;
-  margin: 36px 0 0 -50vw;
+  left: auto;
+  margin: 36px 0 0;
   min-height: 280px;
+  /* Fallback: undo wrap padding */
+  width: calc(100% + 64px);
+  max-width: none;
+  margin-left: -32px;
+  margin-right: -32px;
+}
+
+@supports (width: 100cqi) {
+  .mont-about .mont-about__wrap .mont-about__media--3.traditions-image,
+  .mont-about .mont-about__wrap .traditions-image {
+    /* Match hero/center: edges of .mont-about container */
+    width: 100cqi;
+    margin-left: calc(50% - 50cqi);
+    margin-right: calc(50% - 50cqi);
+  }
 }
 
 .mont-about .traditions-image img {
@@ -246,12 +265,21 @@
 .mont-about .mont-about__scroll-section {
   padding: 64px 0 56px;
   border-top: none;
-  width: 100vw;
   position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
+  left: auto;
+  right: auto;
+  /* Fallback: undo wrap padding (no 100vw — that caused page horizontal scroll) */
+  width: calc(100% + 64px);
+  margin-left: -32px;
+  margin-right: -32px;
+}
+
+@supports (width: 100cqi) {
+  .mont-about .mont-about__scroll-section {
+    width: 100cqi;
+    margin-left: calc(50% - 50cqi);
+    margin-right: calc(50% - 50cqi);
+  }
 }
 
 .mont-about .mont-about__scroll-section::before {
