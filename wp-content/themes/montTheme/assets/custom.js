@@ -60,7 +60,7 @@ jQuery(document).ready(function($) {
 
     // Card click (avoid when user was swiping the image slider).
     $(document).on('click', '.product-item[data-href]', function (e) {
-        if ($(e.target).closest('.wishlist-toggle, .mont-card-slider__dot').length) return;
+        if ($(e.target).closest('.wishlist-toggle, .mont-card-slider__dot, .mont-card-slider__btn, .mont-card-slider__progress').length) return;
         if (String($(this).attr('data-mont-swiped') || '') === '1') {
             $(this).attr('data-mont-swiped', '0');
             return;

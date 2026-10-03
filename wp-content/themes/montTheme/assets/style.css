@@ -1245,33 +1245,72 @@ body.menu-open .mont-ai-shopping-assistant {
     opacity: 1 !important;
     position: static !important;
 }
-.mont-card-slider__dots {
+/* Hover arrows + thin progress (no autoplay) */
+.mont-card-slider__btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 7;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.mont-card-slider__btn--prev {
+    left: 8px;
+}
+.mont-card-slider__btn--next {
+    right: 8px;
+}
+.mont-card-slider__btn svg {
+    display: block;
+}
+.mont-card-slider__progress {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
+    bottom: 0;
+    height: 2px;
     z-index: 6;
-    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
 }
-.mont-card-slider__dot {
-    width: 4px;
-    height: 4px;
-    min-width: 4px;
-    padding: 0;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.55);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: width 0.2s ease, background 0.2s ease;
-}
-.mont-card-slider__dot.is-active {
-    width: 12px;
+.mont-card-slider__progress-fill {
+    height: 100%;
+    width: 0;
     background: #fff;
+    transition: width 0.35s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .mont-card-slider:hover .mont-card-slider__btn {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .mont-card-slider:hover .mont-card-slider__progress {
+        opacity: 1;
+    }
+}
+@media (hover: none), (pointer: coarse) {
+    .mont-card-slider__btn {
+        display: none;
+    }
+    .mont-card-slider__progress {
+        opacity: 1;
+    }
 }
 .product-img-b2b .mont-card-slider {
     position: absolute;

@@ -212,13 +212,22 @@ class productHelper
                             <?php endforeach; ?>
                         </div>
                         <?php if ( count( $slide_urls ) > 1 ) : ?>
-                            <div class="mont-card-slider__dots" aria-hidden="true">
-                                <?php foreach ( $slide_urls as $i => $_u ) : ?>
-                                    <button type="button"
-                                            class="mont-card-slider__dot<?php echo $i === 0 ? ' is-active' : ''; ?>"
-                                            data-index="<?php echo (int) $i; ?>"
-                                            aria-label="<?php echo esc_attr( sprintf( 'Image %d', $i + 1 ) ); ?>"></button>
-                                <?php endforeach; ?>
+                            <button type="button"
+                                    class="mont-card-slider__btn mont-card-slider__btn--prev"
+                                    aria-label="<?php echo esc_attr__( 'Previous image', 'montTheme' ); ?>">
+                                <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+                                    <path d="M6.5 1.5L3 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <button type="button"
+                                    class="mont-card-slider__btn mont-card-slider__btn--next"
+                                    aria-label="<?php echo esc_attr__( 'Next image', 'montTheme' ); ?>">
+                                <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+                                    <path d="M3.5 1.5L7 5l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <div class="mont-card-slider__progress" aria-hidden="true">
+                                <div class="mont-card-slider__progress-fill" style="width: <?php echo esc_attr( ( 1 / count( $slide_urls ) ) * 100 ); ?>%;"></div>
                             </div>
                         <?php endif; ?>
                     </div>

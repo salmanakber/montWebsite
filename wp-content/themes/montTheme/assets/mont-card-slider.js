@@ -1,6 +1,6 @@
 /**
- * Standalone product-card image sliders: dots, swipe, slower autoplay.
- * Each card gets its own random interval so slides don't sync.
+ * Product-card image sliders: hover arrows, thin progress bar, swipe.
+ * No autoplay — next/prev only via arrows or swipe.
  */
 (function () {
     'use strict';
@@ -8,17 +8,7 @@
     if (window.__montCardSliderInit) return;
     window.__montCardSliderInit = true;
 
-    var AUTO_MIN = 5200;
-    var AUTO_MAX = 9200;
     var SWIPE_THRESHOLD = 36;
-
-    function randomInterval() {
-        return Math.floor(AUTO_MIN + Math.random() * (AUTO_MAX - AUTO_MIN));
-    }
-
-    function randomStartDelay() {
-        return Math.floor(400 + Math.random() * 2800);
-    }
 
     function initSlider(root) {
         if (!root || root.__montSliderBound) return;
@@ -30,31 +20,36 @@
         }
 
         root.__montSliderBound = true;
-        var dots = Array.prototype.slice.call(root.querySelectorAll('.mont-card-slider__dot'));
+        var prevBtn = root.querySelector('.mont-card-slider__btn--prev');
+        var nextBtn = root.querySelector('.mont-card-slider__btn--next');
+        var progressFill = root.querySelector('.mont-card-slider__progress-fill');
         var index = 0;
-        var timer = null;
-        var startDelay = null;
-        var autoMs = randomInterval();
         var startX = 0;
         var deltaX = 0;
         var dragging = false;
         var width = 0;
-        var paused = false;
+        var total = slides.length;
 
         function measure() {
             width = root.getBoundingClientRect().width || root.offsetWidth || 1;
             return width;
         }
 
+        function updateProgress() {
+            if (!progressFill) return;
+            var pct = ((index + 1) / total) * 100;
+            progressFill.style.width = pct + '%';
+            root.setAttribute('data-slide', String(index + 1));
+            root.setAttribute('data-slides', String(total));
+        }
+
         function goTo(i, animate) {
             if (typeof animate === 'undefined') animate = true;
-            index = ((i % slides.length) + slides.length) % slides.length;
-            track.style.transition = animate ? 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+            index = ((i % total) + total) % total;
+            track.style.transition = animate ? 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
             track.style.transform = 'translate3d(' + (-index * 100) + '%, 0, 0)';
-            dots.forEach(function (dot, di) {
-                dot.classList.toggle('is-active', di === index);
-            });
-            var nextSlide = slides[(index + 1) % slides.length];
+            updateProgress();
+            var nextSlide = slides[(index + 1) % total];
             var img = nextSlide ? nextSlide.querySelector('img') : null;
             if (img) {
                 img.loading = 'eager';
@@ -65,45 +60,27 @@
             }
         }
 
-        function next() {
+        function prev(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            goTo(index - 1);
+        }
+
+        function next(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             goTo(index + 1);
         }
 
-        function stopAuto() {
-            if (timer) {
-                clearInterval(timer);
-                timer = null;
-            }
-            if (startDelay) {
-                clearTimeout(startDelay);
-                startDelay = null;
-            }
-        }
-
-        function startAuto() {
-            stopAuto();
-            if (paused || slides.length < 2) return;
-            autoMs = randomInterval();
-            startDelay = setTimeout(function () {
-                startDelay = null;
-                if (paused) return;
-                timer = setInterval(next, autoMs);
-            }, randomStartDelay());
-        }
-
-        dots.forEach(function (dot) {
-            dot.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                goTo(parseInt(dot.getAttribute('data-index'), 10) || 0);
-                startAuto();
-            });
-        });
+        if (prevBtn) prevBtn.addEventListener('click', prev);
+        if (nextBtn) nextBtn.addEventListener('click', next);
 
         function onPointerDown(clientX) {
             dragging = true;
-            paused = true;
-            stopAuto();
             startX = clientX;
             deltaX = 0;
             measure();
@@ -131,8 +108,6 @@
             } else {
                 goTo(index);
             }
-            paused = false;
-            startAuto();
         }
 
         root.addEventListener('touchstart', function (e) {
@@ -150,6 +125,7 @@
 
         root.addEventListener('mousedown', function (e) {
             if (e.button !== 0) return;
+            if (e.target.closest('.mont-card-slider__btn')) return;
             onPointerDown(e.clientX);
         });
         window.addEventListener('mousemove', function (e) {
@@ -157,19 +133,8 @@
         });
         window.addEventListener('mouseup', onPointerUp);
 
-        root.addEventListener('mouseenter', function () {
-            paused = true;
-            stopAuto();
-        });
-        root.addEventListener('mouseleave', function () {
-            if (!dragging) {
-                paused = false;
-                startAuto();
-            }
-        });
-
         root.addEventListener('click', function (e) {
-            if (e.target.closest('.mont-card-slider__dot')) {
+            if (e.target.closest('.mont-card-slider__btn, .mont-card-slider__progress')) {
                 e.preventDefault();
                 e.stopPropagation();
             }
@@ -177,12 +142,6 @@
 
         measure();
         goTo(0, false);
-        startAuto();
-
-        document.addEventListener('visibilitychange', function () {
-            if (document.hidden) stopAuto();
-            else if (!paused) startAuto();
-        });
     }
 
     function boot(scope) {
