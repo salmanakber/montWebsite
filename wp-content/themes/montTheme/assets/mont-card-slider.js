@@ -1,6 +1,6 @@
 /**
- * Product-card image sliders: hover arrows, thin progress bar, swipe.
- * No autoplay — next/prev only via arrows or swipe.
+ * Product-card image sliders: hover zoom, arrows, thin progress bar, swipe.
+ * Slides fade (no full-track slide animation). No autoplay.
  */
 (function () {
     'use strict';
@@ -16,10 +16,12 @@
         var slides = track ? Array.prototype.slice.call(track.children) : [];
         if (!track || slides.length < 2) {
             root.__montSliderBound = true;
+            root.classList.add('is-single');
             return;
         }
 
         root.__montSliderBound = true;
+        root.classList.add('is-fade');
         var prevBtn = root.querySelector('.mont-card-slider__btn--prev');
         var nextBtn = root.querySelector('.mont-card-slider__btn--next');
         var progressFill = root.querySelector('.mont-card-slider__progress-fill');
@@ -27,27 +29,20 @@
         var startX = 0;
         var deltaX = 0;
         var dragging = false;
-        var width = 0;
         var total = slides.length;
-
-        function measure() {
-            width = root.getBoundingClientRect().width || root.offsetWidth || 1;
-            return width;
-        }
 
         function updateProgress() {
             if (!progressFill) return;
-            var pct = ((index + 1) / total) * 100;
-            progressFill.style.width = pct + '%';
+            progressFill.style.width = (((index + 1) / total) * 100) + '%';
             root.setAttribute('data-slide', String(index + 1));
             root.setAttribute('data-slides', String(total));
         }
 
-        function goTo(i, animate) {
-            if (typeof animate === 'undefined') animate = true;
+        function goTo(i) {
             index = ((i % total) + total) % total;
-            track.style.transition = animate ? 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
-            track.style.transform = 'translate3d(' + (-index * 100) + '%, 0, 0)';
+            slides.forEach(function (slide, di) {
+                slide.classList.toggle('is-active', di === index);
+            });
             updateProgress();
             var nextSlide = slides[(index + 1) % total];
             var img = nextSlide ? nextSlide.querySelector('img') : null;
@@ -79,34 +74,31 @@
         if (prevBtn) prevBtn.addEventListener('click', prev);
         if (nextBtn) nextBtn.addEventListener('click', next);
 
+        function markSwipeHost(value) {
+            var item = root.closest('.product-item');
+            if (item) item.setAttribute('data-mont-swiped', value);
+            var cardLink = root.closest('a.b2b-product-card-link');
+            if (cardLink) cardLink.setAttribute('data-mont-swiped', value);
+        }
+
         function onPointerDown(clientX) {
             dragging = true;
             startX = clientX;
             deltaX = 0;
-            measure();
-            track.style.transition = 'none';
-            root.closest('.product-item') && root.closest('.product-item').setAttribute('data-mont-swiped', '0');
-            var cardLink = root.closest('a.b2b-product-card-link');
-            if (cardLink) cardLink.setAttribute('data-mont-swiped', '0');
+            markSwipeHost('0');
         }
 
         function onPointerMove(clientX) {
             if (!dragging) return;
             deltaX = clientX - startX;
-            var pct = (deltaX / width) * 100;
-            track.style.transform = 'translate3d(' + ((-index * 100) + pct) + '%, 0, 0)';
         }
 
         function onPointerUp() {
             if (!dragging) return;
             dragging = false;
-            var swiped = Math.abs(deltaX) > SWIPE_THRESHOLD;
-            if (swiped) {
+            if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
                 goTo(deltaX < 0 ? index + 1 : index - 1);
-                var host = root.closest('.product-item') || root.closest('a.b2b-product-card-link');
-                if (host) host.setAttribute('data-mont-swiped', '1');
-            } else {
-                goTo(index);
+                markSwipeHost('1');
             }
         }
 
@@ -140,8 +132,7 @@
             }
         });
 
-        measure();
-        goTo(0, false);
+        goTo(0);
     }
 
     function boot(scope) {

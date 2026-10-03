@@ -1228,11 +1228,37 @@ body.menu-open .mont-ai-shopping-assistant {
     height: 100%;
     will-change: transform;
 }
+/* Fade mode: stack slides, no full-image slide animation */
+.mont-card-slider.is-fade .mont-card-slider__track {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform: none !important;
+    will-change: auto;
+}
+.mont-card-slider.is-fade .mont-card-slider__slide {
+    position: absolute;
+    inset: 0;
+    flex: none;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+    z-index: 0;
+}
+.mont-card-slider.is-fade .mont-card-slider__slide.is-active {
+    opacity: 1;
+    visibility: visible;
+    z-index: 1;
+}
 .mont-card-slider__slide {
     flex: 0 0 100%;
     width: 100%;
     height: 100%;
     position: relative;
+    overflow: hidden;
 }
 .mont-card-slider__slide img,
 .mont-card-slider .main-image,
@@ -1244,6 +1270,18 @@ body.menu-open .mont-ai-shopping-assistant {
     pointer-events: none;
     opacity: 1 !important;
     position: static !important;
+    transform: scale(1);
+    transform-origin: center center;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+/* Soft zoom on hover (image only — not a full card slide) */
+@media (hover: hover) and (pointer: fine) {
+    .mont-card-slider:hover .mont-card-slider__slide.is-active img,
+    .mont-card-slider.is-single:hover .mont-card-slider__slide img,
+    .mont-card-slider:not(.is-fade):hover .mont-card-slider__slide img {
+        transform: scale(1.06);
+    }
 }
 /* Hover arrows + thin progress (no autoplay) */
 .mont-card-slider__btn {
@@ -1284,7 +1322,7 @@ body.menu-open .mont-ai-shopping-assistant {
     bottom: 0;
     height: 2px;
     z-index: 6;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.15);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
@@ -1292,7 +1330,7 @@ body.menu-open .mont-ai-shopping-assistant {
 .mont-card-slider__progress-fill {
     height: 100%;
     width: 0;
-    background: #fff;
+    background: #000;
     transition: width 0.35s ease;
 }
 @media (hover: hover) and (pointer: fine) {
