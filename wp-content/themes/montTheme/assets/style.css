@@ -1289,8 +1289,8 @@ body.menu-open .mont-ai-shopping-assistant {
     top: 50%;
     transform: translateY(-50%);
     z-index: 7;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     margin: 0;
     border: 0;
@@ -1315,6 +1315,8 @@ body.menu-open .mont-ai-shopping-assistant {
 }
 .mont-card-slider__btn svg {
     display: block;
+    width: 13px;
+    height: 13px;
 }
 .mont-card-slider__progress {
     position: absolute;
