@@ -47,8 +47,8 @@ class Mont_WooCommerce_Load_More {
                 'nonce' => wp_create_nonce('mont_load_more_nonce'),
                 'current_page' => max(1, get_query_var('paged')),
                 'max_page' => $GLOBALS['wp_query']->max_num_pages,
-                'loading_text' => __('Loading products...', 'mont'),
-                'no_more_text' => __('No more products to load', 'mont')
+                'loading_text' => function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'loading_products' ) : __( 'Loading products...', 'mont' ),
+                'no_more_text' => function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'no_more_products' ) : __( 'No more products to load', 'mont' ),
             ));
             
             // Add inline CSS
@@ -130,7 +130,8 @@ class Mont_WooCommerce_Load_More {
         // Only show button if there are more pages
         if ($wp_query->max_num_pages > 1) {
             echo '<div class="mont-load-more-container" style="background:transparent;">';
-            echo '<button class="mont-load-more-button" data-page="1" style="background: transparent; border: none;">' . __('Load More Products', 'mont') . '</button>';
+            $load_more_label = function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'load_more_products' ) : __( 'Load More Products', 'mont' );
+            echo '<button class="mont-load-more-button" data-page="1" style="background: transparent; border: none;">' . esc_html( $load_more_label ) . '</button>';
             echo '</div>';
         }
     }

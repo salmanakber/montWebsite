@@ -20,7 +20,7 @@ do_action( 'woocommerce_before_main_content' );
 				<header class="woocommerce-products-header">
 					<?php if ( apply_filters( 'woocommerce_show_page_title', true ) ) : ?>
 						<?php if ( is_product_category( 'trousers' ) ) : ?>
-							<h1 class="woocommerce-products-header__title page-title"><?php esc_html_e( 'Coming Soon', 'montenapoleone' ); ?></h1>
+							<h1 class="woocommerce-products-header__title page-title"><?php echo esc_html( mont_pdp_t( 'coming_soon' ) ); ?></h1>
 						<?php else : ?>
 							<h1 class="woocommerce-products-header__title page-title"><?php woocommerce_page_title(); ?></h1>
 						<?php endif; ?>

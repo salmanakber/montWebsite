@@ -1295,16 +1295,17 @@ body.menu-open .mont-ai-shopping-assistant {
     margin: 0;
     border: 0;
     border-radius: 0;
-    background: #fff;
-    color: #222;
+    background: transparent;
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: none;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 .mont-card-slider__btn--prev {
     left: 8px;

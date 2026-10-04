@@ -113,7 +113,11 @@ button.mont-search-close {
     </div>
     <div class="mont-search-popup-content">
       <!-- WordPress shortcode will be rendered here -->
-      <?php echo do_shortcode('[mont_search placeholder="Find products..." button_text="Søk" show_button="no"]'); ?>
+      <?php
+      $search_ph  = function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'find_products' ) : 'Find products...';
+      $search_btn = function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'search' ) : 'Search';
+      echo do_shortcode( '[mont_search placeholder="' . esc_attr( $search_ph ) . '" button_text="' . esc_attr( $search_btn ) . '" show_button="no"]' );
+      ?>
     </div>
  
 

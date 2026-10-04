@@ -889,7 +889,7 @@ class CustomVariation {
 			$slider_id = 'product_category_slider_' . wp_rand( 1000, 9999 );
 			?>
 			<div class="category-slider-container ssds">
-				<button type="button" class="slider-arrow prev-arrow" aria-label="Previous categories">
+				<button type="button" class="slider-arrow prev-arrow" aria-label="<?php echo esc_attr( mont_pdp_t( 'prev_categories' ) ); ?>">
 					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</button>
 				<div class="category-slider" id="<?php echo esc_attr( $slider_id ); ?>">
@@ -900,7 +900,7 @@ class CustomVariation {
 						</a>
 					<?php endforeach; ?>
 				</div>
-				<button type="button" class="slider-arrow next-arrow" aria-label="Next categories">
+				<button type="button" class="slider-arrow next-arrow" aria-label="<?php echo esc_attr( mont_pdp_t( 'next_categories' ) ); ?>">
 					<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 				</button>
 			</div>

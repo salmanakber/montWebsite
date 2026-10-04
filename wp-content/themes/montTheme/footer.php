@@ -3,12 +3,16 @@
 
 <!-- Announcement Bar -->
 <div id="announcement-bar" style="display: none;">
-    🎉 Discount Applied! Your coupon has been automatically added.
+    <?php echo esc_html( function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'discount_applied' ) : 'Discount Applied! Your coupon has been automatically added.' ); ?>
 </div>
 
 <!-- Popup Container -->
 <?php 
 $discount = new Custom_WooCommerce_Coupon();
+$disc_pct = isset( $discount->discount_amount ) ? $discount->discount_amount : '';
+$disc_title = function_exists( 'mont_pdp_t' )
+	? sprintf( mont_pdp_t( 'discount_popup_title' ), $disc_pct )
+	: sprintf( 'GET %s%% OFF YOUR FIRST ORDER!', $disc_pct );
 ?>
 <style>
 span.error-code {
@@ -23,18 +27,18 @@ span.error-code {
  <div class="popup-container" id="discount-popup" style="display:none;">
         <button class="popup-close" id="close-popup">×</button>
         <div class="popup-left">
-            <h2 class="popup-title">FÅ  <?php echo $discount->discount_amount; ?>% RABATT PÅ DIN FØRSTE ORDRE!
+            <h2 class="popup-title"><?php echo esc_html( $disc_title ); ?>
 </h2>
             <p class="popup-description">
-               Legg igjen din e-post og får vårt nyhetsbrev og tilbud. 
+               <?php echo esc_html( function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'discount_popup_desc' ) : 'Leave your email and get our newsletter and offers.' ); ?>
             </p>
             <form id="subscribe-form">
 				<span class="error-code"></span>
-            <input type="email" id="email-input" class="popup-input" placeholder="Your email">
-            <button class="popup-button">Subscribe & Get Discount</button>
+            <input type="email" id="email-input" class="popup-input" placeholder="<?php echo esc_attr( function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'your_email' ) : 'Your email' ); ?>">
+            <button class="popup-button"><?php echo esc_html( function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'subscribe_discount' ) : 'Subscribe & Get Discount' ); ?></button>
             </button>
             <p class="popup-terms">
-                *I agree to receive updates from Monte Napoleone including exclusive offers and new collection announcements. Consent is not a condition to purchase. Msg & data rates may apply. You can unsubscribe at any time. View our Terms of Service and Privacy Policy.
+                <?php echo esc_html( function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'subscribe_terms' ) : '' ); ?>
             </p>
         </div>
         
@@ -45,7 +49,7 @@ span.error-code {
         </div>
     </div>
     </div>
-<div id="sticky-popup-btn" style="display: none;"><?php echo $discount->discount_amount; ?>% rabatt første kjøp</div>
+<div id="sticky-popup-btn" style="display: none;"><?php echo esc_html( sprintf( function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'sticky_discount' ) : '%s%% off first purchase', $disc_pct ) ); ?></div>
 <?php wp_footer(); ?>
 </body>
 </html>

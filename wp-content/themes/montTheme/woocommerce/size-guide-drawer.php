@@ -4,8 +4,8 @@
  */
 ?>
 <div id="monte-size-guide" class="monte-size-drawer" aria-hidden="true">
-	<div class="monte-size-drawer__panel" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'Size Guide', 'montenapoleone' ); ?>">
-		<button type="button" class="monte-size-drawer__close" aria-label="<?php esc_attr_e( 'Close size guide', 'montenapoleone' ); ?>">
+	<div class="monte-size-drawer__panel" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr( mont_pdp_t( 'size_guide' ) ); ?>">
+		<button type="button" class="monte-size-drawer__close" aria-label="<?php echo esc_attr( mont_pdp_t( 'close_size_guide' ) ); ?>">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M 2.75 2.042969 L 2.042969 2.75 L 2.398438 3.101563 L 7.292969 8 L 2.042969 13.25 L 2.75 13.957031 L 8 8.707031 L 12.894531 13.605469 L 13.25 13.957031 L 13.957031 13.25 L 13.605469 12.894531 L 8.707031 8 L 13.957031 2.75 L 13.25 2.042969 L 8 7.292969 L 3.101563 2.398438 Z"/></svg>
 		</button>
 		<div class="monte-size-drawer__scroll">

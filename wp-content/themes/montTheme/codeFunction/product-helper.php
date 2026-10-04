@@ -18,7 +18,7 @@ class productHelper
 	
 	public function display_custom_wishlist() {
     if (!isset($_SESSION['custom_wishlist']) || empty($_SESSION['custom_wishlist'])) {
-        echo '<p>Your wishlist is empty.</p>';
+        echo '<p>' . esc_html( mont_pdp_t( 'wishlist_empty' ) ) . '</p>';
         return;
     }
 
@@ -32,7 +32,7 @@ class productHelper
             echo '<h3>' . esc_html($product->get_name()) . '</h3>';
             echo '<p class="wishlist-price">' . wc_price($product->get_price()) . '</p>';
             echo '</div>';
-            echo '<button class="remove-wishlist-item" data-product-id="' . esc_attr($product_id) . '">Remove</button>';
+            echo '<button class="remove-wishlist-item" data-product-id="' . esc_attr($product_id) . '">' . esc_html( mont_pdp_t( 'wishlist_remove' ) ) . '</button>';
             echo '</div>';
         }
     }
@@ -175,7 +175,7 @@ class productHelper
 								}
 								if($product->get_stock_quantity() == 0 )
 								{
-									echo 'Pre-order';
+									echo esc_html( mont_pdp_t( 'pre_order' ) );
 								}
 							?>
 						
@@ -214,14 +214,14 @@ class productHelper
                         <?php if ( count( $slide_urls ) > 1 ) : ?>
                             <button type="button"
                                     class="mont-card-slider__btn mont-card-slider__btn--prev"
-                                    aria-label="<?php echo esc_attr__( 'Previous image', 'montTheme' ); ?>">
+                                    aria-label="<?php echo esc_attr( mont_pdp_t( 'prev_image' ) ); ?>">
                                 <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
                                     <path d="M6.5 1.5L3 5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                             </button>
                             <button type="button"
                                     class="mont-card-slider__btn mont-card-slider__btn--next"
-                                    aria-label="<?php echo esc_attr__( 'Next image', 'montTheme' ); ?>">
+                                    aria-label="<?php echo esc_attr( mont_pdp_t( 'next_image' ) ); ?>">
                                 <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
                                     <path d="M3.5 1.5L7 5l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>

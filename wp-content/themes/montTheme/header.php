@@ -61,7 +61,7 @@
 			} else {
 				$b2b_switch_disabled = true;
 				$b2b_url             = '#';
-				$b2b_switch_title    = 'Ikke tilgjengelig i B2B';
+				$b2b_switch_title    = function_exists( 'mont_pdp_t' ) ? mont_pdp_t( 'b2b_unavailable' ) : 'Not available in B2B';
 			}
 		}
 	}
@@ -172,7 +172,7 @@
         </div>
 
         <div class="mont_header_second_menu_header">
-            <div class="mont_header_mobile_close" aria-label="Close menu"></div>
+            <div class="mont_header_mobile_close" aria-label="<?php echo esc_attr( mont_pdp_t( 'close_menu' ) ); ?>"></div>
         </div>
 
         <div class="mont_header_mobile_menu_body">
@@ -192,7 +192,7 @@
 
                 <ul class="mont_header_menu_mobile">
                     <li class="mont_header_menu_mobile__item mont_header_menu_mobile__item--shirts">
-                        <a href="#" class="mont_mega">Skjorter</a>
+                        <a href="#" class="mont_mega"><?php echo esc_html( mont_pdp_t( 'shirts' ) ); ?></a>
                         <i data-lucide="chevron-right" class="right-icon-menu"></i>
                     </li>
                     <?php
@@ -209,10 +209,10 @@
                     }
                     ?>
                     <li class="mont_header_menu_mobile__item">
-                        <a href="<?php echo esc_url( $store_url ); ?>">Store Location</a>
+                        <a href="<?php echo esc_url( $store_url ); ?>"><?php echo esc_html( mont_pdp_t( 'store_location' ) ); ?></a>
                     </li>
                     <li class="mont_header_menu_mobile__item">
-                        <a href="<?php echo esc_url( $about_url ); ?>">About us</a>
+                        <a href="<?php echo esc_url( $about_url ); ?>"><?php echo esc_html( mont_pdp_t( 'about_us' ) ); ?></a>
                     </li>
                 </ul>
 
@@ -221,7 +221,7 @@
 
             <div class="mont_header_mobile_mega_menu">
                 <div class="mont_header_mobile_back_button">
-                    <span><i data-lucide="chevron-left"></i></span> Back
+                    <span><i data-lucide="chevron-left"></i></span> <?php echo esc_html( mont_pdp_t( 'back' ) ); ?>
                 </div>
                 <div class="mont_header_mobile_mega_content">
                     <?php echo do_shortcode( '[custom_elementor_template id="20468"]' ); ?>
@@ -230,7 +230,7 @@
         </div>
     </div>
     </header>
-    <div class="mont-channel-bar" role="navigation" aria-label="Butikk type" data-mont-channel="<?php echo esc_attr( $channel ); ?>">
+    <div class="mont-channel-bar" role="navigation" aria-label="<?php echo esc_attr( mont_pdp_t( 'channel_type' ) ); ?>" data-mont-channel="<?php echo esc_attr( $channel ); ?>">
         <div class="mont-channel-switch" data-active="<?php echo esc_attr( $channel ); ?>">
             <span class="mont-channel-switch__pill" aria-hidden="true"></span>
             <a
@@ -240,7 +240,7 @@
                 aria-current="<?php echo $channel === 'b2c' ? 'page' : 'false'; ?>"
             >
                 <span class="mont-channel-switch__copy">
-                    <span class="mont-channel-switch__label">B2C Skjorter</span>
+                    <span class="mont-channel-switch__label"><?php echo esc_html( mont_pdp_t( 'b2c_shirts' ) ); ?></span>
                 </span>
             </a>
             <a
@@ -256,7 +256,7 @@
                 <?php endif; ?>
             >
                 <span class="mont-channel-switch__copy">
-                    <span class="mont-channel-switch__label">B2B Skjorter</span>
+                    <span class="mont-channel-switch__label"><?php echo esc_html( mont_pdp_t( 'b2b_shirts' ) ); ?></span>
                 </span>
             </a>
         </div>

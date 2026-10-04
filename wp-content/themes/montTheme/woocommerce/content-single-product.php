@@ -511,11 +511,11 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                 </div>
 
                 <?php if ($total_items > 1) : ?>
-                <div class="mont_gallery_nav" aria-label="Gallery navigation">
-                    <button type="button" class="mont_gallery_nav_btn mont_gallery_prev" aria-label="Previous">
+                <div class="mont_gallery_nav" aria-label="<?php echo esc_attr( $t( 'gallery_nav', 'Gallery navigation' ) ); ?>">
+                    <button type="button" class="mont_gallery_nav_btn mont_gallery_prev" aria-label="<?php echo esc_attr( $t( 'previous', 'Previous' ) ); ?>">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5L8 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button type="button" class="mont_gallery_nav_btn mont_gallery_next" aria-label="Next">
+                    <button type="button" class="mont_gallery_nav_btn mont_gallery_next" aria-label="<?php echo esc_attr( $t( 'next', 'Next' ) ); ?>">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                 </div>
