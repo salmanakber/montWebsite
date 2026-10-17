@@ -120,8 +120,6 @@ body.single-product {margin: 0 !important;}
 }
 
 /* Hide items > 4 initially */
-.mont_gallery_item.initially-hidden { display: none; }
-
 .mont_gallery_item video,
 .mont_gallery_item img {
     width: 100%;
@@ -166,25 +164,6 @@ body.single-product {margin: 0 !important;}
 
 .mont_video_overlay_btn:hover { background: #fff; }
 .mont_video_overlay_btn svg { width: 14px; height: 14px; fill: #000; }
-
-/* See More Button */
-.mont_see_more_container {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
-}
-.mont_see_more_btn {
-    background: #000;
-    color: #fff;
-    border: 1px solid #000;
-    padding: 10px 30px;
-    text-transform: uppercase;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-.mont_see_more_btn:hover { background: #fff; color: #000; }
 
 div#mont_backButton { z-index: 999; }
 
@@ -306,7 +285,6 @@ div#mont_backButton { z-index: 999; }
     }
     .mont_gallery_wrapper-unified .mont_gallery_item,
     .mont_gallery_wrapper-unified .mont_gallery_item.video-trigger,
-    .mont_gallery_wrapper-unified .mont_gallery_item.initially-hidden,
     #mont_gallery_track > .mont_gallery_item {
         display: block !important;
         flex: 0 0 var(--mont-slide-w, 100%) !important;
@@ -346,9 +324,6 @@ div#mont_backButton { z-index: 999; }
     .mont_gallery_wrapper-unified .mont_video_overlay_btn {
         pointer-events: auto !important;
         z-index: 9 !important;
-    }
-    .mont_gallery_wrapper-unified .mont_see_more_container {
-        display: none !important;
     }
     .mont_gallery_wrapper-unified .mont_gallery_nav {
         display: flex !important;
@@ -467,15 +442,10 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
             <div class="mont_gallery_wrapper-unified">
                 <div class="mont_gallery_grid_wrapper" id="mont_gallery_track">
                     <?php 
-                    $counter = 0;
-                    foreach ($media_items as $index => $item) : 
-                        $counter++;
-                        // Hide items beyond first 4 (desktop only; mobile CSS shows all)
-                        $hidden_class = ($counter > 4) ? 'initially-hidden' : '';
-                        
+                    foreach ($media_items as $index => $item) :
                         if ($item['type'] === 'video') : ?>
                             <!-- VIDEO ITEM -->
-                            <div class="mont_gallery_item <?php echo esc_attr($hidden_class); ?> custom-cursor-expand video-trigger"
+                            <div class="mont_gallery_item custom-cursor-expand video-trigger"
                                  data-media-type="video"
                                  data-src="<?php echo esc_url($item['url']); ?>">
                                 
@@ -496,13 +466,13 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                             $image_url = wp_get_attachment_image_url($item['id'], 'full');
                             ?>
                             <!-- IMAGE ITEM -->
-                            <div class="mont_gallery_item <?php echo esc_attr($hidden_class); ?>">
+                            <div class="mont_gallery_item">
                                 <img src="<?php echo esc_url($image_url); ?>"
                                      class="mont_gallery_main-image custom-cursor-expand lightbox-trigger"
                                      alt="Product Image"
                                      data-media-type="image"
                                      data-src="<?php echo esc_url($image_url); ?>"
-                                     loading="eager"
+                                     loading="<?php echo $index < 2 ? 'eager' : 'lazy'; ?>"
                                      decoding="async"
                                      <?php echo $index === 0 ? 'fetchpriority="high"' : ''; ?>>
                             </div>
@@ -520,12 +490,6 @@ if(get_field("product_type") == "FORHÅNDSORDRE")
                     </button>
                 </div>
                 <div class="mont_gallery_dots" id="mont_gallery_dots"></div>
-                <?php endif; ?>
-
-                <?php if ($total_items > 4) : ?>
-                <div class="mont_see_more_container">
-                    <button id="mont_see_more_btn" class="mont_see_more_btn"><?php echo esc_html( $t( 'see_more_images', 'See more images' ) ); ?></button>
-                </div>
                 <?php endif; ?>
             </div>
         </div> 
@@ -900,17 +864,6 @@ function toggleVideo(e, videoId) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    
-    // 1. "See More" Button Logic (desktop)
-    const seeMoreBtn = document.getElementById('mont_see_more_btn');
-    if (seeMoreBtn) {
-        seeMoreBtn.addEventListener('click', function() {
-            document.querySelectorAll('.mont_gallery_item.initially-hidden').forEach(item => {
-                item.classList.remove('initially-hidden');
-            });
-            this.parentElement.style.display = 'none';
-        });
-    }
 
     // Mobile gallery slider is handled by assets/product-gallery-slider.js
 

@@ -1268,7 +1268,6 @@ a.custom-add-to-cart {
 
     .mont_gallery_wrapper-unified .mont_gallery_item,
     .mont_gallery_wrapper-unified .mont_gallery_item.video-trigger,
-    .mont_gallery_wrapper-unified .mont_gallery_item.initially-hidden,
     #mont_gallery_track > .mont_gallery_item {
         display: block !important;
         /* --mont-slide-w set in px by product-gallery-slider.js (fallback: wrapper width) */
@@ -1313,10 +1312,6 @@ a.custom-add-to-cart {
     .mont_gallery_wrapper-unified .mont_video_overlay_btn {
         pointer-events: auto !important;
         z-index: 9 !important;
-    }
-
-    .mont_gallery_wrapper-unified .mont_see_more_container {
-        display: none !important;
     }
 
     .mont_gallery_wrapper-unified .mont_gallery_nav {
