@@ -138,6 +138,13 @@ class DC_Multi_Currency {
         add_filter('woocommerce_currency_symbol', array($this, 'filter_currency_symbol'), 10, 2);
         add_filter('woocommerce_price_format', array($this, 'filter_price_format'), 10, 2);
         add_filter('woocommerce_price_num_decimals', array($this, 'filter_price_decimals'), 10, 1);
+        add_filter('wc_price_args', array($this, 'filter_price_args'), 20);
+        add_filter('wc_get_price_decimal_separator', array($this, 'filter_decimal_separator'));
+        add_filter('wc_get_price_thousand_separator', array($this, 'filter_thousand_separator'));
+
+        // WooCommerce product edit screen — same region prices as Stock Management.
+        add_action('woocommerce_product_options_pricing', array($this, 'render_wc_product_region_prices'));
+        add_action('woocommerce_process_product_meta', array($this, 'save_wc_product_region_prices'), 20);
     }
 
     public function filter_price($price, $product) {
@@ -229,12 +236,15 @@ class DC_Multi_Currency {
         return $symbol;
     }
 
+    /**
+     * USD → American format ($1,290.00). All other currencies → shared NOK-style (1 290,00 kr).
+     */
     public function filter_price_format($format, $currency_pos) {
         $currency = DC_Region_Currency::get_current_currency();
-        if ($currency === 'NOK') {
-            return '%2$s %1$s';
+        if ($currency === 'USD') {
+            return '%1$s%2$s';
         }
-        return $format;
+        return '%2$s %1$s';
     }
 
     public function filter_price_decimals($decimals) {
@@ -243,6 +253,105 @@ class DC_Multi_Currency {
             return 0;
         }
         return $decimals;
+    }
+
+    /**
+     * Force separators + format inside wc_price() for every storefront price.
+     *
+     * @param array $args wc_price args.
+     * @return array
+     */
+    public function filter_price_args($args) {
+        $currency = !empty($args['currency']) ? $args['currency'] : DC_Region_Currency::get_current_currency();
+        if ($currency === 'USD') {
+            $args['decimal_separator']  = '.';
+            $args['thousand_separator'] = ',';
+            $args['price_format']       = '%1$s%2$s';
+        } else {
+            $args['decimal_separator']  = ',';
+            $args['thousand_separator'] = ' ';
+            $args['price_format']       = '%2$s %1$s';
+        }
+        return $args;
+    }
+
+    public function filter_decimal_separator($separator) {
+        return DC_Region_Currency::get_current_currency() === 'USD' ? '.' : ',';
+    }
+
+    public function filter_thousand_separator($separator) {
+        return DC_Region_Currency::get_current_currency() === 'USD' ? ',' : ' ';
+    }
+
+    /**
+     * Region price fields on the native WooCommerce product edit screen.
+     */
+    public function render_wc_product_region_prices() {
+        global $post;
+        if (!$post || empty($post->ID)) {
+            return;
+        }
+
+        $prices = self::get_product_edit_prices((int) $post->ID);
+        echo '<div class="options_group show_if_simple show_if_variable dc-wc-region-prices">';
+        echo '<p class="form-field"><strong>' . esc_html__('Prices by Region', 'dc-product-manager') . '</strong></p>';
+        echo '<p class="form-field" style="margin-top:0;"><span class="description">' .
+            esc_html__('Same as Stock Management. Empty currencies fall back to the default product price.', 'dc-product-manager') .
+            '</span></p>';
+
+        foreach (DC_Region_Currency::get_regions() as $slug => $region) {
+            $code  = $region['currency'];
+            $value = isset($prices[$code]) ? $prices[$code] : '';
+            woocommerce_wp_text_input(
+                array(
+                    'id'                => '_dc_price_' . strtolower($code),
+                    'name'              => 'dc_multicurrency_prices[' . $code . ']',
+                    'label'             => esc_html($region['label'] . ' (' . $region['display'] . ')'),
+                    'value'             => $value,
+                    'type'              => 'number',
+                    'desc_tip'          => true,
+                    'description'       => sprintf(
+                        /* translators: %s: currency code */
+                        __('Price shown when the customer selects the %s region.', 'dc-product-manager'),
+                        $code
+                    ),
+                    'custom_attributes' => array(
+                        'step' => $code === 'VND' ? '1' : '0.01',
+                        'min'  => '0',
+                    ),
+                )
+            );
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Persist region prices from the WooCommerce product edit screen.
+     *
+     * @param int $post_id Product ID.
+     */
+    public function save_wc_product_region_prices($post_id) {
+        $post_id = (int) $post_id;
+        if ($post_id <= 0) {
+            return;
+        }
+
+        // Only update when our fields are present (avoids wiping prices on unrelated saves).
+        if (!isset($_POST['dc_multicurrency_prices']) || !is_array($_POST['dc_multicurrency_prices'])) {
+            return;
+        }
+
+        $raw = wp_unslash($_POST['dc_multicurrency_prices']);
+        $prices = array();
+        foreach ($raw as $code => $value) {
+            $code = strtoupper(sanitize_text_field($code));
+            if ($value === '' || $value === null) {
+                continue;
+            }
+            $prices[$code] = $value;
+        }
+
+        self::save_prices_for_product($post_id, $prices);
     }
 
     /**

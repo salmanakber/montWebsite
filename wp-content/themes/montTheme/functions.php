@@ -99,10 +99,29 @@ function custom_woocommerce_price_format($format, $currency_pos) {
         $currency = \DC_Product_Manager\DC_Region_Currency::get_current_currency();
     }
 
-    if ($currency === 'NOK') {
-        return '%2$s %1$s';
+    // USD uses American format; all other currencies share NOK-style (amount then symbol).
+    if ($currency === 'USD') {
+        return '%1$s%2$s';
     }
-    return $format;
+    return '%2$s %1$s';
+}
+
+add_filter('wc_price_args', 'mont_wc_price_args_by_currency', 25);
+function mont_wc_price_args_by_currency($args) {
+    $currency = !empty($args['currency']) ? $args['currency'] : 'NOK';
+    if (class_exists('DC_Product_Manager\\DC_Region_Currency') && empty($args['currency'])) {
+        $currency = \DC_Product_Manager\DC_Region_Currency::get_current_currency();
+    }
+    if ($currency === 'USD') {
+        $args['decimal_separator']  = '.';
+        $args['thousand_separator'] = ',';
+        $args['price_format']       = '%1$s%2$s';
+    } else {
+        $args['decimal_separator']  = ',';
+        $args['thousand_separator'] = ' ';
+        $args['price_format']       = '%2$s %1$s';
+    }
+    return $args;
 }
 
 add_filter('woocommerce_currency_symbol', 'change_currency_symbol', 10, 2);

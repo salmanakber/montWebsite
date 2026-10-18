@@ -206,19 +206,29 @@ jQuery(document).ready(function ($) {
         return (count * 10) + extraValue;
     }
 
-    function formatMoney(amount) {
+    function getActiveCurrency() {
         var currency = (typeof dc_region !== 'undefined' && dc_region.regions && dc_region.currentRegion)
             ? (dc_region.regions[dc_region.currentRegion] || {}).currency
             : 'NOK';
-        currency = currency || 'NOK';
+        return currency || 'NOK';
+    }
+
+    function formatMoney(amount) {
+        var currency = getActiveCurrency();
+        // USD → US format; all other currencies → shared NOK-style locale.
+        var locale = currency === 'USD' ? 'en-US' : 'nb-NO';
         try {
-            return new Intl.NumberFormat('nb-NO', {
+            return new Intl.NumberFormat(locale, {
                 style: 'currency',
                 currency: currency,
-                minimumFractionDigits: currency === 'VND' ? 0 : 2
+                minimumFractionDigits: currency === 'VND' ? 0 : 2,
+                maximumFractionDigits: currency === 'VND' ? 0 : 2
             }).format(amount);
         } catch (e) {
-            return amount.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' ' + currency;
+            if (currency === 'USD') {
+                return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            return amount.toLocaleString('nb-NO', { minimumFractionDigits: 2 }) + ' ' + currency;
         }
     }
 
@@ -227,6 +237,6 @@ jQuery(document).ready(function ($) {
         var productPrice = parseFloat($('#actual-price').val()) || 0;
         var totalPrice = calculateTotal() + productPrice;
         $('#added-price').val(calculateTotal());
-        $('.mont_product-price').find('span bdi').text(totalPrice.toFixed(2).replace('.', ',') + ' NOK');
+        $('.mont_product-price').find('span bdi').text(formatMoney(totalPrice));
     });
 });
